@@ -1,1 +1,1 @@
-Phyton Solar Data Analyser
+Python Solar Data Analyser

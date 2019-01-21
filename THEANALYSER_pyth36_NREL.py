@@ -15,7 +15,7 @@ import CMM_Pyth36_v1 as CMM
 import Spectro_Pyth36 as spectrofcts
 import TMsimulNew_Pyth36 as TMMfcts
 import EQE_fcts_Pyth36_v2 as EQEfcts
-import IV_fcts_Pyth36_V2 as IVfcts
+import IV_fcts_Pyth36_NRELV1 as IVfcts
 import JVfollowup_Pyth36_v0 as JVfollowup
 import Database_v0 as DB
 import XRDautoA as xrdauto
@@ -67,15 +67,15 @@ class TheAnalyser(Frame):
         EQEbutton = Button(root, text='EQE', command = self.callEQE)
         EQEbutton.grid(row=1,column=5,columnspan=2)
         Spectrobutton = Button(root, text='Spectro', command = self.callSpectro)
-        Spectrobutton.grid(row=1,column=14,columnspan=2)
+        Spectrobutton.grid(row=1,column=8,columnspan=2)
         Ellipsobutton = Button(root, text='Ellipso', command = self.callEllipso)
-        Ellipsobutton.grid(row=2,column=14,columnspan=2)
+        Ellipsobutton.grid(row=2,column=8,columnspan=2)
         QSSPCbutton = Button(root, text='QSSPC', command = self.callQSSPC)
-        QSSPCbutton.grid(row=3,column=14,columnspan=2)
+        QSSPCbutton.grid(row=3,column=8,columnspan=2)
         PLbutton = Button(root, text='PL', command = self.callPL)
-        PLbutton.grid(row=4,column=14,columnspan=2)
+        PLbutton.grid(row=4,column=8,columnspan=2)
         Hallbutton = Button(root, text='HallEffect', command = self.callHall)
-        Hallbutton.grid(row=4,column=16,columnspan=3)
+        Hallbutton.grid(row=4,column=10,columnspan=3)
         IVbutton = Button(root, text='IV', command = self.callIV)
         IVbutton.grid(row=2,column=5,columnspan=2)
         CMMbutton = Button(root, text='CMM', command = self.callCMM)
@@ -83,13 +83,13 @@ class TheAnalyser(Frame):
         TMSbutton = Button(root, text='TMM', command = self.callTMM)
         TMSbutton.grid(row=5,column=4,columnspan=3)
         DBbutton = Button(root, text='DATABASE', command = self.callDB)
-        DBbutton.grid(row=6,column=17,columnspan=4)
+        DBbutton.grid(row=6,column=12,columnspan=4)
         refcellbutton = Button(root, text='CellEvolCheck', command = self.callRefCell)
-        refcellbutton.grid(row=6,column=14,columnspan=4)
+        refcellbutton.grid(row=6,column=8,columnspan=4)
         XRDbutton = Button(root, text='XRDauto', command = self.callXRDauto)
-        XRDbutton.grid(row=3,column=16,columnspan=3)
+        XRDbutton.grid(row=3,column=10,columnspan=3)
         XRDbutton = Button(root, text='XRD', command = self.callXRD)
-        XRDbutton.grid(row=3,column=18,columnspan=2)
+        XRDbutton.grid(row=3,column=12,columnspan=2)
         
             
     def callEQE(self):
@@ -136,7 +136,7 @@ class TheAnalyser(Frame):
         xrd.XRDApp()
         
 root = Tk()
-background_image=ImageTk.PhotoImage(file=os.path.join(os.path.dirname(os.path.abspath(__file__)),'images','background2.png'))
+background_image=ImageTk.PhotoImage(file=os.path.join(os.path.dirname(os.path.abspath(__file__)),'images','background.png'))
 w = background_image.width()
 h = background_image.height()
 root.geometry("%dx%d+0+0" % (w, h))

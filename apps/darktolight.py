@@ -6,8 +6,9 @@ import os
 #sys.setrecursionlimit(1500) #to avoid error on some computer: RuntimeError: maximum recursion depth exceeded in cmp
 #import matplotlib
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
-
+#from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk as NavigationToolbar2TkAgg
 import tkinter as tk
 from tkinter import *
 #import tkMessageBox as messagebox

@@ -55,6 +55,15 @@ TODOLIST
 - group: select which one to plot (so that we don't have to delete them)
 
 
+
+NREL adaptation todolist:
+    - mpp files reading
+    - get stats by substrates with 6 cells colored
+    - check the autoanalysis
+        - does the batchname, samplename... work?
+        - by substrates graphs?
+        - stats graphs?
+
 """
 #%%############# Global variable definition
 testdata = []
@@ -589,7 +598,7 @@ class IVApp(Toplevel):
                         groupdict["Group"]=samplesgroups[item]
                         listofthegroup=[]
                         for item1 in range(len(DATAx)):
-                            if DATAx[item1]["Group"]==groupdict["Group"]:
+                            if DATAx[item1]["Group"]==groupdict["Group"] and DATAx[item1]["Illumination"]=='Light':
                                 listofthegroup.append(DATAx[item1])
                         
                         listofthegroupRev=[]
@@ -626,7 +635,7 @@ class IVApp(Toplevel):
                         groupdict["Group"]=samplesgroups[item]
                         listofthegroup=[]
                         for item1 in range(len(DATAx)):
-                            if DATAx[item1]["Group"]==groupdict["Group"]:
+                            if DATAx[item1]["Group"]==groupdict["Group"] and DATAx[item1]["Illumination"]=='Light':
                                 listofthegroup.append(DATAx[item1])
     
                         grouper = itemgetter("DepID", "Cellletter",'ScanDirection')
@@ -1703,10 +1712,13 @@ class IVApp(Toplevel):
                 partdict["AirTemp"]=999
                 partdict["ChuckTemp"]=999
                     
+#                DATA.append(partdict)
+
                 if partdict["Illumination"]=="Light":
                     DATA.append(partdict)
                 else:
-                    DATAdark.append(partdict)
+                    partdict["SampleName"]=partdict["SampleName"]+'_D'
+                    DATA.append(partdict)
                 
         
     def getdatalistsfromIVTFfiles(self, file_path):

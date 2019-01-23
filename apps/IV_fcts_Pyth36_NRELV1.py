@@ -63,6 +63,14 @@ NREL adaptation todolist:
         - does the batchname, samplename... work?
         - by substrates graphs?
         - stats graphs?
+        
+excel file
+- dark files in rawdatalight tab
+- order substrate tab with light first and dark then
+- batch number: how to define? if finds a '-' in sample name: takes what's before as batch number
+ or if letters and numbers => letters are the batchname, numbers are the samplenumber
+
+
 
 """
 #%%############# Global variable definition
@@ -1590,7 +1598,7 @@ class IVApp(Toplevel):
             # Calculate fill factor
             params['FF'] = abs(100*np.around(params['Pmax']/(params['Jsc']*params['Voc']), decimals=4))
         except:
-            print("error")
+            print("error with fits, probably a dark curve...")
     
         return  params
     
@@ -1687,7 +1695,7 @@ class IVApp(Toplevel):
                 partdict["VocFF"]=partdict["Voc"]*partdict["FF"]
                 partdict["Roc"]=params['Roc'] 
                 partdict["Rsc"]=params['Rsc'] 
-                partdict["Rscjsc"]=partdict["Rsc"]*partdict["Jsc"]
+                partdict["RscJsc"]=partdict["Rsc"]*partdict["Jsc"]
                 
                 partdict["Vmpp"]=-1
                 partdict["Jmpp"]=-1
@@ -2828,7 +2836,7 @@ class IVApp(Toplevel):
                                 fig=plt.figure()
                                 ax=fig.add_subplot(111)
                                 for item1 in range(len(DATAbysubstrate[-1][1])):
-                                    if DATAmppbysubstrate[item][1][item0]["CellNumber"]==DATAbysubstrate[-1][1][item1]["CellNumber"]:
+                                    if DATAmppbysubstrate[item][1][item0]["Cellletter"]==DATAbysubstrate[-1][1][item1]["Cellletter"]:
                                         ax.plot(DATAbysubstrate[-1][1][item1]["IVData"][0],[-10*a*b for a,b in zip(DATAbysubstrate[-1][1][item1]["IVData"][0],DATAbysubstrate[-1][1][item1]["IVData"][1])])
                                 ax.plot([abs(a) for a in DATAmppbysubstrate[item][1][item0]["MppData"][0]],DATAmppbysubstrate[item][1][item0]["MppData"][3])
                                 ax.set_xlabel('Voltage (mV)')
@@ -3103,588 +3111,595 @@ class IVApp(Toplevel):
         except:
             print("there's an issue with creating excel summary file")
             
-        try:
-            #stat graphs
-            if self.AutoGraphs.get():
-                #group
+#        try:
+        #stat graphs
+        if self.AutoGraphs.get():
+            #group
+            plt.close("all")
+            
+            if len(samplesgroups)>1:
+                fig = plt.figure()
+                Effsubfig = fig.add_subplot(224) 
+                names=samplesgroups
+                valsRev=[]
+                for item in names:
+                    valsRev.append([i["RevEff"] for i in grouplistdict if i["Group"]==item and "RevEff" in i])
+                valsFor=[]
+                for item in names:
+                    valsFor.append([i["ForEff"] for i in grouplistdict if i["Group"]==item and "ForEff" in i])
+                    
+                valstot=[]
+                Rev=[]
+                Forw=[]
+                namelist=[]
+                for i in range(len(names)):
+                    if valsRev[i][0]==[] and valsFor[i][0]==[]:
+                        print(" ")
+                    else:
+                        Rev.append(valsRev[i][0])
+                        Forw.append(valsFor[i][0])
+                        valstot.append(valsRev[i][0]+valsFor[i][0])
+                        namelist.append(names[i])
+                
+                Effsubfig.boxplot(valstot,0,'',labels=namelist)
+                
+                for i in range(len(namelist)):
+                    y=Rev[i]
+                    if len(y)>0:
+                        x=np.random.normal(i+1,0.04,size=len(y))
+                        Effsubfig.scatter(x,y,s=5,color='red', alpha=0.5)
+                    y=Forw[i]
+                    if len(y)>0:
+                        x=np.random.normal(i+1,0.04,size=len(y))
+                        Effsubfig.scatter(x,y,s=5,color='blue', alpha=0.5)  
+                
+                #Effsubfig.set_xlabel('Red=reverse; Blue=forward')
+                
+                Effsubfig.set_ylabel('Efficiency (%)')
+                for item in ([Effsubfig.title, Effsubfig.xaxis.label, Effsubfig.yaxis.label] +
+                             Effsubfig.get_xticklabels() + Effsubfig.get_yticklabels()):
+                    item.set_fontsize(4)
+                
+                Vocsubfig = fig.add_subplot(221) 
+                names=samplesgroups
+                valsRev=[]
+                for item in names:
+                    valsRev.append([i["RevVoc"] for i in grouplistdict if i["Group"]==item and "RevVoc" in i])
+                valsFor=[]
+                for item in names:
+                    valsFor.append([i["ForVoc"] for i in grouplistdict if i["Group"]==item and "ForVoc" in i])
+                    
+                valstot=[]
+                Rev=[]
+                Forw=[]
+                namelist=[]
+                for i in range(len(names)):
+                    if valsRev[i][0]==[] and valsFor[i][0]==[]:
+                        print(" ")
+                    else:
+                        Rev.append(valsRev[i][0])
+                        Forw.append(valsFor[i][0])
+                        valstot.append(valsRev[i][0]+valsFor[i][0])
+                        namelist.append(names[i])
+                
+                Vocsubfig.boxplot(valstot,0,'',labels=namelist)
+                
+                for i in range(len(namelist)):
+                    y=Rev[i]
+                    if len(y)>0:
+                        x=np.random.normal(i+1,0.04,size=len(y))
+                        Vocsubfig.scatter(x,y,s=5,color='red', alpha=0.5)
+                    y=Forw[i]
+                    if len(y)>0:
+                        x=np.random.normal(i+1,0.04,size=len(y))
+                        Vocsubfig.scatter(x,y,s=5,color='blue', alpha=0.5)  
+                
+                #Vocsubfig.set_xlabel('Red=reverse; Blue=forward')
+                
+                Vocsubfig.set_ylabel('Voc (mV)')
+                for item in ([Vocsubfig.title, Vocsubfig.xaxis.label, Vocsubfig.yaxis.label] +
+                             Vocsubfig.get_xticklabels() + Vocsubfig.get_yticklabels()):
+                    item.set_fontsize(4)
+                    
+                Jscsubfig = fig.add_subplot(222) 
+                names=samplesgroups
+                valsRev=[]
+                for item in names:
+                    valsRev.append([i["RevJsc"] for i in grouplistdict if i["Group"]==item and "RevJsc" in i])
+                valsFor=[]
+                for item in names:
+                    valsFor.append([i["ForJsc"] for i in grouplistdict if i["Group"]==item and "ForJsc" in i])
+                    
+                valstot=[]
+                Rev=[]
+                Forw=[]
+                namelist=[]
+                for i in range(len(names)):
+                    if valsRev[i][0]==[] and valsFor[i][0]==[]:
+                        print(" ")
+                    else:
+                        Rev.append(valsRev[i][0])
+                        Forw.append(valsFor[i][0])
+                        valstot.append(valsRev[i][0]+valsFor[i][0])
+                        namelist.append(names[i])
+                
+                Jscsubfig.boxplot(valstot,0,'',labels=namelist)
+                
+                for i in range(len(namelist)):
+                    y=Rev[i]
+                    if len(y)>0:
+                        x=np.random.normal(i+1,0.04,size=len(y))
+                        Jscsubfig.scatter(x,y,s=5,color='red', alpha=0.5)
+                    y=Forw[i]
+                    if len(y)>0:
+                        x=np.random.normal(i+1,0.04,size=len(y))
+                        Jscsubfig.scatter(x,y,s=5,color='blue', alpha=0.5)  
+                
+                #Jscsubfig.set_xlabel('Red=reverse; Blue=forward')
+                
+                Jscsubfig.set_ylabel('Jsc (mA/cm'+'\xb2'+')')
+                for item in ([Jscsubfig.title, Jscsubfig.xaxis.label, Jscsubfig.yaxis.label] +
+                             Jscsubfig.get_xticklabels() + Jscsubfig.get_yticklabels()):
+                    item.set_fontsize(4)
+                
+                FFsubfig = fig.add_subplot(223) 
+                names=samplesgroups
+                valsRev=[]
+                for item in names:
+                    valsRev.append([i["RevFF"] for i in grouplistdict if i["Group"]==item and "RevFF" in i])
+                valsFor=[]
+                for item in names:
+                    valsFor.append([i["ForFF"] for i in grouplistdict if i["Group"]==item and "ForFF" in i])
+                    
+                valstot=[]
+                Rev=[]
+                Forw=[]
+                namelist=[]
+                for i in range(len(names)):
+                    if valsRev[i][0]==[] and valsFor[i][0]==[]:
+                        print(" ")
+                    else:
+                        Rev.append(valsRev[i][0])
+                        Forw.append(valsFor[i][0])
+                        valstot.append(valsRev[i][0]+valsFor[i][0])
+                        namelist.append(names[i])
+                
+                FFsubfig.boxplot(valstot,0,'',labels=namelist)
+                
+                for i in range(len(namelist)):
+                    y=Rev[i]
+                    if len(y)>0:
+                        x=np.random.normal(i+1,0.04,size=len(y))
+                        FFsubfig.scatter(x,y,s=5,color='red', alpha=0.5)
+                    y=Forw[i]
+                    if len(y)>0:
+                        x=np.random.normal(i+1,0.04,size=len(y))
+                        FFsubfig.scatter(x,y,s=5,color='blue', alpha=0.5)  
+                
+                #FFsubfig.set_xlabel('Red=reverse; Blue=forward')
+                
+                FFsubfig.set_ylabel('FF (%)')
+                for item in ([FFsubfig.title, FFsubfig.xaxis.label, FFsubfig.yaxis.label] +
+                             FFsubfig.get_xticklabels() + FFsubfig.get_yticklabels()):
+                    item.set_fontsize(4)
+                    
+                FFsubfig.annotate('Red=reverse; Blue=forward', xy=(1.3,-0.2), xycoords='axes fraction', fontsize=4,
+                            horizontalalignment='right', verticalalignment='bottom')
+                annotation="#ofCells: "
+                for item in range(len(samplesgroups)):
+                    if samplesgroups[item] in namelist:
+                        annotation+=samplesgroups[item]+"=>"+str(grouplistdict[item]["numbCell"])+"; "
+                FFsubfig.annotate(annotation, xy=(1.3,-0.3), xycoords='axes fraction', fontsize=4,
+                            horizontalalignment='right', verticalalignment='bottom')
+                
+                fig.subplots_adjust(wspace=.25)
+                fig.savefig(batchname+'_StatGroupgraph.png',dpi=300,bbox_inches="tight")
+                
+                
+                
                 plt.close("all")
+            
+            
+            #time
+            if DATAx[0]["Setup"]=="TFIV" or DATAx[0]["Setup"]=='SSIgorC215':
                 
-                if len(samplesgroups)>1:
-                    fig = plt.figure()
-                    Effsubfig = fig.add_subplot(224) 
-                    names=samplesgroups
-                    valsRev=[]
-                    for item in names:
-                        valsRev.append([i["RevEff"] for i in grouplistdict if i["Group"]==item and "RevEff" in i])
-                    valsFor=[]
-                    for item in names:
-                        valsFor.append([i["ForEff"] for i in grouplistdict if i["Group"]==item and "ForEff" in i])
-                        
-                    valstot=[]
-                    Rev=[]
-                    Forw=[]
-                    namelist=[]
-                    for i in range(len(names)):
-                        if valsRev[i][0]==[] and valsFor[i][0]==[]:
-                            print(" ")
-                        else:
-                            Rev.append(valsRev[i][0])
-                            Forw.append(valsFor[i][0])
-                            valstot.append(valsRev[i][0]+valsFor[i][0])
-                            namelist.append(names[i])
-                    
-                    Effsubfig.boxplot(valstot,0,'',labels=namelist)
-                    
-                    for i in range(len(namelist)):
-                        y=Rev[i]
-                        if len(y)>0:
-                            x=np.random.normal(i+1,0.04,size=len(y))
-                            Effsubfig.scatter(x,y,s=5,color='red', alpha=0.5)
-                        y=Forw[i]
-                        if len(y)>0:
-                            x=np.random.normal(i+1,0.04,size=len(y))
-                            Effsubfig.scatter(x,y,s=5,color='blue', alpha=0.5)  
-                    
-                    #Effsubfig.set_xlabel('Red=reverse; Blue=forward')
-                    
-                    Effsubfig.set_ylabel('Efficiency (%)')
-                    for item in ([Effsubfig.title, Effsubfig.xaxis.label, Effsubfig.yaxis.label] +
-                                 Effsubfig.get_xticklabels() + Effsubfig.get_yticklabels()):
-                        item.set_fontsize(4)
-                    
-                    Vocsubfig = fig.add_subplot(221) 
-                    names=samplesgroups
-                    valsRev=[]
-                    for item in names:
-                        valsRev.append([i["RevVoc"] for i in grouplistdict if i["Group"]==item and "RevVoc" in i])
-                    valsFor=[]
-                    for item in names:
-                        valsFor.append([i["ForVoc"] for i in grouplistdict if i["Group"]==item and "ForVoc" in i])
-                        
-                    valstot=[]
-                    Rev=[]
-                    Forw=[]
-                    namelist=[]
-                    for i in range(len(names)):
-                        if valsRev[i][0]==[] and valsFor[i][0]==[]:
-                            print(" ")
-                        else:
-                            Rev.append(valsRev[i][0])
-                            Forw.append(valsFor[i][0])
-                            valstot.append(valsRev[i][0]+valsFor[i][0])
-                            namelist.append(names[i])
-                    
-                    Vocsubfig.boxplot(valstot,0,'',labels=namelist)
-                    
-                    for i in range(len(namelist)):
-                        y=Rev[i]
-                        if len(y)>0:
-                            x=np.random.normal(i+1,0.04,size=len(y))
-                            Vocsubfig.scatter(x,y,s=5,color='red', alpha=0.5)
-                        y=Forw[i]
-                        if len(y)>0:
-                            x=np.random.normal(i+1,0.04,size=len(y))
-                            Vocsubfig.scatter(x,y,s=5,color='blue', alpha=0.5)  
-                    
-                    #Vocsubfig.set_xlabel('Red=reverse; Blue=forward')
-                    
-                    Vocsubfig.set_ylabel('Voc (mV)')
-                    for item in ([Vocsubfig.title, Vocsubfig.xaxis.label, Vocsubfig.yaxis.label] +
-                                 Vocsubfig.get_xticklabels() + Vocsubfig.get_yticklabels()):
-                        item.set_fontsize(4)
-                        
-                    Jscsubfig = fig.add_subplot(222) 
-                    names=samplesgroups
-                    valsRev=[]
-                    for item in names:
-                        valsRev.append([i["RevJsc"] for i in grouplistdict if i["Group"]==item and "RevJsc" in i])
-                    valsFor=[]
-                    for item in names:
-                        valsFor.append([i["ForJsc"] for i in grouplistdict if i["Group"]==item and "ForJsc" in i])
-                        
-                    valstot=[]
-                    Rev=[]
-                    Forw=[]
-                    namelist=[]
-                    for i in range(len(names)):
-                        if valsRev[i][0]==[] and valsFor[i][0]==[]:
-                            print(" ")
-                        else:
-                            Rev.append(valsRev[i][0])
-                            Forw.append(valsFor[i][0])
-                            valstot.append(valsRev[i][0]+valsFor[i][0])
-                            namelist.append(names[i])
-                    
-                    Jscsubfig.boxplot(valstot,0,'',labels=namelist)
-                    
-                    for i in range(len(namelist)):
-                        y=Rev[i]
-                        if len(y)>0:
-                            x=np.random.normal(i+1,0.04,size=len(y))
-                            Jscsubfig.scatter(x,y,s=5,color='red', alpha=0.5)
-                        y=Forw[i]
-                        if len(y)>0:
-                            x=np.random.normal(i+1,0.04,size=len(y))
-                            Jscsubfig.scatter(x,y,s=5,color='blue', alpha=0.5)  
-                    
-                    #Jscsubfig.set_xlabel('Red=reverse; Blue=forward')
-                    
-                    Jscsubfig.set_ylabel('Jsc (mA/cm'+'\xb2'+')')
-                    for item in ([Jscsubfig.title, Jscsubfig.xaxis.label, Jscsubfig.yaxis.label] +
-                                 Jscsubfig.get_xticklabels() + Jscsubfig.get_yticklabels()):
-                        item.set_fontsize(4)
-                    
-                    FFsubfig = fig.add_subplot(223) 
-                    names=samplesgroups
-                    valsRev=[]
-                    for item in names:
-                        valsRev.append([i["RevFF"] for i in grouplistdict if i["Group"]==item and "RevFF" in i])
-                    valsFor=[]
-                    for item in names:
-                        valsFor.append([i["ForFF"] for i in grouplistdict if i["Group"]==item and "ForFF" in i])
-                        
-                    valstot=[]
-                    Rev=[]
-                    Forw=[]
-                    namelist=[]
-                    for i in range(len(names)):
-                        if valsRev[i][0]==[] and valsFor[i][0]==[]:
-                            print(" ")
-                        else:
-                            Rev.append(valsRev[i][0])
-                            Forw.append(valsFor[i][0])
-                            valstot.append(valsRev[i][0]+valsFor[i][0])
-                            namelist.append(names[i])
-                    
-                    FFsubfig.boxplot(valstot,0,'',labels=namelist)
-                    
-                    for i in range(len(namelist)):
-                        y=Rev[i]
-                        if len(y)>0:
-                            x=np.random.normal(i+1,0.04,size=len(y))
-                            FFsubfig.scatter(x,y,s=5,color='red', alpha=0.5)
-                        y=Forw[i]
-                        if len(y)>0:
-                            x=np.random.normal(i+1,0.04,size=len(y))
-                            FFsubfig.scatter(x,y,s=5,color='blue', alpha=0.5)  
-                    
-                    #FFsubfig.set_xlabel('Red=reverse; Blue=forward')
-                    
-                    FFsubfig.set_ylabel('FF (%)')
-                    for item in ([FFsubfig.title, FFsubfig.xaxis.label, FFsubfig.yaxis.label] +
-                                 FFsubfig.get_xticklabels() + FFsubfig.get_yticklabels()):
-                        item.set_fontsize(4)
-                        
-                    FFsubfig.annotate('Red=reverse; Blue=forward', xy=(1.3,-0.2), xycoords='axes fraction', fontsize=4,
-                                horizontalalignment='right', verticalalignment='bottom')
-                    annotation="#ofCells: "
-                    for item in range(len(samplesgroups)):
-                        if samplesgroups[item] in namelist:
-                            annotation+=samplesgroups[item]+"=>"+str(grouplistdict[item]["numbCell"])+"; "
-                    FFsubfig.annotate(annotation, xy=(1.3,-0.3), xycoords='axes fraction', fontsize=4,
-                                horizontalalignment='right', verticalalignment='bottom')
-                    
-                    fig.subplots_adjust(wspace=.25)
-                    fig.savefig(batchname+'_StatGroupgraph.png',dpi=300,bbox_inches="tight")
-                    
-                    
-                    
-                    plt.close("all")
-                
-                
-                #time
                 if DATAx[0]["Setup"]=="TFIV":
                     time=[float(i["MeasDayTime"].split()[1].split(':')[0])+ float(i["MeasDayTime"].split()[1].split(':')[1])/60 + float(i["MeasDayTime"].split()[1].split(':')[2])/3600 for i in DATAx]
-                    Voct=[i["Voc"] for i in DATAx]
-                    Jsct=[i["Jsc"] for i in DATAx]
-                    FFt=[i["FF"] for i in DATAx]
-                    Efft=[i["Eff"] for i in DATAx]
+                elif DATAx[0]["Setup"]=='SSIgorC215':
+                    time=[float(i["MeasDayTime"].split()[1].split(':')[0])+ float(i["MeasDayTime"].split()[1].split(':')[1])/60 + float(i["MeasDayTime"].split()[1].split(':')[2])/3600 for i in DATAx]
                     
-                    fig = plt.figure()
-                    Vocsubfig = fig.add_subplot(221) 
-                    Vocsubfig.scatter(time, Voct, s=5, c='k', alpha=0.5)
-                    Vocsubfig.set_ylabel('Voc (mV)')
-                    for item in ([Vocsubfig.title, Vocsubfig.xaxis.label, Vocsubfig.yaxis.label] +
-                                 Vocsubfig.get_xticklabels() + Vocsubfig.get_yticklabels()):
-                        item.set_fontsize(8)
-                    plt.xticks(np.arange(min(time), max(time)+1, 1.0))
-                    Vocsubfig.xaxis.set_major_locator(MaxNLocator(integer=True))
                     
-                    Jscsubfig = fig.add_subplot(222) 
-                    Jscsubfig.scatter(time, Jsct, s=5, c='k', alpha=0.5)
-                    Jscsubfig.set_ylabel('Jsc (mA/cm'+'\xb2'+')')
-                    for item in ([Jscsubfig.title, Jscsubfig.xaxis.label, Jscsubfig.yaxis.label] +
-                                 Jscsubfig.get_xticklabels() + Jscsubfig.get_yticklabels()):
-                        item.set_fontsize(8)
-                    plt.xticks(np.arange(min(time), max(time)+1, 1.0))
-                    Jscsubfig.xaxis.set_major_locator(MaxNLocator(integer=True))
                     
-                    FFsubfig = fig.add_subplot(223) 
-                    FFsubfig.scatter(time, FFt, s=5, c='k', alpha=0.5)
-                    FFsubfig.set_xlabel('Time')
-                    FFsubfig.set_ylabel('FF (%)')
-                    for item in ([FFsubfig.title, FFsubfig.xaxis.label, FFsubfig.yaxis.label] +
-                                 FFsubfig.get_xticklabels() + FFsubfig.get_yticklabels()):
-                        item.set_fontsize(8)
-                    plt.xticks(np.arange(min(time), max(time)+1, 1.0))
-                    FFsubfig.xaxis.set_major_locator(MaxNLocator(integer=True))
-                    
-                    Effsubfig = fig.add_subplot(224) 
-                    Effsubfig.scatter(time, Efft, s=5, c='k', alpha=0.5)
-                    Effsubfig.set_xlabel('Time')
-                    Effsubfig.set_ylabel('Eff (%)')
-                    for item in ([Effsubfig.title, Effsubfig.xaxis.label, Effsubfig.yaxis.label] +
-                                 Effsubfig.get_xticklabels() + Effsubfig.get_yticklabels()):
-                        item.set_fontsize(8)
-                    plt.xticks(np.arange(min(time), max(time)+1, 1.0))
-                    Effsubfig.xaxis.set_major_locator(MaxNLocator(integer=True))
-                    
-                    fig.subplots_adjust(wspace=.25)
-                    fig.savefig(batchname+'_StatTimegraph.png',dpi=300,bbox_inches="tight")
-                    plt.close("all")
-                
-                
-                #Resistances
-                
-                Rsclist=[float(i["Rsc"]) for i in DATAx]
-                Roclist=[float(i["Roc"]) for i in DATAx]
                 Voct=[i["Voc"] for i in DATAx]
                 Jsct=[i["Jsc"] for i in DATAx]
                 FFt=[i["FF"] for i in DATAx]
                 Efft=[i["Eff"] for i in DATAx]
                 
-                
                 fig = plt.figure()
                 Vocsubfig = fig.add_subplot(221) 
-                Vocsubfig.scatter(Rsclist, Voct, s=5, c='k', alpha=0.5)
+                Vocsubfig.scatter(time, Voct, s=5, c='k', alpha=0.5)
                 Vocsubfig.set_ylabel('Voc (mV)')
                 for item in ([Vocsubfig.title, Vocsubfig.xaxis.label, Vocsubfig.yaxis.label] +
                              Vocsubfig.get_xticklabels() + Vocsubfig.get_yticklabels()):
                     item.set_fontsize(8)
-                #plt.xticks(np.arange(min(time), max(time)+1, 1.0))
-                Vocsubfig.set_xlim(left=0)
-                Vocsubfig.set_ylim(bottom=0)
+                plt.xticks(np.arange(min(time), max(time)+1, 1.0))
                 Vocsubfig.xaxis.set_major_locator(MaxNLocator(integer=True))
                 
-                
                 Jscsubfig = fig.add_subplot(222) 
-                Jscsubfig.scatter(Rsclist, Jsct, s=5, c='k', alpha=0.5)
+                Jscsubfig.scatter(time, Jsct, s=5, c='k', alpha=0.5)
                 Jscsubfig.set_ylabel('Jsc (mA/cm'+'\xb2'+')')
                 for item in ([Jscsubfig.title, Jscsubfig.xaxis.label, Jscsubfig.yaxis.label] +
                              Jscsubfig.get_xticklabels() + Jscsubfig.get_yticklabels()):
                     item.set_fontsize(8)
-                #plt.xticks(np.arange(min(time), max(time)+1, 1.0))
-                Jscsubfig.set_xlim(left=0)
-                Jscsubfig.set_ylim(bottom=0)
+                plt.xticks(np.arange(min(time), max(time)+1, 1.0))
                 Jscsubfig.xaxis.set_major_locator(MaxNLocator(integer=True))
                 
                 FFsubfig = fig.add_subplot(223) 
-                FFsubfig.scatter(Rsclist, FFt, s=5, c='k', alpha=0.5)
-                FFsubfig.set_xlabel('Rsc')
+                FFsubfig.scatter(time, FFt, s=5, c='k', alpha=0.5)
+                FFsubfig.set_xlabel('Time')
                 FFsubfig.set_ylabel('FF (%)')
                 for item in ([FFsubfig.title, FFsubfig.xaxis.label, FFsubfig.yaxis.label] +
                              FFsubfig.get_xticklabels() + FFsubfig.get_yticklabels()):
                     item.set_fontsize(8)
-                #plt.xticks(np.arange(min(time), max(time)+1, 1.0))
-                FFsubfig.set_xlim(left=0)
-                FFsubfig.set_ylim(bottom=0)
+                plt.xticks(np.arange(min(time), max(time)+1, 1.0))
                 FFsubfig.xaxis.set_major_locator(MaxNLocator(integer=True))
                 
                 Effsubfig = fig.add_subplot(224) 
-                Effsubfig.scatter(Rsclist, Efft, s=5, c='k', alpha=0.5)
-                Effsubfig.set_xlabel('Rsc')
+                Effsubfig.scatter(time, Efft, s=5, c='k', alpha=0.5)
+                Effsubfig.set_xlabel('Time')
                 Effsubfig.set_ylabel('Eff (%)')
                 for item in ([Effsubfig.title, Effsubfig.xaxis.label, Effsubfig.yaxis.label] +
                              Effsubfig.get_xticklabels() + Effsubfig.get_yticklabels()):
                     item.set_fontsize(8)
-                #plt.xticks(np.arange(min(time), max(time)+1, 1.0))
-                Effsubfig.set_xlim(left=0)
-                Effsubfig.set_ylim(bottom=0)
+                plt.xticks(np.arange(min(time), max(time)+1, 1.0))
                 Effsubfig.xaxis.set_major_locator(MaxNLocator(integer=True))
                 
-                fig.subplots_adjust(wspace=.3)
-                fig.savefig(batchname+'_StatRscgraph.png',dpi=300,bbox_inches="tight")
+                fig.subplots_adjust(wspace=.25)
+                fig.savefig(batchname+'_StatTimegraph.png',dpi=300,bbox_inches="tight")
                 plt.close("all")
-                
-                
-                fig = plt.figure()
-                Vocsubfig = fig.add_subplot(221) 
-                Vocsubfig.scatter(Roclist, Voct, s=5, c='k', alpha=0.5)
-                Vocsubfig.set_ylabel('Voc (mV)')
-                for item in ([Vocsubfig.title, Vocsubfig.xaxis.label, Vocsubfig.yaxis.label] +
-                             Vocsubfig.get_xticklabels() + Vocsubfig.get_yticklabels()):
-                    item.set_fontsize(8)
-                #plt.xticks(np.arange(min(time), max(time)+1, 1.0))
-                Vocsubfig.set_xlim(left=0)
-                Vocsubfig.set_ylim(bottom=0)
-                Vocsubfig.xaxis.set_major_locator(MaxNLocator(integer=True))
-                
-                Jscsubfig = fig.add_subplot(222) 
-                Jscsubfig.scatter(Roclist, Jsct, s=5, c='k', alpha=0.5)
-                Jscsubfig.set_ylabel('Jsc (mA/cm'+'\xb2'+')')
-                for item in ([Jscsubfig.title, Jscsubfig.xaxis.label, Jscsubfig.yaxis.label] +
-                             Jscsubfig.get_xticklabels() + Jscsubfig.get_yticklabels()):
-                    item.set_fontsize(8)
-                #plt.xticks(np.arange(min(time), max(time)+1, 1.0))
-                Jscsubfig.set_xlim(left=0)
-                Jscsubfig.set_ylim(bottom=0)
-                Jscsubfig.xaxis.set_major_locator(MaxNLocator(integer=True))
-                
-                FFsubfig = fig.add_subplot(223) 
-                FFsubfig.scatter(Roclist, FFt, s=5, c='k', alpha=0.5)
-                FFsubfig.set_xlabel('Roc')
-                FFsubfig.set_ylabel('FF (%)')
-                for item in ([FFsubfig.title, FFsubfig.xaxis.label, FFsubfig.yaxis.label] +
-                             FFsubfig.get_xticklabels() + FFsubfig.get_yticklabels()):
-                    item.set_fontsize(8)
-                #plt.xticks(np.arange(min(time), max(time)+1, 1.0))
-                FFsubfig.set_xlim(left=0)
-                FFsubfig.set_ylim(bottom=0)
-                FFsubfig.xaxis.set_major_locator(MaxNLocator(integer=True))
-                
-                Effsubfig = fig.add_subplot(224) 
-                Effsubfig.scatter(Roclist, Efft, s=5, c='k', alpha=0.5)
-                Effsubfig.set_xlabel('Roc')
-                Effsubfig.set_ylabel('Eff (%)')
-                for item in ([Effsubfig.title, Effsubfig.xaxis.label, Effsubfig.yaxis.label] +
-                             Effsubfig.get_xticklabels() + Effsubfig.get_yticklabels()):
-                    item.set_fontsize(8)
-                #plt.xticks(np.arange(min(time), max(time)+1, 1.0))
-                Effsubfig.set_xlim(left=0)
-                Effsubfig.set_ylim(bottom=0)
-                Effsubfig.xaxis.set_major_locator(MaxNLocator(integer=True))
-                
-                fig.subplots_adjust(wspace=.3)
-                fig.savefig(batchname+'_StatRocgraph.png',dpi=300,bbox_inches="tight")
-                plt.close("all")
-                
-                
-                #stat graph with diff colors for ABC and Forw Rev, by substrate
-                #get substrate number without run number
-                if DATAx[0]["Setup"]=="TFIV":
-                    try:
-                        fig = plt.figure()
-                        
-                        VocAFy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Forward"]
-                        VocAFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Forward"]
-                        
-                        VocBFy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Forward"]
-                        VocBFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Forward"]
-                        
-                        VocCFy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Forward"]
-                        VocCFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Forward"]
-                        
-                        VocSFy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='Single' and i["ScanDirection"]=="Forward"]
-                        VocSFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='S' and i["ScanDirection"]=="Forward"]
-                        
-                        VocARy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Reverse"]
-                        VocARx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Reverse"]
-                        
-                        VocBRy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Reverse"]
-                        VocBRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Reverse"]
-                        
-                        VocCRy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Reverse"]
-                        VocCRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Reverse"]
-                        
-                        VocSRy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='Single' and i["ScanDirection"]=="Reverse"]
-                        VocSRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='S' and i["ScanDirection"]=="Reverse"]
-                        
-                        Vocsubfig = fig.add_subplot(221) 
-                        Vocsubfig.scatter(VocAFx, VocAFy, s=5, facecolors='none', edgecolors='r', lw=0.5)
-                        Vocsubfig.scatter(VocBFx, VocBFy, s=5, facecolors='none', edgecolors='g', lw=0.5)
-                        Vocsubfig.scatter(VocCFx, VocCFy, s=5, facecolors='none', edgecolors='b', lw=0.5)
-                        Vocsubfig.scatter(VocARx, VocARy, s=5, edgecolors='r', lw=0.5)
-                        Vocsubfig.scatter(VocBRx, VocBRy, s=5, edgecolors='g', lw=0.5)
-                        Vocsubfig.scatter(VocCRx, VocCRy, s=5, edgecolors='b', lw=0.5)
-                        Vocsubfig.scatter(VocSFx, VocSFy, s=5, facecolors='none', edgecolors='k', lw=0.5)
-                        Vocsubfig.scatter(VocSRx, VocSRy, s=5, edgecolors='k', lw=0.5)
-                        Vocsubfig.set_ylabel('Voc (mV)')
-                        Vocsubfig.set_xlabel("Sample #")
-                        for item in ([Vocsubfig.title, Vocsubfig.xaxis.label, Vocsubfig.yaxis.label] +
-                                     Vocsubfig.get_xticklabels() + Vocsubfig.get_yticklabels()):
-                            item.set_fontsize(4)
-                        Vocsubfig.set_ylim(bottom=0)
-                        Vocsubfig.xaxis.set_major_locator(MaxNLocator(integer=True))
-                        
-                        Vocsubfig.set_xticks(np.arange(float(min(VocAFx+VocBFx+VocCFx+VocSFx+VocARx+VocBRx+VocCRx+VocSRx))-0.5,float(max(VocAFx+VocBFx+VocCFx+VocSFx+VocARx+VocBRx+VocCRx+VocSRx))+0.5,1), minor=True)
-                        #Vocsubfig.set_xticks(np.arange(float(min(VocAFx))-0.5,float(max(VocAFx))+0.5,1), minor=True)
-                        Vocsubfig.xaxis.grid(False, which='major')
-                        Vocsubfig.xaxis.grid(True, which='minor', color='k', linestyle='-', alpha=0.2)
-                        
-                        Vocsubfig.axis([float(min(VocAFx+VocBFx+VocCFx+VocSFx+VocARx+VocBRx+VocCRx+VocSRx))-0.5,float(max(VocAFx+VocBFx+VocCFx+VocSFx+VocARx+VocBRx+VocCRx+VocSRx))+0.5,0.5*float(min(VocAFy+VocBFy+VocCFy+VocSFy+VocARy+VocBRy+VocCRy+VocSRy)),1.1*float(max(VocAFy+VocBFy+VocCFy+VocSFy+VocARy+VocBRy+VocCRy+VocSRy))])
-                        for axis in ['top','bottom','left','right']:
-                          Vocsubfig.spines[axis].set_linewidth(0.5)
-                        Vocsubfig.tick_params(axis='x', which='both',bottom='off', top='off')
-                        
-                        
-                        
-                        JscAFy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Forward"]
-                        JscAFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Forward"]
-                        
-                        JscBFy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Forward"]
-                        JscBFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Forward"]
-                        
-                        JscCFy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Forward"]
-                        JscCFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Forward"]
-                        
-                        JscSFy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='Single' and i["ScanDirection"]=="Forward"]
-                        JscSFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='S' and i["ScanDirection"]=="Forward"]
-                        
-                        JscARy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Reverse"]
-                        JscARx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Reverse"]
-                        
-                        JscBRy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Reverse"]
-                        JscBRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Reverse"]
-                        
-                        JscCRy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Reverse"]
-                        JscCRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Reverse"]
-                        
-                        JscSRy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='Single' and i["ScanDirection"]=="Reverse"]
-                        JscSRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='S' and i["ScanDirection"]=="Reverse"]
-                        
-                        
-                        Jscsubfig = fig.add_subplot(222) 
-                        Jscsubfig.scatter(JscAFx, JscAFy, s=5, facecolors='none', edgecolors='r', lw=0.5)
-                        Jscsubfig.scatter(JscBFx, JscBFy, s=5, facecolors='none', edgecolors='g', lw=0.5)
-                        Jscsubfig.scatter(JscCFx, JscCFy, s=5, facecolors='none', edgecolors='b', lw=0.5)
-                        Jscsubfig.scatter(JscARx, JscARy, s=5, edgecolors='r', lw=0.5)
-                        Jscsubfig.scatter(JscBRx, JscBRy, s=5, edgecolors='g', lw=0.5)
-                        Jscsubfig.scatter(JscCRx, JscCRy, s=5, edgecolors='b', lw=0.5)
-                        Jscsubfig.scatter(JscSFx, JscSFy, s=5, facecolors='none', edgecolors='k', lw=0.5)
-                        Jscsubfig.scatter(JscSRx, JscSRy, s=5, edgecolors='k', lw=0.5)
-                        Jscsubfig.set_ylabel('Jsc (mA/cm'+'\xb2'+')')
-                        Jscsubfig.set_xlabel("Sample #")
-                        for item in ([Jscsubfig.title, Jscsubfig.xaxis.label, Jscsubfig.yaxis.label] +
-                                     Jscsubfig.get_xticklabels() + Jscsubfig.get_yticklabels()):
-                            item.set_fontsize(4)
-                        Jscsubfig.set_ylim(bottom=0)
-                        Jscsubfig.xaxis.set_major_locator(MaxNLocator(integer=True))
-                        
-                        Jscsubfig.set_xticks(np.arange(float(min(JscAFx+JscBFx+JscCFx+JscSFx+JscARx+JscBRx+JscCRx+JscSRx))-0.5,float(max(JscAFx+JscBFx+JscCFx+JscSFx+JscARx+JscBRx+JscCRx+JscSRx))+0.5,1), minor=True)
-                        #Jscsubfig.set_xticks(np.arange(float(min(JscAFx))-0.5,float(max(JscAFx))+0.5,1), minor=True)
-                        Jscsubfig.xaxis.grid(False, which='major')
-                        Jscsubfig.xaxis.grid(True, which='minor', color='k', linestyle='-', alpha=0.2)
-                        
-                        Jscsubfig.axis([float(min(JscAFx+JscBFx+JscCFx+JscSFx+JscARx+JscBRx+JscCRx+JscSRx))-0.5,float(max(JscAFx+JscBFx+JscCFx+JscSFx+JscARx+JscBRx+JscCRx+JscSRx))+0.5,0.5*float(min(JscAFy+JscBFy+JscCFy+JscSFy+JscARy+JscBRy+JscCRy+JscSRy)),1.1*float(max(JscAFy+JscBFy+JscCFy+JscSFy+JscARy+JscBRy+JscCRy+JscSRy))])
-                        for axis in ['top','bottom','left','right']:
-                          Jscsubfig.spines[axis].set_linewidth(0.5)
-                        Jscsubfig.tick_params(axis='x', which='both',bottom='off', top='off')
-                        
-                        
-                        FFAFy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Forward"]
-                        FFAFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Forward"]
-                        
-                        FFBFy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Forward"]
-                        FFBFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Forward"]
-                        
-                        FFCFy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Forward"]
-                        FFCFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Forward"]
-                        
-                        FFSFy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='Single' and i["ScanDirection"]=="Forward"]
-                        FFSFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='S' and i["ScanDirection"]=="Forward"]
-                        
-                        FFARy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Reverse"]
-                        FFARx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Reverse"]
-                        
-                        FFBRy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Reverse"]
-                        FFBRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Reverse"]
-                        
-                        FFCRy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Reverse"]
-                        FFCRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Reverse"]
-                        
-                        FFSRy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='Single' and i["ScanDirection"]=="Reverse"]
-                        FFSRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='S' and i["ScanDirection"]=="Reverse"]
-                        
-                        
-                        FFsubfig = fig.add_subplot(223) 
-                        FFsubfig.scatter(FFAFx, FFAFy, s=5, facecolors='none', edgecolors='r', lw=0.5)
-                        FFsubfig.scatter(FFBFx, FFBFy, s=5, facecolors='none', edgecolors='g', lw=0.5)
-                        FFsubfig.scatter(FFCFx, FFCFy, s=5, facecolors='none', edgecolors='b', lw=0.5)
-                        FFsubfig.scatter(FFARx, FFARy, s=5, edgecolors='r', lw=0.5)
-                        FFsubfig.scatter(FFBRx, FFBRy, s=5, edgecolors='g', lw=0.5)
-                        FFsubfig.scatter(FFCRx, FFCRy, s=5, edgecolors='b', lw=0.5)
-                        FFsubfig.scatter(FFSFx, FFSFy, s=5, facecolors='none', edgecolors='k', lw=0.5)
-                        FFsubfig.scatter(FFSRx, FFSRy, s=5, edgecolors='k', lw=0.5)
-                        FFsubfig.set_ylabel('FF (%)')
-                        FFsubfig.set_xlabel("Sample #")
-                        for item in ([FFsubfig.title, FFsubfig.xaxis.label, FFsubfig.yaxis.label] +
-                                     FFsubfig.get_xticklabels() + FFsubfig.get_yticklabels()):
-                            item.set_fontsize(4)
-                        FFsubfig.set_ylim(bottom=0)
-                        FFsubfig.xaxis.set_major_locator(MaxNLocator(integer=True))
-                        
-                        FFsubfig.set_xticks(np.arange(float(min(FFAFx+FFBFx+FFCFx+FFSFx+FFARx+FFBRx+FFCRx+FFSRx))-0.5,float(max(FFAFx+FFBFx+FFCFx+FFSFx+FFARx+FFBRx+FFCRx+FFSRx))+0.5,1), minor=True)
-                        #FFsubfig.set_xticks(np.arange(float(min(FFAFx))-0.5,float(max(FFAFx))+0.5,1), minor=True)
-                        FFsubfig.xaxis.grid(False, which='major')
-                        FFsubfig.xaxis.grid(True, which='minor', color='k', linestyle='-', alpha=0.2)
-                        
-                        FFsubfig.axis([float(min(FFAFx+FFBFx+FFCFx+FFSFx+FFARx+FFBRx+FFCRx+FFSRx))-0.5,float(max(FFAFx+FFBFx+FFCFx+FFSFx+FFARx+FFBRx+FFCRx+FFSRx))+0.5,0.5*float(min(FFAFy+FFBFy+FFCFy+FFSFy+FFARy+FFBRy+FFCRy+FFSRy)),1.1*float(max(FFAFy+FFBFy+FFCFy+FFSFy+FFARy+FFBRy+FFCRy+FFSRy))])
-                        for axis in ['top','bottom','left','right']:
-                          FFsubfig.spines[axis].set_linewidth(0.5)
-                        FFsubfig.tick_params(axis='x', which='both',bottom='off', top='off')
-                        
-                        
-                        EffAFy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Forward"]
-                        EffAFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Forward"]
-                        
-                        EffBFy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Forward"]
-                        EffBFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Forward"]
-                        
-                        EffCFy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Forward"]
-                        EffCFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Forward"]
-                        
-                        EffSFy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='Single' and i["ScanDirection"]=="Forward"]
-                        EffSFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='S' and i["ScanDirection"]=="Forward"]
-                        
-                        EffARy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Reverse"]
-                        EffARx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Reverse"]
-                        
-                        EffBRy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Reverse"]
-                        EffBRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Reverse"]
-                        
-                        EffCRy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Reverse"]
-                        EffCRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Reverse"]
-                        
-                        EffSRy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='Single' and i["ScanDirection"]=="Reverse"]
-                        EffSRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='S' and i["ScanDirection"]=="Reverse"]
-                        
-                        
-                        Effsubfig = fig.add_subplot(224) 
-                        Effsubfig.scatter(EffAFx, EffAFy, s=5, facecolors='none', edgecolors='r', lw=0.5)
-                        Effsubfig.scatter(EffBFx, EffBFy, s=5, facecolors='none', edgecolors='g', lw=0.5)
-                        Effsubfig.scatter(EffCFx, EffCFy, s=5, facecolors='none', edgecolors='b', lw=0.5)
-                        Effsubfig.scatter(EffARx, EffARy, s=5, edgecolors='r', lw=0.5)
-                        Effsubfig.scatter(EffBRx, EffBRy, s=5, edgecolors='g', lw=0.5)
-                        Effsubfig.scatter(EffCRx, EffCRy, s=5, edgecolors='b', lw=0.5)
-                        Effsubfig.scatter(EffSFx, EffSFy, s=5, facecolors='none', edgecolors='k', lw=0.5)
-                        Effsubfig.scatter(EffSRx, EffSRy, s=5, edgecolors='k', lw=0.5)
-                        Effsubfig.set_ylabel('Eff (%)')
-                        Effsubfig.set_xlabel("Sample #")
-                        for item in ([Effsubfig.title, Effsubfig.xaxis.label, Effsubfig.yaxis.label] +
-                                     Effsubfig.get_xticklabels() + Effsubfig.get_yticklabels()):
-                            item.set_fontsize(4)
-                        Effsubfig.set_ylim(bottom=0)
-                        Effsubfig.xaxis.set_major_locator(MaxNLocator(integer=True))
-                        
-                        Effsubfig.set_xticks(np.arange(float(min(EffAFx+EffBFx+EffCFx+EffSFx+EffARx+EffBRx+EffCRx+EffSRx))-0.5,float(max(EffAFx+EffBFx+EffCFx+EffSFx+EffARx+EffBRx+EffCRx+EffSRx))+0.5,1), minor=True)
-                        Effsubfig.xaxis.grid(False, which='major')
-                        Effsubfig.xaxis.grid(True, which='minor', color='k', linestyle='-', alpha=0.2)
-                        
-                        Effsubfig.axis([float(min(EffAFx+EffBFx+EffCFx+EffSFx+EffARx+EffBRx+EffCRx+EffSRx))-0.5,float(max(EffAFx+EffBFx+EffCFx+EffSFx+EffARx+EffBRx+EffCRx+EffSRx))+0.5,0.5*float(min(EffAFy+EffBFy+EffCFy+EffSFy+EffARy+EffBRy+EffCRy+EffSRy)),1.1*float(max(EffAFy+EffBFy+EffCFy+EffSFy+EffARy+EffBRy+EffCRy+EffSRy))])
-                        for axis in ['top','bottom','left','right']:
-                          Effsubfig.spines[axis].set_linewidth(0.5)
-                        Effsubfig.tick_params(axis='x', which='both',bottom='off', top='off')
-                        
-                        
-                        FFsubfig.annotate('Red=A; Green=B; Blue=C; Black=S; empty=Forward; full=Reverse;', xy=(1.55,-0.2), xycoords='axes fraction', fontsize=4,
-                                        horizontalalignment='right', verticalalignment='bottom')
-                        
-                        fig.savefig(batchname+'_StatJVgraph.png',dpi=300,bbox_inches="tight")
-                        plt.close("all")
-                    except IndexError:
-                        print("indexerror: list index out of range... it's probably an issue with sample names...")
-        except:
-            print("there's an issue with creating one of the stat graph")
+            
+            
+            #Resistances
+            
+            Rsclist=[float(i["Rsc"]) for i in DATAx]
+            Roclist=[float(i["Roc"]) for i in DATAx]
+            Voct=[i["Voc"] for i in DATAx]
+            Jsct=[i["Jsc"] for i in DATAx]
+            FFt=[i["FF"] for i in DATAx]
+            Efft=[i["Eff"] for i in DATAx]
+            
+            
+            fig = plt.figure()
+            Vocsubfig = fig.add_subplot(221) 
+            Vocsubfig.scatter(Rsclist, Voct, s=5, c='k', alpha=0.5)
+            Vocsubfig.set_ylabel('Voc (mV)')
+            for item in ([Vocsubfig.title, Vocsubfig.xaxis.label, Vocsubfig.yaxis.label] +
+                         Vocsubfig.get_xticklabels() + Vocsubfig.get_yticklabels()):
+                item.set_fontsize(8)
+            #plt.xticks(np.arange(min(time), max(time)+1, 1.0))
+            Vocsubfig.set_xlim(left=0)
+            Vocsubfig.set_ylim(bottom=0)
+            Vocsubfig.xaxis.set_major_locator(MaxNLocator(integer=True))
+            
+            
+            Jscsubfig = fig.add_subplot(222) 
+            Jscsubfig.scatter(Rsclist, Jsct, s=5, c='k', alpha=0.5)
+            Jscsubfig.set_ylabel('Jsc (mA/cm'+'\xb2'+')')
+            for item in ([Jscsubfig.title, Jscsubfig.xaxis.label, Jscsubfig.yaxis.label] +
+                         Jscsubfig.get_xticklabels() + Jscsubfig.get_yticklabels()):
+                item.set_fontsize(8)
+            #plt.xticks(np.arange(min(time), max(time)+1, 1.0))
+            Jscsubfig.set_xlim(left=0)
+            Jscsubfig.set_ylim(bottom=0)
+            Jscsubfig.xaxis.set_major_locator(MaxNLocator(integer=True))
+            
+            FFsubfig = fig.add_subplot(223) 
+            FFsubfig.scatter(Rsclist, FFt, s=5, c='k', alpha=0.5)
+            FFsubfig.set_xlabel('Rsc')
+            FFsubfig.set_ylabel('FF (%)')
+            for item in ([FFsubfig.title, FFsubfig.xaxis.label, FFsubfig.yaxis.label] +
+                         FFsubfig.get_xticklabels() + FFsubfig.get_yticklabels()):
+                item.set_fontsize(8)
+            #plt.xticks(np.arange(min(time), max(time)+1, 1.0))
+            FFsubfig.set_xlim(left=0)
+            FFsubfig.set_ylim(bottom=0)
+            FFsubfig.xaxis.set_major_locator(MaxNLocator(integer=True))
+            
+            Effsubfig = fig.add_subplot(224) 
+            Effsubfig.scatter(Rsclist, Efft, s=5, c='k', alpha=0.5)
+            Effsubfig.set_xlabel('Rsc')
+            Effsubfig.set_ylabel('Eff (%)')
+            for item in ([Effsubfig.title, Effsubfig.xaxis.label, Effsubfig.yaxis.label] +
+                         Effsubfig.get_xticklabels() + Effsubfig.get_yticklabels()):
+                item.set_fontsize(8)
+            #plt.xticks(np.arange(min(time), max(time)+1, 1.0))
+            Effsubfig.set_xlim(left=0)
+            Effsubfig.set_ylim(bottom=0)
+            Effsubfig.xaxis.set_major_locator(MaxNLocator(integer=True))
+            
+            fig.subplots_adjust(wspace=.3)
+            fig.savefig(batchname+'_StatRscgraph.png',dpi=300,bbox_inches="tight")
+            plt.close("all")
+            
+            
+            fig = plt.figure()
+            Vocsubfig = fig.add_subplot(221) 
+            Vocsubfig.scatter(Roclist, Voct, s=5, c='k', alpha=0.5)
+            Vocsubfig.set_ylabel('Voc (mV)')
+            for item in ([Vocsubfig.title, Vocsubfig.xaxis.label, Vocsubfig.yaxis.label] +
+                         Vocsubfig.get_xticklabels() + Vocsubfig.get_yticklabels()):
+                item.set_fontsize(8)
+            #plt.xticks(np.arange(min(time), max(time)+1, 1.0))
+            Vocsubfig.set_xlim(left=0)
+            Vocsubfig.set_ylim(bottom=0)
+            Vocsubfig.xaxis.set_major_locator(MaxNLocator(integer=True))
+            
+            Jscsubfig = fig.add_subplot(222) 
+            Jscsubfig.scatter(Roclist, Jsct, s=5, c='k', alpha=0.5)
+            Jscsubfig.set_ylabel('Jsc (mA/cm'+'\xb2'+')')
+            for item in ([Jscsubfig.title, Jscsubfig.xaxis.label, Jscsubfig.yaxis.label] +
+                         Jscsubfig.get_xticklabels() + Jscsubfig.get_yticklabels()):
+                item.set_fontsize(8)
+            #plt.xticks(np.arange(min(time), max(time)+1, 1.0))
+            Jscsubfig.set_xlim(left=0)
+            Jscsubfig.set_ylim(bottom=0)
+            Jscsubfig.xaxis.set_major_locator(MaxNLocator(integer=True))
+            
+            FFsubfig = fig.add_subplot(223) 
+            FFsubfig.scatter(Roclist, FFt, s=5, c='k', alpha=0.5)
+            FFsubfig.set_xlabel('Roc')
+            FFsubfig.set_ylabel('FF (%)')
+            for item in ([FFsubfig.title, FFsubfig.xaxis.label, FFsubfig.yaxis.label] +
+                         FFsubfig.get_xticklabels() + FFsubfig.get_yticklabels()):
+                item.set_fontsize(8)
+            #plt.xticks(np.arange(min(time), max(time)+1, 1.0))
+            FFsubfig.set_xlim(left=0)
+            FFsubfig.set_ylim(bottom=0)
+            FFsubfig.xaxis.set_major_locator(MaxNLocator(integer=True))
+            
+            Effsubfig = fig.add_subplot(224) 
+            Effsubfig.scatter(Roclist, Efft, s=5, c='k', alpha=0.5)
+            Effsubfig.set_xlabel('Roc')
+            Effsubfig.set_ylabel('Eff (%)')
+            for item in ([Effsubfig.title, Effsubfig.xaxis.label, Effsubfig.yaxis.label] +
+                         Effsubfig.get_xticklabels() + Effsubfig.get_yticklabels()):
+                item.set_fontsize(8)
+            #plt.xticks(np.arange(min(time), max(time)+1, 1.0))
+            Effsubfig.set_xlim(left=0)
+            Effsubfig.set_ylim(bottom=0)
+            Effsubfig.xaxis.set_major_locator(MaxNLocator(integer=True))
+            
+            fig.subplots_adjust(wspace=.3)
+            fig.savefig(batchname+'_StatRocgraph.png',dpi=300,bbox_inches="tight")
+            plt.close("all")
+            
+            
+            #stat graph with diff colors for ABC and Forw Rev, by substrate
+            #get substrate number without run number
+            if DATAx[0]["Setup"]=="TFIV" or DATAx[0]["Setup"]=='SSIgorC215':
+                try:
+                    fig = plt.figure()
+                    
+                    VocAFy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Forward"]
+                    VocAFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Forward"]
+                    
+                    VocBFy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Forward"]
+                    VocBFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Forward"]
+                    
+                    VocCFy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Forward"]
+                    VocCFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Forward"]
+                    
+                    VocSFy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='Single' and i["ScanDirection"]=="Forward"]
+                    VocSFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='S' and i["ScanDirection"]=="Forward"]
+                    
+                    VocARy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Reverse"]
+                    VocARx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Reverse"]
+                    
+                    VocBRy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Reverse"]
+                    VocBRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Reverse"]
+                    
+                    VocCRy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Reverse"]
+                    VocCRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Reverse"]
+                    
+                    VocSRy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='Single' and i["ScanDirection"]=="Reverse"]
+                    VocSRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='S' and i["ScanDirection"]=="Reverse"]
+                    
+                    Vocsubfig = fig.add_subplot(221) 
+                    Vocsubfig.scatter(VocAFx, VocAFy, s=5, facecolors='none', edgecolors='r', lw=0.5)
+                    Vocsubfig.scatter(VocBFx, VocBFy, s=5, facecolors='none', edgecolors='g', lw=0.5)
+                    Vocsubfig.scatter(VocCFx, VocCFy, s=5, facecolors='none', edgecolors='b', lw=0.5)
+                    Vocsubfig.scatter(VocARx, VocARy, s=5, edgecolors='r', lw=0.5)
+                    Vocsubfig.scatter(VocBRx, VocBRy, s=5, edgecolors='g', lw=0.5)
+                    Vocsubfig.scatter(VocCRx, VocCRy, s=5, edgecolors='b', lw=0.5)
+                    Vocsubfig.scatter(VocSFx, VocSFy, s=5, facecolors='none', edgecolors='k', lw=0.5)
+                    Vocsubfig.scatter(VocSRx, VocSRy, s=5, edgecolors='k', lw=0.5)
+                    Vocsubfig.set_ylabel('Voc (mV)')
+                    Vocsubfig.set_xlabel("Sample #")
+                    for item in ([Vocsubfig.title, Vocsubfig.xaxis.label, Vocsubfig.yaxis.label] +
+                                 Vocsubfig.get_xticklabels() + Vocsubfig.get_yticklabels()):
+                        item.set_fontsize(4)
+                    Vocsubfig.set_ylim(bottom=0)
+                    Vocsubfig.xaxis.set_major_locator(MaxNLocator(integer=True))
+                    
+                    Vocsubfig.set_xticks(np.arange(float(min(VocAFx+VocBFx+VocCFx+VocSFx+VocARx+VocBRx+VocCRx+VocSRx))-0.5,float(max(VocAFx+VocBFx+VocCFx+VocSFx+VocARx+VocBRx+VocCRx+VocSRx))+0.5,1), minor=True)
+                    #Vocsubfig.set_xticks(np.arange(float(min(VocAFx))-0.5,float(max(VocAFx))+0.5,1), minor=True)
+                    Vocsubfig.xaxis.grid(False, which='major')
+                    Vocsubfig.xaxis.grid(True, which='minor', color='k', linestyle='-', alpha=0.2)
+                    
+                    Vocsubfig.axis([float(min(VocAFx+VocBFx+VocCFx+VocSFx+VocARx+VocBRx+VocCRx+VocSRx))-0.5,float(max(VocAFx+VocBFx+VocCFx+VocSFx+VocARx+VocBRx+VocCRx+VocSRx))+0.5,0.5*float(min(VocAFy+VocBFy+VocCFy+VocSFy+VocARy+VocBRy+VocCRy+VocSRy)),1.1*float(max(VocAFy+VocBFy+VocCFy+VocSFy+VocARy+VocBRy+VocCRy+VocSRy))])
+                    for axis in ['top','bottom','left','right']:
+                      Vocsubfig.spines[axis].set_linewidth(0.5)
+                    Vocsubfig.tick_params(axis='x', which='both',bottom='off', top='off')
+                    
+                    
+                    
+                    JscAFy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Forward"]
+                    JscAFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Forward"]
+                    
+                    JscBFy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Forward"]
+                    JscBFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Forward"]
+                    
+                    JscCFy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Forward"]
+                    JscCFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Forward"]
+                    
+                    JscSFy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='Single' and i["ScanDirection"]=="Forward"]
+                    JscSFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='S' and i["ScanDirection"]=="Forward"]
+                    
+                    JscARy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Reverse"]
+                    JscARx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Reverse"]
+                    
+                    JscBRy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Reverse"]
+                    JscBRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Reverse"]
+                    
+                    JscCRy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Reverse"]
+                    JscCRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Reverse"]
+                    
+                    JscSRy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='Single' and i["ScanDirection"]=="Reverse"]
+                    JscSRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='S' and i["ScanDirection"]=="Reverse"]
+                    
+                    
+                    Jscsubfig = fig.add_subplot(222) 
+                    Jscsubfig.scatter(JscAFx, JscAFy, s=5, facecolors='none', edgecolors='r', lw=0.5)
+                    Jscsubfig.scatter(JscBFx, JscBFy, s=5, facecolors='none', edgecolors='g', lw=0.5)
+                    Jscsubfig.scatter(JscCFx, JscCFy, s=5, facecolors='none', edgecolors='b', lw=0.5)
+                    Jscsubfig.scatter(JscARx, JscARy, s=5, edgecolors='r', lw=0.5)
+                    Jscsubfig.scatter(JscBRx, JscBRy, s=5, edgecolors='g', lw=0.5)
+                    Jscsubfig.scatter(JscCRx, JscCRy, s=5, edgecolors='b', lw=0.5)
+                    Jscsubfig.scatter(JscSFx, JscSFy, s=5, facecolors='none', edgecolors='k', lw=0.5)
+                    Jscsubfig.scatter(JscSRx, JscSRy, s=5, edgecolors='k', lw=0.5)
+                    Jscsubfig.set_ylabel('Jsc (mA/cm'+'\xb2'+')')
+                    Jscsubfig.set_xlabel("Sample #")
+                    for item in ([Jscsubfig.title, Jscsubfig.xaxis.label, Jscsubfig.yaxis.label] +
+                                 Jscsubfig.get_xticklabels() + Jscsubfig.get_yticklabels()):
+                        item.set_fontsize(4)
+                    Jscsubfig.set_ylim(bottom=0)
+                    Jscsubfig.xaxis.set_major_locator(MaxNLocator(integer=True))
+                    
+                    Jscsubfig.set_xticks(np.arange(float(min(JscAFx+JscBFx+JscCFx+JscSFx+JscARx+JscBRx+JscCRx+JscSRx))-0.5,float(max(JscAFx+JscBFx+JscCFx+JscSFx+JscARx+JscBRx+JscCRx+JscSRx))+0.5,1), minor=True)
+                    #Jscsubfig.set_xticks(np.arange(float(min(JscAFx))-0.5,float(max(JscAFx))+0.5,1), minor=True)
+                    Jscsubfig.xaxis.grid(False, which='major')
+                    Jscsubfig.xaxis.grid(True, which='minor', color='k', linestyle='-', alpha=0.2)
+                    
+                    Jscsubfig.axis([float(min(JscAFx+JscBFx+JscCFx+JscSFx+JscARx+JscBRx+JscCRx+JscSRx))-0.5,float(max(JscAFx+JscBFx+JscCFx+JscSFx+JscARx+JscBRx+JscCRx+JscSRx))+0.5,0.5*float(min(JscAFy+JscBFy+JscCFy+JscSFy+JscARy+JscBRy+JscCRy+JscSRy)),1.1*float(max(JscAFy+JscBFy+JscCFy+JscSFy+JscARy+JscBRy+JscCRy+JscSRy))])
+                    for axis in ['top','bottom','left','right']:
+                      Jscsubfig.spines[axis].set_linewidth(0.5)
+                    Jscsubfig.tick_params(axis='x', which='both',bottom='off', top='off')
+                    
+                    
+                    FFAFy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Forward"]
+                    FFAFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Forward"]
+                    
+                    FFBFy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Forward"]
+                    FFBFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Forward"]
+                    
+                    FFCFy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Forward"]
+                    FFCFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Forward"]
+                    
+                    FFSFy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='Single' and i["ScanDirection"]=="Forward"]
+                    FFSFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='S' and i["ScanDirection"]=="Forward"]
+                    
+                    FFARy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Reverse"]
+                    FFARx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Reverse"]
+                    
+                    FFBRy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Reverse"]
+                    FFBRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Reverse"]
+                    
+                    FFCRy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Reverse"]
+                    FFCRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Reverse"]
+                    
+                    FFSRy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='Single' and i["ScanDirection"]=="Reverse"]
+                    FFSRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='S' and i["ScanDirection"]=="Reverse"]
+                    
+                    
+                    FFsubfig = fig.add_subplot(223) 
+                    FFsubfig.scatter(FFAFx, FFAFy, s=5, facecolors='none', edgecolors='r', lw=0.5)
+                    FFsubfig.scatter(FFBFx, FFBFy, s=5, facecolors='none', edgecolors='g', lw=0.5)
+                    FFsubfig.scatter(FFCFx, FFCFy, s=5, facecolors='none', edgecolors='b', lw=0.5)
+                    FFsubfig.scatter(FFARx, FFARy, s=5, edgecolors='r', lw=0.5)
+                    FFsubfig.scatter(FFBRx, FFBRy, s=5, edgecolors='g', lw=0.5)
+                    FFsubfig.scatter(FFCRx, FFCRy, s=5, edgecolors='b', lw=0.5)
+                    FFsubfig.scatter(FFSFx, FFSFy, s=5, facecolors='none', edgecolors='k', lw=0.5)
+                    FFsubfig.scatter(FFSRx, FFSRy, s=5, edgecolors='k', lw=0.5)
+                    FFsubfig.set_ylabel('FF (%)')
+                    FFsubfig.set_xlabel("Sample #")
+                    for item in ([FFsubfig.title, FFsubfig.xaxis.label, FFsubfig.yaxis.label] +
+                                 FFsubfig.get_xticklabels() + FFsubfig.get_yticklabels()):
+                        item.set_fontsize(4)
+                    FFsubfig.set_ylim(bottom=0)
+                    FFsubfig.xaxis.set_major_locator(MaxNLocator(integer=True))
+                    
+                    FFsubfig.set_xticks(np.arange(float(min(FFAFx+FFBFx+FFCFx+FFSFx+FFARx+FFBRx+FFCRx+FFSRx))-0.5,float(max(FFAFx+FFBFx+FFCFx+FFSFx+FFARx+FFBRx+FFCRx+FFSRx))+0.5,1), minor=True)
+                    #FFsubfig.set_xticks(np.arange(float(min(FFAFx))-0.5,float(max(FFAFx))+0.5,1), minor=True)
+                    FFsubfig.xaxis.grid(False, which='major')
+                    FFsubfig.xaxis.grid(True, which='minor', color='k', linestyle='-', alpha=0.2)
+                    
+                    FFsubfig.axis([float(min(FFAFx+FFBFx+FFCFx+FFSFx+FFARx+FFBRx+FFCRx+FFSRx))-0.5,float(max(FFAFx+FFBFx+FFCFx+FFSFx+FFARx+FFBRx+FFCRx+FFSRx))+0.5,0.5*float(min(FFAFy+FFBFy+FFCFy+FFSFy+FFARy+FFBRy+FFCRy+FFSRy)),1.1*float(max(FFAFy+FFBFy+FFCFy+FFSFy+FFARy+FFBRy+FFCRy+FFSRy))])
+                    for axis in ['top','bottom','left','right']:
+                      FFsubfig.spines[axis].set_linewidth(0.5)
+                    FFsubfig.tick_params(axis='x', which='both',bottom='off', top='off')
+                    
+                    
+                    EffAFy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Forward"]
+                    EffAFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Forward"]
+                    
+                    EffBFy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Forward"]
+                    EffBFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Forward"]
+                    
+                    EffCFy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Forward"]
+                    EffCFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Forward"]
+                    
+                    EffSFy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='Single' and i["ScanDirection"]=="Forward"]
+                    EffSFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='S' and i["ScanDirection"]=="Forward"]
+                    
+                    EffARy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Reverse"]
+                    EffARx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Reverse"]
+                    
+                    EffBRy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Reverse"]
+                    EffBRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Reverse"]
+                    
+                    EffCRy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Reverse"]
+                    EffCRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Reverse"]
+                    
+                    EffSRy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='Single' and i["ScanDirection"]=="Reverse"]
+                    EffSRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='S' and i["ScanDirection"]=="Reverse"]
+                    
+                    
+                    Effsubfig = fig.add_subplot(224) 
+                    Effsubfig.scatter(EffAFx, EffAFy, s=5, facecolors='none', edgecolors='r', lw=0.5)
+                    Effsubfig.scatter(EffBFx, EffBFy, s=5, facecolors='none', edgecolors='g', lw=0.5)
+                    Effsubfig.scatter(EffCFx, EffCFy, s=5, facecolors='none', edgecolors='b', lw=0.5)
+                    Effsubfig.scatter(EffARx, EffARy, s=5, edgecolors='r', lw=0.5)
+                    Effsubfig.scatter(EffBRx, EffBRy, s=5, edgecolors='g', lw=0.5)
+                    Effsubfig.scatter(EffCRx, EffCRy, s=5, edgecolors='b', lw=0.5)
+                    Effsubfig.scatter(EffSFx, EffSFy, s=5, facecolors='none', edgecolors='k', lw=0.5)
+                    Effsubfig.scatter(EffSRx, EffSRy, s=5, edgecolors='k', lw=0.5)
+                    Effsubfig.set_ylabel('Eff (%)')
+                    Effsubfig.set_xlabel("Sample #")
+                    for item in ([Effsubfig.title, Effsubfig.xaxis.label, Effsubfig.yaxis.label] +
+                                 Effsubfig.get_xticklabels() + Effsubfig.get_yticklabels()):
+                        item.set_fontsize(4)
+                    Effsubfig.set_ylim(bottom=0)
+                    Effsubfig.xaxis.set_major_locator(MaxNLocator(integer=True))
+                    
+                    Effsubfig.set_xticks(np.arange(float(min(EffAFx+EffBFx+EffCFx+EffSFx+EffARx+EffBRx+EffCRx+EffSRx))-0.5,float(max(EffAFx+EffBFx+EffCFx+EffSFx+EffARx+EffBRx+EffCRx+EffSRx))+0.5,1), minor=True)
+                    Effsubfig.xaxis.grid(False, which='major')
+                    Effsubfig.xaxis.grid(True, which='minor', color='k', linestyle='-', alpha=0.2)
+                    
+                    Effsubfig.axis([float(min(EffAFx+EffBFx+EffCFx+EffSFx+EffARx+EffBRx+EffCRx+EffSRx))-0.5,float(max(EffAFx+EffBFx+EffCFx+EffSFx+EffARx+EffBRx+EffCRx+EffSRx))+0.5,0.5*float(min(EffAFy+EffBFy+EffCFy+EffSFy+EffARy+EffBRy+EffCRy+EffSRy)),1.1*float(max(EffAFy+EffBFy+EffCFy+EffSFy+EffARy+EffBRy+EffCRy+EffSRy))])
+                    for axis in ['top','bottom','left','right']:
+                      Effsubfig.spines[axis].set_linewidth(0.5)
+                    Effsubfig.tick_params(axis='x', which='both',bottom='off', top='off')
+                    
+                    
+                    FFsubfig.annotate('Red=A; Green=B; Blue=C; Black=S; empty=Forward; full=Reverse;', xy=(1.55,-0.2), xycoords='axes fraction', fontsize=4,
+                                    horizontalalignment='right', verticalalignment='bottom')
+                    
+                    fig.savefig(batchname+'_StatJVgraph.png',dpi=300,bbox_inches="tight")
+                    plt.close("all")
+                except IndexError:
+                    print("indexerror: list index out of range... it's probably an issue with sample names...")
+#        except:
+#            print("there's an issue with creating one of the stat graph")
         plt.close("all")
         
         self.window.destroy()

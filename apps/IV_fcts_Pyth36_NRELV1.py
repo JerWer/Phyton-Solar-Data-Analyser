@@ -1,6 +1,6 @@
 #! python3
 
-import os
+import os,datetime
 import matplotlib.pyplot as plt
 #from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -57,8 +57,8 @@ TODOLIST
 
 
 NREL adaptation todolist:
-    - mpp files reading
     - get stats by substrates with 6 cells colored
+    - get stats by cell (whatever substrate)
     - check the autoanalysis
         - does the batchname, samplename... work?
         - by substrates graphs?
@@ -97,6 +97,8 @@ listofcolorstyle=[]
 
 
 #%%#############
+def modification_date(path_to_file):
+    return datetime.datetime.fromtimestamp(os.path.getmtime(path_to_file)).strftime("%Y-%m-%d %H:%M:%S")
 
 def center(win):
     """
@@ -330,7 +332,7 @@ class IVApp(Toplevel):
         self.mppmaxy = tk.DoubleVar()
         Entry(self.Frame2, textvariable=self.mppmaxy,width=5).grid(row=rowpos+4,column=columnpos+3,columnspan=1)
         tk.Label(self.Frame2, text="Max Y",fg='black',background='white').grid(row=rowpos+5,column=columnpos+3,columnspan=1)
-        self.mppmaxy.set(200)
+        self.mppmaxy.set(20)
         
         self.mpplegpos1 = IntVar()
         pos=Checkbutton(self.Frame2,text=None,variable=self.mpplegpos1, 
@@ -1719,7 +1721,64 @@ class IVApp(Toplevel):
                 else:
                     partdict["SampleName"]=partdict["SampleName"]+'_D'
                     DATA.append(partdict)
+            elif filetype ==2 : #mpp files of SERF C215 labview program
+                partdict = {}
+                partdict["filepath"]=file_path[i]
+                filename=os.path.splitext(os.path.basename(partdict["filepath"]))[0]
+                partdict["DepID"]=filename.split('_')[0][:-2]
+                partdict["SampleName"]=filename.split('_')[0]
+                partdict["Cellletter"]=filename.split('_')[0][-1:]
                 
+                partdict["MeasComment"]=filename[filename.index('_')+1:]
+
+                partdict["MeasDayTime"]=modification_date(file_path[i])
+
+                partdict["CellSurface"]= float(filerawdata[0].split('\t')[-1])
+
+                partdict["Delay"]=0
+                partdict["IntegTime"]=0
+                partdict["Vstep"]=0
+                partdict["Vstart"]=0
+                partdict["Vend"]=0
+                partdict["ExecTime"]=0
+                partdict["Operator"]='unknown'
+                partdict["Group"]="Default group"
+                
+                mpppartdat = [[],[],[],[],[]]#[voltage,current,time,power,vstep]
+                for item in range(1,len(filerawdata),1):
+                    mpppartdat[0].append(float(filerawdata[item].split("\t")[2]))
+                    mpppartdat[1].append(float(filerawdata[item].split("\t")[3]))
+                    mpppartdat[2].append(float(filerawdata[item].split("\t")[0]))
+                    mpppartdat[3].append(float(filerawdata[item].split("\t")[1]))
+                    mpppartdat[4].append(-1)
+                partdict["PowerEnd"]=mpppartdat[3][-1]
+                partdict["PowerAvg"]=sum(mpppartdat[3])/float(len(mpppartdat[3]))
+                partdict["trackingduration"]=mpppartdat[2][-1]
+                partdict["MppData"]=mpppartdat
+                DATAMPP.append(partdict)                
+        
+        DATA = sorted(DATA, key=itemgetter('SampleName')) 
+        names=[d["SampleName"] for d in DATA if "SampleName" in d]
+        groupednames=[list(j) for i, j in groupby(names)]
+        for item in range(len(groupednames)):
+            if len(groupednames[item])!=1:
+                for item0 in range(1,len(groupednames[item]),1):
+                    groupednames[item][item0]+= "_"+str(item0)
+        groupednames=list(chain.from_iterable(groupednames))
+        for item in range(len(DATA)):
+            DATA[item]['SampleName']=groupednames[item]
+        
+        DATAMPP = sorted(DATAMPP, key=itemgetter('SampleName')) 
+        names=[d["SampleName"] for d in DATAMPP if "SampleName" in d]
+        groupednames=[list(j) for i, j in groupby(names)]
+        for item in range(len(groupednames)):
+            if len(groupednames[item])!=1:
+                for item0 in range(1,len(groupednames[item]),1):
+                    groupednames[item][item0]+= "_"+str(item0)
+        groupednames=list(chain.from_iterable(groupednames))
+        for item in range(len(DATAMPP)):
+            DATAMPP[item]['SampleName']=groupednames[item]
+            
         
     def getdatalistsfromIVTFfiles(self, file_path):
         global DATA

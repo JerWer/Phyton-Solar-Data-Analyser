@@ -52,7 +52,7 @@ TODOLIST
     fits ? something to extract?
 
 - group: modify the name of an existing group => automatically change in all samples
-- group: select which one to plot (so that we don't have to delete them)
+- !!!group: select which one to plot (so that we don't have to delete them)
 
 
 
@@ -65,14 +65,9 @@ NREL adaptation todolist:
         - stats graphs?
         
 excel file
-- dark files in rawdatalight tab
 - order substrate tab with light first and dark then
-- batch number: how to define? if finds a '-' in sample name: takes what's before as batch number
- or if letters and numbers => letters are the batchname, numbers are the samplenumber
 - StatIVgraph: by substrate, get 6 cells a different color
-- specific power issue: due to unit of mpp data factor 10
-- doesn't generate the best RF IV graph for each substrate
-
+- time graph: take the PM and AM into account
 
 """
 #%%############# Global variable definition
@@ -2849,10 +2844,10 @@ class IVApp(Toplevel):
                                 ax=fig.add_subplot(111)
                                 for item1 in range(len(DATAbysubstrate[-1][1])):
                                     if DATAmppbysubstrate[item][1][item0]["Cellletter"]==DATAbysubstrate[-1][1][item1]["Cellletter"]:
-                                        ax.plot(DATAbysubstrate[-1][1][item1]["IVData"][0],[-10*a*b for a,b in zip(DATAbysubstrate[-1][1][item1]["IVData"][0],DATAbysubstrate[-1][1][item1]["IVData"][1])])
+                                        ax.plot(DATAbysubstrate[-1][1][item1]["IVData"][0],[-a*b for a,b in zip(DATAbysubstrate[-1][1][item1]["IVData"][0],DATAbysubstrate[-1][1][item1]["IVData"][1])])
                                 ax.plot([abs(a) for a in DATAmppbysubstrate[item][1][item0]["MppData"][0]],DATAmppbysubstrate[item][1][item0]["MppData"][3])
                                 ax.set_xlabel('Voltage (mV)')
-                                ax.set_ylabel('Specific power (W/m$^2$)')
+                                ax.set_ylabel('Specific power (mW/cm$^2$)')
                                 ax.axhline(y=0, color='k')
                                 ax.axvline(x=0, color='k')
                                 ax.set_xlim(left=0)
@@ -2863,7 +2858,7 @@ class IVApp(Toplevel):
         except:
             print("there's an issue with creating JV graph files")     
          
-        if DATAx[0]["Setup"]=="TFIV":
+        if DATAx[0]["Setup"]=="TFIV" or DATAx[0]["Setup"]=="SSIgorC215":
             try:        
                 if self.AutoGraphs.get():
                     #graph with all best efficient cells from all substrates
@@ -3044,23 +3039,34 @@ class IVApp(Toplevel):
                     worksheet = workbook.add_worksheet("rawdataLight")
                     summary=[]
                     for item in range(len(DATAx)):
-                        summary.append([DATAx[item]["Group"],DATAx[item]["SampleName"],DATAx[item]["Cellletter"],DATAx[item]["MeasDayTime"],DATAx[item]["CellSurface"],str(DATAx[item]["Voc"]),str(DATAx[item]["Jsc"]),str(DATAx[item]["FF"]),str(DATAx[item]["Eff"]),str(DATAx[item]["Pmpp"]),str(DATAx[item]["Vmpp"]),str(DATAx[item]["Jmpp"]),str(DATAx[item]["Roc"]),str(DATAx[item]["Rsc"]),str(DATAx[item]["VocFF"]),str(DATAx[item]["RscJsc"]),str(DATAx[item]["NbPoints"]),str(DATAx[item]["Delay"]),str(DATAx[item]["IntegTime"]),str(DATAx[item]["Vstart"]),str(DATAx[item]["Vend"]),str(DATAx[item]["Illumination"]),str(DATAx[item]["ScanDirection"]),str('%.2f' % float(DATAx[item]["ImaxComp"])),str(DATAx[item]["Isenserange"]),str(DATAx[item]["AreaJV"]),DATAx[item]["Operator"],DATAx[item]["MeasComment"],timeLandD[item]["RefNomCurr"],timeLandD[item]["RefMeasCurr"],str(timeLandD[item]["AirTemp"]),str(timeLandD[item]["ChuckTemp"])])
+                        if DATAx[item]["Illumination"]=='Light':
+                            summary.append([DATAx[item]["Group"],DATAx[item]["SampleName"],DATAx[item]["Cellletter"],DATAx[item]["MeasDayTime"],DATAx[item]["CellSurface"],str(DATAx[item]["Voc"]),str(DATAx[item]["Jsc"]),str(DATAx[item]["FF"]),str(DATAx[item]["Eff"]),str(DATAx[item]["Pmpp"]),str(DATAx[item]["Vmpp"]),str(DATAx[item]["Jmpp"]),str(DATAx[item]["Roc"]),str(DATAx[item]["Rsc"]),str(DATAx[item]["VocFF"]),str(DATAx[item]["RscJsc"]),str(DATAx[item]["NbPoints"]),str(DATAx[item]["Delay"]),str(DATAx[item]["IntegTime"]),str(DATAx[item]["Vstart"]),str(DATAx[item]["Vend"]),str(DATAx[item]["Illumination"]),str(DATAx[item]["ScanDirection"]),str('%.2f' % float(DATAx[item]["ImaxComp"])),str(DATAx[item]["Isenserange"]),str(DATAx[item]["AreaJV"]),DATAx[item]["Operator"],DATAx[item]["MeasComment"],timeLandD[item]["RefNomCurr"],timeLandD[item]["RefMeasCurr"],str(timeLandD[item]["AirTemp"]),str(timeLandD[item]["ChuckTemp"])])
+                    summary.insert(0, ["-", "-", "-","-","cm2","mV","mA/cm2","%","%","W/cm2","mV","mA/cm2","Ohm*cm2","Ohm*cm2","-","-","-","s","s","mV","mV","-","-","A","A","-","-","-","mA","mA","DegC","DegC"])
+                    summary.insert(0, ["Group","Sample Name", "Cell","MeasDayTime","Cell Surface","Voc","Jsc","FF","Eff","Pmpp","Vmpp","Jmpp","Roc","Rsc","VocFF","RscJsc","NbPoints","Delay","IntegTime","Vstart","Vend","Illumination","ScanDirection","ImaxComp","Isenserange","AreaJV","Operator","MeasComment","RefNomCurr","RefMeasCurr","AirTemp","ChuckTemp"])
+                    for item in range(len(summary)):
+                        for item0 in range(len(summary[item])):
+                            worksheet.write(item,item0,summary[item][item0])
+                    worksheet = workbook.add_worksheet("rawdatadark")
+                    summary=[]
+                    for item in range(len(DATAx)):
+                        if DATAx[item]["Illumination"]=='Dark':
+                            summary.append([DATAx[item]["Group"],DATAx[item]["SampleName"],DATAx[item]["Cellletter"],DATAx[item]["MeasDayTime"],DATAx[item]["CellSurface"],str(DATAx[item]["Voc"]),str(DATAx[item]["Jsc"]),str(DATAx[item]["FF"]),str(DATAx[item]["Eff"]),str(DATAx[item]["Pmpp"]),str(DATAx[item]["Vmpp"]),str(DATAx[item]["Jmpp"]),str(DATAx[item]["Roc"]),str(DATAx[item]["Rsc"]),str(DATAx[item]["VocFF"]),str(DATAx[item]["RscJsc"]),str(DATAx[item]["NbPoints"]),str(DATAx[item]["Delay"]),str(DATAx[item]["IntegTime"]),str(DATAx[item]["Vstart"]),str(DATAx[item]["Vend"]),str(DATAx[item]["Illumination"]),str(DATAx[item]["ScanDirection"]),str('%.2f' % float(DATAx[item]["ImaxComp"])),str(DATAx[item]["Isenserange"]),str(DATAx[item]["AreaJV"]),DATAx[item]["Operator"],DATAx[item]["MeasComment"],timeLandD[item]["RefNomCurr"],timeLandD[item]["RefMeasCurr"],str(timeLandD[item]["AirTemp"]),str(timeLandD[item]["ChuckTemp"])])
                     summary.insert(0, ["-", "-", "-","-","cm2","mV","mA/cm2","%","%","W/cm2","mV","mA/cm2","Ohm*cm2","Ohm*cm2","-","-","-","s","s","mV","mV","-","-","A","A","-","-","-","mA","mA","DegC","DegC"])
                     summary.insert(0, ["Group","Sample Name", "Cell","MeasDayTime","Cell Surface","Voc","Jsc","FF","Eff","Pmpp","Vmpp","Jmpp","Roc","Rsc","VocFF","RscJsc","NbPoints","Delay","IntegTime","Vstart","Vend","Illumination","ScanDirection","ImaxComp","Isenserange","AreaJV","Operator","MeasComment","RefNomCurr","RefMeasCurr","AirTemp","ChuckTemp"])
                     for item in range(len(summary)):
                         for item0 in range(len(summary[item])):
                             worksheet.write(item,item0,summary[item][item0])
                 
-                if DATAdark!=[]:
-                    worksheet = workbook.add_worksheet("rawdatadark")
-                    summary=[]
-                    for item in range(len(DATAdark)):
-                        summary.append([DATAdark[item]["Group"],DATAdark[item]["SampleName"],DATAdark[item]["Cellletter"],DATAdark[item]["MeasDayTime"],DATAdark[item]["CellSurface"],str(DATAdark[item]["Voc"]),str(DATAdark[item]["Jsc"]),str(DATAdark[item]["FF"]),str(DATAdark[item]["Eff"]),str(DATAdark[item]["Pmpp"]),str(DATAdark[item]["Vmpp"]),str(DATAdark[item]["Jmpp"]),str(DATAdark[item]["Roc"]),str(DATAdark[item]["Rsc"]),str(DATAdark[item]["VocFF"]),str(DATAdark[item]["RscJsc"]),str(DATAdark[item]["NbPoints"]),DATAdark[item]["Delay"],DATAdark[item]["IntegTime"],DATAdark[item]["Vstart"],DATAdark[item]["Vend"],DATAdark[item]["Illumination"],DATAdark[item]["ScanDirection"],str('%.2f' % float(DATAdark[item]["ImaxComp"])),DATAdark[item]["Isenserange"],str(DATAdark[item]["AreaJV"]),DATAdark[item]["Operator"],DATAdark[item]["MeasComment"],timeLandD[item]["RefNomCurr"],timeLandD[item]["RefMeasCurr"],str(timeLandD[item]["AirTemp"]),str(timeLandD[item]["ChuckTemp"])])
-                    summary.insert(0, ["-", "-", "-","cm2","mV","mA/cm2","%","%","W/cm2","mV","mA/cm2","Ohm*cm2","Ohm*cm2","-","-","-","s","s","mV","mV","-","-","A","A","-","-","-","mA","mA","DegC","DegC"])
-                    summary.insert(0, ["Sample Name", "Cell","MeasDayTime","Cell Surface","Voc","Jsc","FF","Eff","Pmpp","Vmpp","Jmpp","Roc","Rsc","VocFF","RscJsc","NbPoints","Delay","IntegTime","Vstart","Vend","Illumination","ScanDirection","ImaxComp","Isenserange","AreaJV","Operator","MeasComment","RefNomCurr","RefMeasCurr","AirTemp","ChuckTemp"])
-                    for item in range(len(summary)):
-                        for item0 in range(len(summary[item])):
-                            worksheet.write(item,item0,summary[item][item0])
+#                if DATAdark!=[]:
+#                    worksheet = workbook.add_worksheet("rawdatadark")
+#                    summary=[]
+#                    for item in range(len(DATAdark)):
+#                        summary.append([DATAdark[item]["Group"],DATAdark[item]["SampleName"],DATAdark[item]["Cellletter"],DATAdark[item]["MeasDayTime"],DATAdark[item]["CellSurface"],str(DATAdark[item]["Voc"]),str(DATAdark[item]["Jsc"]),str(DATAdark[item]["FF"]),str(DATAdark[item]["Eff"]),str(DATAdark[item]["Pmpp"]),str(DATAdark[item]["Vmpp"]),str(DATAdark[item]["Jmpp"]),str(DATAdark[item]["Roc"]),str(DATAdark[item]["Rsc"]),str(DATAdark[item]["VocFF"]),str(DATAdark[item]["RscJsc"]),str(DATAdark[item]["NbPoints"]),DATAdark[item]["Delay"],DATAdark[item]["IntegTime"],DATAdark[item]["Vstart"],DATAdark[item]["Vend"],DATAdark[item]["Illumination"],DATAdark[item]["ScanDirection"],str('%.2f' % float(DATAdark[item]["ImaxComp"])),DATAdark[item]["Isenserange"],str(DATAdark[item]["AreaJV"]),DATAdark[item]["Operator"],DATAdark[item]["MeasComment"],timeLandD[item]["RefNomCurr"],timeLandD[item]["RefMeasCurr"],str(timeLandD[item]["AirTemp"]),str(timeLandD[item]["ChuckTemp"])])
+#                    summary.insert(0, ["-", "-", "-","cm2","mV","mA/cm2","%","%","W/cm2","mV","mA/cm2","Ohm*cm2","Ohm*cm2","-","-","-","s","s","mV","mV","-","-","A","A","-","-","-","mA","mA","DegC","DegC"])
+#                    summary.insert(0, ["Sample Name", "Cell","MeasDayTime","Cell Surface","Voc","Jsc","FF","Eff","Pmpp","Vmpp","Jmpp","Roc","Rsc","VocFF","RscJsc","NbPoints","Delay","IntegTime","Vstart","Vend","Illumination","ScanDirection","ImaxComp","Isenserange","AreaJV","Operator","MeasComment","RefNomCurr","RefMeasCurr","AirTemp","ChuckTemp"])
+#                    for item in range(len(summary)):
+#                        for item0 in range(len(summary[item])):
+#                            worksheet.write(item,item0,summary[item][item0])
                             
                 sorted_bestEff= sorted(bestEff, key=itemgetter('Eff'), reverse=True) 
                 if sorted_bestEff!=[]:        
@@ -3499,8 +3505,14 @@ class IVApp(Toplevel):
                     VocCFy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Forward"]
                     VocCFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Forward"]
                     
-                    VocSFy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='Single' and i["ScanDirection"]=="Forward"]
-                    VocSFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='S' and i["ScanDirection"]=="Forward"]
+                    VocDFy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='D' and i["ScanDirection"]=="Forward"]
+                    VocDFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='D' and i["ScanDirection"]=="Forward"]
+                    
+                    VocEFy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='E' and i["ScanDirection"]=="Forward"]
+                    VocEFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='E' and i["ScanDirection"]=="Forward"]
+                    
+                    VocFFy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='F' and i["ScanDirection"]=="Forward"]
+                    VocFFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='F' and i["ScanDirection"]=="Forward"]
                     
                     VocARy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Reverse"]
                     VocARx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Reverse"]
@@ -3511,8 +3523,14 @@ class IVApp(Toplevel):
                     VocCRy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Reverse"]
                     VocCRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Reverse"]
                     
-                    VocSRy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='Single' and i["ScanDirection"]=="Reverse"]
-                    VocSRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='S' and i["ScanDirection"]=="Reverse"]
+                    VocDRy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='D' and i["ScanDirection"]=="Reverse"]
+                    VocDRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='D' and i["ScanDirection"]=="Reverse"]
+                    
+                    VocERy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='E' and i["ScanDirection"]=="Reverse"]
+                    VocERx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='E' and i["ScanDirection"]=="Reverse"]
+                    
+                    VocFRy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='F' and i["ScanDirection"]=="Reverse"]
+                    VocFRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='F' and i["ScanDirection"]=="Reverse"]
                     
                     Vocsubfig = fig.add_subplot(221) 
                     Vocsubfig.scatter(VocAFx, VocAFy, s=5, facecolors='none', edgecolors='r', lw=0.5)
@@ -3521,22 +3539,28 @@ class IVApp(Toplevel):
                     Vocsubfig.scatter(VocARx, VocARy, s=5, edgecolors='r', lw=0.5)
                     Vocsubfig.scatter(VocBRx, VocBRy, s=5, edgecolors='g', lw=0.5)
                     Vocsubfig.scatter(VocCRx, VocCRy, s=5, edgecolors='b', lw=0.5)
-                    Vocsubfig.scatter(VocSFx, VocSFy, s=5, facecolors='none', edgecolors='k', lw=0.5)
-                    Vocsubfig.scatter(VocSRx, VocSRy, s=5, edgecolors='k', lw=0.5)
+                    Vocsubfig.scatter(VocDFx, VocDFy, s=5, facecolors='none', edgecolors='c', lw=0.5)
+                    Vocsubfig.scatter(VocEFx, VocEFy, s=5, facecolors='none', edgecolors='m', lw=0.5)
+                    Vocsubfig.scatter(VocFFx, VocFFy, s=5, facecolors='none', edgecolors='k', lw=0.5)
+                    Vocsubfig.scatter(VocDRx, VocDRy, s=5, edgecolors='c', lw=0.5)
+                    Vocsubfig.scatter(VocERx, VocERy, s=5, edgecolors='m', lw=0.5)
+                    Vocsubfig.scatter(VocFRx, VocFRy, s=5, edgecolors='k', lw=0.5)
+                    
+#                    Vocsubfig.scatter(VocSFx, VocSFy, s=5, facecolors='none', edgecolors='k', lw=0.5)
+#                    Vocsubfig.scatter(VocSRx, VocSRy, s=5, edgecolors='k', lw=0.5)
                     Vocsubfig.set_ylabel('Voc (mV)')
                     Vocsubfig.set_xlabel("Sample #")
-                    for item in ([Vocsubfig.title, Vocsubfig.xaxis.label, Vocsubfig.yaxis.label] +
-                                 Vocsubfig.get_xticklabels() + Vocsubfig.get_yticklabels()):
+                    for item in ([Vocsubfig.title, Vocsubfig.xaxis.label, Vocsubfig.yaxis.label] + Vocsubfig.get_xticklabels() + Vocsubfig.get_yticklabels()):
                         item.set_fontsize(4)
                     Vocsubfig.set_ylim(bottom=0)
                     Vocsubfig.xaxis.set_major_locator(MaxNLocator(integer=True))
                     
-                    Vocsubfig.set_xticks(np.arange(float(min(VocAFx+VocBFx+VocCFx+VocSFx+VocARx+VocBRx+VocCRx+VocSRx))-0.5,float(max(VocAFx+VocBFx+VocCFx+VocSFx+VocARx+VocBRx+VocCRx+VocSRx))+0.5,1), minor=True)
+                    Vocsubfig.set_xticks(np.arange(float(min(VocAFx+VocBFx+VocCFx+VocARx+VocBRx+VocCRx+VocDFx+VocEFx+VocFFx+VocDRx+VocERx+VocFRx))-0.5,float(max(VocAFx+VocBFx+VocCFx+VocARx+VocBRx+VocCRx+VocDFx+VocEFx+VocFFx+VocDRx+VocERx+VocFRx))+0.5,1), minor=True)
                     #Vocsubfig.set_xticks(np.arange(float(min(VocAFx))-0.5,float(max(VocAFx))+0.5,1), minor=True)
                     Vocsubfig.xaxis.grid(False, which='major')
                     Vocsubfig.xaxis.grid(True, which='minor', color='k', linestyle='-', alpha=0.2)
                     
-                    Vocsubfig.axis([float(min(VocAFx+VocBFx+VocCFx+VocSFx+VocARx+VocBRx+VocCRx+VocSRx))-0.5,float(max(VocAFx+VocBFx+VocCFx+VocSFx+VocARx+VocBRx+VocCRx+VocSRx))+0.5,0.5*float(min(VocAFy+VocBFy+VocCFy+VocSFy+VocARy+VocBRy+VocCRy+VocSRy)),1.1*float(max(VocAFy+VocBFy+VocCFy+VocSFy+VocARy+VocBRy+VocCRy+VocSRy))])
+                    Vocsubfig.axis([float(min(VocAFx+VocBFx+VocCFx+VocARx+VocBRx+VocCRx+VocDFx+VocEFx+VocFFx+VocDRx+VocERx+VocFRx))-0.5,float(max(VocAFx+VocBFx+VocCFx+VocARx+VocBRx+VocCRx+VocDFx+VocEFx+VocFFx+VocDRx+VocERx+VocFRx))+0.5,0.5*float(min(VocAFx+VocBFx+VocCFx+VocARx+VocBRx+VocCRx+VocDFx+VocEFx+VocFFx+VocDRx+VocERx+VocFRx)),1.1*float(max(VocAFx+VocBFx+VocCFx+VocARx+VocBRx+VocCRx+VocDFx+VocEFx+VocFFx+VocDRx+VocERx+VocFRx))])
                     for axis in ['top','bottom','left','right']:
                       Vocsubfig.spines[axis].set_linewidth(0.5)
                     Vocsubfig.tick_params(axis='x', which='both',bottom='off', top='off')

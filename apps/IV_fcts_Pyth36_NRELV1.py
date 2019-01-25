@@ -69,7 +69,9 @@ excel file
 - order substrate tab with light first and dark then
 - batch number: how to define? if finds a '-' in sample name: takes what's before as batch number
  or if letters and numbers => letters are the batchname, numbers are the samplenumber
-
+- StatIVgraph: by substrate, get 6 cells a different color
+- specific power issue: due to unit of mpp data factor 10
+- doesn't generate the best RF IV graph for each substrate
 
 
 """
@@ -483,7 +485,8 @@ class IVApp(Toplevel):
             file_path =filedialog.askopenfilenames(title="Please select the IV files")
             if file_path!='':
                 filetypes=[os.path.splitext(item)[1] for item in file_path]
-                if len(list(set(filetypes)))==1:
+                print(list(set(filetypes)))
+                if len(list(set(filetypes)))==1 or (''in list(set(filetypes)) and '.txt'in list(set(filetypes))):
                     directory = str(Path(file_path[0]).parent.parent)+'\\resultFilesIV'
                     if not os.path.exists(directory):
                         os.makedirs(directory)
@@ -497,7 +500,7 @@ class IVApp(Toplevel):
                         self.getdatalistsfromIVTFfiles(file_pathnew)
                         finished=1
                         break
-                    elif filetype==".txt":
+                    elif filetype==".txt" or filetype=='':
                         print("NREL files")
                         self.getdatalistsfromNRELfiles(file_path)
                         finished=1
@@ -599,18 +602,18 @@ class IVApp(Toplevel):
         fontsizegroup=self.fontsizeGroupGraph.get()
         DATAx=copy.deepcopy(DATA)
         
-        try:
-            if len(samplesgroups)>1:    #if user defined group names different than "Default group"        
-                grouplistdict=[]
-                if self.RF.get()==0:    #select all data points
-                    for item in range(1,len(samplesgroups),1):
-                        groupdict={}
-                        groupdict["Group"]=samplesgroups[item]
-                        listofthegroup=[]
-                        for item1 in range(len(DATAx)):
-                            if DATAx[item1]["Group"]==groupdict["Group"] and DATAx[item1]["Illumination"]=='Light':
-                                listofthegroup.append(DATAx[item1])
-                        
+#        try:
+        if len(samplesgroups)>1:    #if user defined group names different than "Default group"        
+            grouplistdict=[]
+            if self.RF.get()==0:    #select all data points
+                for item in range(1,len(samplesgroups),1):
+                    groupdict={}
+                    groupdict["Group"]=samplesgroups[item]
+                    listofthegroup=[]
+                    for item1 in range(len(DATAx)):
+                        if DATAx[item1]["Group"]==groupdict["Group"] and DATAx[item1]["Illumination"]=='Light':
+                            listofthegroup.append(DATAx[item1])
+                    if len(listofthegroup)!=0:
                         listofthegroupRev=[]
                         listofthegroupFor=[]
                         for item1 in range(len(listofthegroup)):
@@ -637,17 +640,17 @@ class IVApp(Toplevel):
                         groupdict["ForJmpp"]=[x['Jmpp'] for x in listofthegroupFor if 'Jmpp' in x]
                         
                         grouplistdict.append(groupdict)
-                        
-                elif self.RF.get()==1:      #select only the best RevFor of each cell
                     
-                    for item in range(1,len(samplesgroups),1):
-                        groupdict={}
-                        groupdict["Group"]=samplesgroups[item]
-                        listofthegroup=[]
-                        for item1 in range(len(DATAx)):
-                            if DATAx[item1]["Group"]==groupdict["Group"] and DATAx[item1]["Illumination"]=='Light':
-                                listofthegroup.append(DATAx[item1])
-    
+            elif self.RF.get()==1:      #select only the best RevFor of each cell
+                
+                for item in range(1,len(samplesgroups),1):
+                    groupdict={}
+                    groupdict["Group"]=samplesgroups[item]
+                    listofthegroup=[]
+                    for item1 in range(len(DATAx)):
+                        if DATAx[item1]["Group"]==groupdict["Group"] and DATAx[item1]["Illumination"]=='Light':
+                            listofthegroup.append(DATAx[item1])
+                    if len(listofthegroup)!=0:
                         grouper = itemgetter("DepID", "Cellletter",'ScanDirection')
                         result = []
                         for key, grp in groupby(sorted(listofthegroup, key = grouper), grouper):
@@ -693,7 +696,7 @@ class IVApp(Toplevel):
                         groupdict["ForJmpp"]=[x['Jmpp'] for x in listofthegroupFor if 'Jmpp' in x]
                         
                         grouplistdict.append(groupdict)
-                    
+            if len(listofthegroup)!=0:    
                 self.GroupStatfig.clear()
                 names=samplesgroups[1:]
                 if self.GroupChoice.get()=="Eff":
@@ -1110,8 +1113,8 @@ class IVApp(Toplevel):
                             horizontalalignment='right', verticalalignment='bottom')
     
                 plt.gcf().canvas.draw()
-        except:
-            pass
+#        except:
+#            pass
     
     def UpdateIVGraph(self):
         global DATA
@@ -1604,12 +1607,8 @@ class IVApp(Toplevel):
     
     def getdatalistsfromNRELfiles(self, file_path): #reads JV and mpp files from NREL
         global DATA
-        global DATAdark
         global DATAMPP
         
-        #need to distinguish which type of file it is
-        #need to be general to add later the other sun simulators
-        #both for JV scans and for mpp
         
         for i in range(len(file_path)):
             filetoread = open(file_path[i],"r")
@@ -1628,16 +1627,23 @@ class IVApp(Toplevel):
                 
                 filename=os.path.splitext(os.path.basename(partdict["filepath"]))[0]
 #                print(filename)
-                partdict["Cellletter"]=filename.split('_')[4][2:]
-                partdict["DepID"]=filename.split('_')[0]#substrate ID
-                partdict["SampleName"]=filename.split('_')[0]+"_"+partdict["Cellletter"]+"_"+filename.split('_')[5]#measurement ID
+                if 'rev' in filename:
+                    partdict["DepID"]=filename[:filename.index('rev')-1]
+                    aftername=filename[filename.index('rev'):]
+                elif 'fwd' in filename:
+                    partdict["DepID"]=filename[:filename.index('fwd')-1]
+                    aftername=filename[filename.index('fwd'):]
                 
-                if filename.split('_')[2]=="lt":
+                partdict["Cellletter"]=aftername.split('_')[3][2:]
+                partdict["batchname"]=partdict["DepID"].split('_')[0]
+                partdict["SampleName"]=partdict["DepID"]+"_"+partdict["Cellletter"]+"_"+aftername.split('_')[4]
+                
+                if aftername.split('_')[1]=="lt":
                     partdict["Illumination"]="Light"
                 else:
                     partdict["Illumination"]="Dark"
                     
-                if filename.split('_')[1]=="rev":
+                if aftername.split('_')[0]=="rev":
                     partdict["ScanDirection"]="Reverse"
                 else:
                     partdict["ScanDirection"]="Forward" 
@@ -1645,6 +1651,7 @@ class IVApp(Toplevel):
                 for item in range(len(filerawdata)):
                     if "Date/Time:" in filerawdata[item]:
                         partdict["MeasDayTime"]=filerawdata[item][11:-1]
+#                        print(partdict["MeasDayTime"].split(' ')[-2])
                         break
                 partdict["MeasComment"]="-"
                 for item in range(len(filerawdata)):
@@ -1680,12 +1687,15 @@ class IVApp(Toplevel):
                     if "HEADER END" in filerawdata[item]:
                             pos=item+3
                             break
+                        
                 ivpartdat = [[],[]]#[voltage,current]
                 for item in range(pos,len(filerawdata),1):
-                    ivpartdat[0].append(float(filerawdata[item].split("\t")[0]))
-                    ivpartdat[1].append(-float(filerawdata[item].split("\t")[1]))
+                    try:
+                        ivpartdat[0].append(float(filerawdata[item].split("\t")[0]))
+                        ivpartdat[1].append(-float(filerawdata[item].split("\t")[1]))
+                    except:
+                        break
                 partdict["IVData"]=ivpartdat
-                
                 params=self.extract_jv_params(partdict["IVData"])
                 partdict["Voc"]=params['Voc']*1000 #mV
                 partdict["Jsc"]=params['Jsc'] #mA/cm2
@@ -1729,14 +1739,16 @@ class IVApp(Toplevel):
                 else:
                     partdict["SampleName"]=partdict["SampleName"]+'_D'
                     DATA.append(partdict)
+                
             elif filetype ==2 : #mpp files of SERF C215 labview program
+                #assumes file name: batch_samplenumber_cellLetter_mpp
                 partdict = {}
                 partdict["filepath"]=file_path[i]
                 filename=os.path.splitext(os.path.basename(partdict["filepath"]))[0]
-                partdict["DepID"]=filename.split('_')[0][:-2]
-                partdict["SampleName"]=filename.split('_')[0]
-                partdict["Cellletter"]=filename.split('_')[0][-1:]
-                
+                partdict["DepID"]=filename.split('_')[0]+'_'+filename.split('_')[1]
+                partdict["SampleName"]=filename.split('_')[0]+'_'+filename.split('_')[1]+'_'+filename.split('_')[2]
+                partdict["Cellletter"]=filename.split('_')[2]
+                partdict["batchname"]=filename.split('_')[0]
                 partdict["MeasComment"]=filename[filename.index('_')+1:]
 
                 partdict["MeasDayTime"]=modification_date(file_path[i])
@@ -3306,10 +3318,8 @@ class IVApp(Toplevel):
                 if DATAx[0]["Setup"]=="TFIV":
                     time=[float(i["MeasDayTime"].split()[1].split(':')[0])+ float(i["MeasDayTime"].split()[1].split(':')[1])/60 + float(i["MeasDayTime"].split()[1].split(':')[2])/3600 for i in DATAx]
                 elif DATAx[0]["Setup"]=='SSIgorC215':
-                    time=[float(i["MeasDayTime"].split()[1].split(':')[0])+ float(i["MeasDayTime"].split()[1].split(':')[1])/60 + float(i["MeasDayTime"].split()[1].split(':')[2])/3600 for i in DATAx]
-                    
-                    
-                    
+                    time=[float(i["MeasDayTime"].split(' ')[-2].split(':')[0])+ float(i["MeasDayTime"].split(' ')[-2].split(':')[1])/60 + float(i["MeasDayTime"].split(' ')[-2].split(':')[2])/3600 for i in DATAx]
+                                       
                 Voct=[i["Voc"] for i in DATAx]
                 Jsct=[i["Jsc"] for i in DATAx]
                 FFt=[i["FF"] for i in DATAx]

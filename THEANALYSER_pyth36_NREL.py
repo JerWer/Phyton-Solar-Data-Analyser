@@ -14,7 +14,7 @@ import ellipso_Pyth36 as Ellipso
 import CMM_Pyth36_v1 as CMM
 import Spectro_Pyth36 as spectrofcts
 import TMsimulNew_Pyth36 as TMMfcts
-import EQE_fcts_Pyth36_v2 as EQEfcts
+import EQE_fcts_Pyth36_NRELV1 as EQEfcts
 import IV_fcts_Pyth36_NRELV1 as IVfcts
 import JVfollowup_Pyth36_v0 as JVfollowup
 import Database_v0 as DB

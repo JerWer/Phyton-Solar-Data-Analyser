@@ -55,6 +55,9 @@ TODOLIST
 - !!!group: select which one to plot (so that we don't have to delete them)
 
 
+-distinguish before and after mpp, make group graph with 4 colors (RevBefore, RevAfter, ForBefore, ForAfter)
+
+error: MemoryError: In RendererAgg: Out of memory
 
 """
 #%%############# Global variable definition

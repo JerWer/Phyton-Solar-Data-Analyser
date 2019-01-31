@@ -57,7 +57,15 @@ TODOLIST
 
 -distinguish before and after mpp, make group graph with 4 colors (RevBefore, RevAfter, ForBefore, ForAfter)
 
-error: MemoryError: In RendererAgg: Out of memory
+add options in autoanalysis for exporting only the main stats graphs, without all the other substrates... and also inverse without stat graphs...
+add all graphs as options
+
+add legend to specificpower graph: with mention before/after mpp
+
+
+does not produce the dark log/linear auto graph as the DATAdark list is empty
+
+error lign 2917: indexerror list index out of range
 
 """
 #%%############# Global variable definition
@@ -73,6 +81,9 @@ takenforplotmpp=[]
 DATAMPP = []
 DATAdark = []
 DATAFV=[]
+
+numbLightfiles=0
+numbDarkfiles=0
 
 IVlegendMod = []
 IVlinestyle = []
@@ -458,7 +469,7 @@ class IVApp(Toplevel):
         global DATA 
         global DATAFV
         global DATAMPP
-        global DATAdark
+        global DATAdark, numbLightfiles, numbDarkfiles
                
         self.workongoing.configure(text="Importation\nstarted...\nPatience\nis a great\nvirtue")
         
@@ -558,7 +569,7 @@ class IVApp(Toplevel):
             print(len(DATAMPP))
             print(len(DATAdark))
             print(len(DATAFV))
-            self.workongoing.configure(text="Imported:\n%d JV files\n%d MPP files\n%d Dark files " % (len(DATA),len(DATAMPP),len(DATAdark)))
+            self.workongoing.configure(text="Imported:\n%d JV files\n%d MPP files\n%d Dark files " % (numbLightfiles,len(DATAMPP),numbDarkfiles))
             
             if DATAMPP!=[]:
                 self.mppnames = ()
@@ -1606,7 +1617,7 @@ class IVApp(Toplevel):
     
     def getdatalistsfromNRELfiles(self, file_path): #reads JV and mpp files from NREL
         global DATA
-        global DATAMPP
+        global DATAMPP, numbLightfiles, numbDarkfiles
         
         
         for i in range(len(file_path)):
@@ -1665,6 +1676,16 @@ class IVApp(Toplevel):
                     if "End V:" in filerawdata[item]:
                         partdict["Vend"]=float(filerawdata[item][7:-1])
                         break
+                if partdict["ScanDirection"]=="Reverse":
+                    if partdict["Vstart"]<partdict["Vend"]:
+                        vend=partdict["Vend"]
+                        partdict["Vend"]=partdict["Vstart"]
+                        partdict["Vstart"]=vend
+                else:
+                    if partdict["Vstart"]>partdict["Vend"]:
+                        vend=partdict["Vend"]
+                        partdict["Vend"]=partdict["Vstart"]
+                        partdict["Vstart"]=vend 
                 for item in range(len(filerawdata)):
                     if "Number Points:" in filerawdata[item]:
                         partdict["NbPoints"]=float(filerawdata[item][15:-1])
@@ -1735,9 +1756,11 @@ class IVApp(Toplevel):
 
                 if partdict["Illumination"]=="Light":
                     DATA.append(partdict)
+                    numbLightfiles+=1
                 else:
                     partdict["SampleName"]=partdict["SampleName"]+'_D'
                     DATA.append(partdict)
+                    numbDarkfiles+=1
                 
             elif filetype ==2 : #mpp files of SERF C215 labview program
                 #assumes file name: batch_samplenumber_cellLetter_mpp
@@ -2589,7 +2612,8 @@ class IVApp(Toplevel):
             except:
                 print("there's an issue with creating JVdark txt files")
             try:
-                if self.AutoGraphs.get():
+                if self.IVgraphs.get():
+                    plt.clf()
                     plt.close("all")
                     fig, axs =plt.subplots(1,2)
                     x1=min(DATAdarkbysubstrate[-1][1][0]["IVData"][0])
@@ -2631,9 +2655,11 @@ class IVApp(Toplevel):
                     plt.savefig(str(substratpartdat[0])+'_lowIllum.png',dpi=300, bbox_extra_artists=(lgd,),bbox_inches="tight")
                     plt.close(fig) 
                     plt.close('all')
+                    plt.clf()
             except:
                 print("there's an issue with creating JV lowillum graphs")
-        
+        plt.clf()
+        #mpp data
         try:
             for key, group in groupby(sorted_datampp, key=lambda x:x['DepID']):
                 substratpartdat=[key,list(group)]
@@ -2648,15 +2674,16 @@ class IVApp(Toplevel):
                         file.writelines("%s" % item for item in contenttxtfile)
                         file.close()
                     #export figures
-                    if self.AutoGraphs.get():
+                    if self.mppgraphs.get():
                         plt.plot(substratpartdat[1][item0]["MppData"][2],substratpartdat[1][item0]["MppData"][3])
                         plt.xlabel('Time (s)')
                         plt.ylabel('Power (mW/cm'+'\xb2'+')')        
                         plt.savefig(str(substratpartdat[1][item0]["SampleName"]) + '_Pmpp.png',dpi=300)
                     plt.close('all')
+                    plt.clf()
         except:
             print("there's an issue with creating pmpp txt files")
-            
+        plt.clf()    
         try:     
             for key, group in groupby(sorted_datafv, key=lambda x:x['DepID']):
                 substratpartdat=[key,list(group)]
@@ -2671,12 +2698,13 @@ class IVApp(Toplevel):
                         file.writelines("%s" % item for item in contenttxtfile)
                         file.close()
                     #export figures
-                    if self.AutoGraphs.get():
+                    if self.mppgraphs.get():
                         plt.plot(substratpartdat[1][item0]["FVData"][3],substratpartdat[1][item0]["FVData"][2])
                         plt.xlabel('Time (s)')
                         plt.ylabel('Power (mW/cm'+'\xb2'+')')        
                         plt.savefig(str(substratpartdat[1][item0]["SampleName"]) + '_FV.png',dpi=300)
-                    plt.close('all') 
+                    plt.close('all')
+                    plt.clf()
         except:
             print("there's an issue with creating FV txt files")
             
@@ -2712,7 +2740,8 @@ class IVApp(Toplevel):
                 file.writelines("%s" % item for item in contenttxtfile)
                 file.close()
             #graphs by substrate with JV table, separate graph and table production, then reassemble to export...
-            if self.AutoGraphs.get():
+            plt.clf()
+            if self.IVgraphs.get():
                 collabel=("Voc","Jsc","FF","Eff","Roc","Rsc","Vstart","Vend","CellSurface")
                 nrows, ncols = len(substratpartdat[1])+1, len(collabel)
                 hcell, wcell = 0.3, 1.
@@ -2758,10 +2787,10 @@ class IVApp(Toplevel):
                 the_table = ax2.table(cellText=tabledata,colLabels=collabel,rowLabels=rowlabel,loc='center')
                 the_table.set_fontsize(18)
                 ax2.axis('off')
-                fig2.savefig(str(substratpartdat[0])+'_table.png',dpi=300,bbox_inches="tight")
+                fig2.savefig(str(substratpartdat[0])+'_table.png',dpi=200,bbox_inches="tight")
                 handles, labels = ax3.get_legend_handles_labels()
                 lgd = ax3.legend(handles, labels, loc='center left', bbox_to_anchor=(1, 0.5))
-                fig1.savefig(str(substratpartdat[0])+'.png',dpi=300, bbox_extra_artists=(lgd,),bbox_inches="tight")
+                fig1.savefig(str(substratpartdat[0])+'.png',dpi=200, bbox_extra_artists=(lgd,),bbox_inches="tight")
                 
                 images = list(map(ImageTk.open, [str(substratpartdat[0])+'.png',str(substratpartdat[0])+'_table.png']))
                 widths, heights = zip(*(i.size for i in images))
@@ -2776,6 +2805,7 @@ class IVApp(Toplevel):
                 plt.close(fig2)
                 plt.close(fig1)
                 plt.close('all')
+                plt.clf()
                
                 if DATAx[0]["Setup"]=="TFIV"  or DATAx[0]["Setup"]=="SSIgorC215":
                     #graph best FR of this substrate
@@ -2837,133 +2867,143 @@ class IVApp(Toplevel):
                             lgd = ax.legend(handles, labels, loc='center left', bbox_to_anchor=(1, 0.5))
                             fig.savefig(str(substratpartdat[0])+'_BestRevForw.png',dpi=300, bbox_extra_artists=(lgd,),bbox_inches="tight")
                             plt.close('all')
+                            plt.clf()
                             break
                         else:
                             item+=1 
+                plt.clf()
                 #specific power graph
-                for item in range(len(DATAmppbysubstrate)):
-                    if substratpartdat[0]==DATAmppbysubstrate[item][0]:
-                        for item0 in range(len(DATAmppbysubstrate[item][1])):
-                            fig=plt.figure()
-                            ax=fig.add_subplot(111)
-                            for item1 in range(len(DATAbysubstrate[-1][1])):
-                                if DATAmppbysubstrate[item][1][item0]["Cellletter"]==DATAbysubstrate[-1][1][item1]["Cellletter"]:
-                                    ax.plot(DATAbysubstrate[-1][1][item1]["IVData"][0],[-a*b for a,b in zip(DATAbysubstrate[-1][1][item1]["IVData"][0],DATAbysubstrate[-1][1][item1]["IVData"][1])])
-                            ax.plot([abs(a) for a in DATAmppbysubstrate[item][1][item0]["MppData"][0]],DATAmppbysubstrate[item][1][item0]["MppData"][3])
-                            ax.set_xlabel('Voltage (mV)')
-                            ax.set_ylabel('Specific power (mW/cm$^2$)')
-                            ax.axhline(y=0, color='k')
-                            ax.axvline(x=0, color='k')
-                            ax.set_xlim(left=0)
-                            ax.set_ylim(bottom=0)
-                            fig.savefig(DATAmppbysubstrate[item][1][item0]["SampleName"]+'_specpower.png',dpi=300,bbox_inches="tight")
-                            plt.close("all")
-                        break
+                if self.mppgraphs.get(): 
+                    for item in range(len(DATAmppbysubstrate)):
+                        if substratpartdat[0]==DATAmppbysubstrate[item][0]:
+                            for item0 in range(len(DATAmppbysubstrate[item][1])):
+                                fig=plt.figure()
+                                ax=fig.add_subplot(111)
+                                for item1 in range(len(DATAbysubstrate[-1][1])):
+                                    if DATAmppbysubstrate[item][1][item0]["Cellletter"]==DATAbysubstrate[-1][1][item1]["Cellletter"]:
+                                        ax.plot(DATAbysubstrate[-1][1][item1]["IVData"][0],[-a*b for a,b in zip(DATAbysubstrate[-1][1][item1]["IVData"][0],DATAbysubstrate[-1][1][item1]["IVData"][1])])
+                                ax.plot([abs(a) for a in DATAmppbysubstrate[item][1][item0]["MppData"][0]],DATAmppbysubstrate[item][1][item0]["MppData"][3])
+                                ax.set_xlabel('Voltage (mV)')
+                                ax.set_ylabel('Specific power (mW/cm$^2$)')
+                                ax.axhline(y=0, color='k')
+                                ax.axvline(x=0, color='k')
+                                ax.set_xlim(left=0)
+                                ax.set_ylim(bottom=0)
+                                fig.savefig(DATAmppbysubstrate[item][1][item0]["SampleName"]+'_specpower.png',dpi=300,bbox_inches="tight")
+                                plt.close("all")
+                                plt.clf()
+                            break
 #        except:
 #            print("there's an issue with creating JV graph files")     
-         
+        plt.close("all")
+        plt.clf()
         if DATAx[0]["Setup"]=="TFIV" or DATAx[0]["Setup"]=="SSIgorC215":
-            try:        
-                if self.AutoGraphs.get():
-                    #graph with all best efficient cells from all substrates
-                    fig=plt.figure()
-                    ax=fig.add_subplot(111)
-                    bestEffsorted = sorted(bestEff, key=itemgetter('Eff'), reverse=True) 
-                    tabledata=[]
-                    rowlabel=[]
-                    for item in range(len(bestEffsorted)):
-                        ax.plot(bestEffsorted[item]["IVData"][0],bestEffsorted[item]["IVData"][1], label=bestEffsorted[item]["SampleName"]) 
-                        rowlabel.append(bestEffsorted[item]["SampleName"])
-                        tabledata.append(['%.f' % float(bestEffsorted[item]["Voc"]),'%.2f' % float(bestEffsorted[item]["Jsc"]),'%.2f' % float(bestEffsorted[item]["FF"]),'%.2f' % float(bestEffsorted[item]["Eff"]),'%.2f' % float(bestEffsorted[item]["Roc"]),'%.2f' % float(bestEffsorted[item]["Rsc"]),'%.2f' % float(bestEffsorted[item]["Vstart"]),'%.2f' % float(bestEffsorted[item]["Vend"]),'%.2f' % float(bestEffsorted[item]["CellSurface"])])
-                    ax.set_xlabel('Voltage (mV)')
-                    ax.set_ylabel('Current density (mA/cm'+'\xb2'+')')
-                    ax.axhline(y=0, color='k')
-                    ax.axvline(x=0, color='k')
-                    x1=min(bestEffsorted[item]["IVData"][0])
-                    x2=max(bestEffsorted[item]["IVData"][0])
-                    y1=1.3*min(bestEffsorted[item]["IVData"][1])
-                    if max(bestEffsorted[item]["IVData"][1])>10:
-                        y2=10
-                    else:
-                        y2=max(bestEffsorted[item]["IVData"][1])
-                    ax.axis([x1,x2,y1,y2])
-                    handles, labels = ax.get_legend_handles_labels()
-                    lgd = ax.legend(handles, labels, loc='center left', bbox_to_anchor=(1, 0.5))
-                    fig.savefig(batchname+'_MostEfficientCells.png',dpi=300, bbox_extra_artists=(lgd,),bbox_inches="tight")
-                    plt.close()
-                    collabel=("Voc","Jsc","FF","Eff","Roc","Rsc","Vstart","Vend","CellSurface")
-                    nrows, ncols = len(bestEffsorted)+1, len(collabel)
-                    hcell, wcell = 0.3, 1.
-                    hpad, wpad = 0, 0 
-                    fig=plt.figure(figsize=(ncols*wcell+wpad, nrows*hcell+hpad))
-                    ax = fig.add_subplot(111)
-                    rowlabel=tuple(rowlabel)
-                    the_table = ax.table(cellText=tabledata,colLabels=collabel,rowLabels=rowlabel,loc='center')
-                    the_table.set_fontsize(18)
-                    ax.axis('off')
-                    fig.savefig('MostEfficientCellstable.png',dpi=300,bbox_inches="tight")
-                    plt.close("all")
-                    images = list(map(ImageTk.open, [batchname+'_MostEfficientCells.png','MostEfficientCellstable.png']))
-                    widths, heights = zip(*(i.size for i in images))
-                    total_width = max(widths)
-                    max_height = sum(heights)
-                    new_im = ImageTk.new('RGB', (total_width, max_height), (255, 255, 255))
-                    new_im.paste(im=images[0],box=(0,0))
-                    new_im.paste(im=images[1],box=(0,heights[0]))
-                    new_im.save(batchname+'_MostEfficientCells.png')
-                    os.remove('MostEfficientCellstable.png')
-                    plt.close()
-                    #graph with all best voc*FF cells from all substrates  
-                    fig=plt.figure()
-                    ax=fig.add_subplot(111)
-                    bestvocffsorted = sorted(bestvocff, key=itemgetter('VocFF'), reverse=True) 
-                    tabledata=[]
-                    rowlabel=[]
-                    for item in range(len(bestEffsorted)):
-                        ax.plot(bestvocffsorted[item]["IVData"][0],bestvocffsorted[item]["IVData"][1], label=bestvocffsorted[item]["SampleName"]) 
-                        rowlabel.append(bestvocffsorted[item]["SampleName"])
-                        tabledata.append(['%.f' % float(bestvocffsorted[item]["Voc"]),'%.2f' % float(bestvocffsorted[item]["Jsc"]),'%.2f' % float(bestvocffsorted[item]["FF"]),'%.2f' % float(bestvocffsorted[item]["Eff"]),'%.2f' % float(bestvocffsorted[item]["Roc"]),'%.2f' % float(bestvocffsorted[item]["Rsc"]),'%.2f' % float(bestvocffsorted[item]["Vstart"]),'%.2f' % float(bestvocffsorted[item]["Vend"]),'%.2f' % float(bestvocffsorted[item]["CellSurface"])])
-                    ax.set_xlabel('Voltage (mV)')
-                    ax.set_ylabel('Current density (mA/cm'+'\xb2'+')')
-                    ax.axhline(y=0, color='k')
-                    ax.axvline(x=0, color='k')
-                    x1=min(bestvocffsorted[item]["IVData"][0])
-                    x2=max(bestvocffsorted[item]["IVData"][0])
-                    y1=1.3*min(bestvocffsorted[item]["IVData"][1])
-                    if max(bestvocffsorted[item]["IVData"][1])>10:
-                        y2=10
-                    else:
-                        y2=max(bestvocffsorted[item]["IVData"][1])
-                    ax.axis([x1,x2,y1,y2])
-                    handles, labels = ax.get_legend_handles_labels()
-                    lgd = ax.legend(handles, labels, loc='center left', bbox_to_anchor=(1, 0.5))
-                    fig.savefig(batchname+'_bestvocff.png',dpi=300, bbox_extra_artists=(lgd,),bbox_inches="tight")
-                    plt.close(fig)
-                    collabel=("Voc","Jsc","FF","Eff","Roc","Rsc","Vstart","Vend","CellSurface")
-                    nrows, ncols = len(bestvocffsorted)+1, len(collabel)
-                    hcell, wcell = 0.3, 1.
-                    hpad, wpad = 0, 0 
-                    fig=plt.figure(figsize=(ncols*wcell+wpad, nrows*hcell+hpad))
-                    ax = fig.add_subplot(111)
-                    rowlabel=tuple(rowlabel)
-                    the_table = ax.table(cellText=tabledata,colLabels=collabel,rowLabels=rowlabel,loc='center')
-                    the_table.set_fontsize(18)
-                    ax.axis('off')
-                    fig.savefig('bestvocfftable.png',dpi=300,bbox_inches="tight")
-                    plt.close(fig)
-                    images = list(map(ImageTk.open, [batchname+'_bestvocff.png','bestvocfftable.png']))
-                    widths, heights = zip(*(i.size for i in images))
-                    total_width = max(widths)
-                    max_height = sum(heights)
-                    new_im = ImageTk.new('RGB', (total_width, max_height), (255, 255, 255))
-                    new_im.paste(im=images[0],box=(0,0))
-                    new_im.paste(im=images[1],box=(0,heights[0]))
-                    new_im.save(batchname+'_bestvocff.png')
-                    os.remove('bestvocfftable.png')
-            except:
-                print("there's an issue with creating Bestof graphs")
-            
-            
+#            try:        
+            if self.statGraphs.get():
+                #graph with all best efficient cells from all substrates
+                fig=plt.figure()
+                ax=fig.add_subplot(111)
+                bestEffsorted = sorted(bestEff, key=itemgetter('Eff'), reverse=True) 
+                tabledata=[]
+                rowlabel=[]
+                for item in range(len(bestEffsorted)):
+                    ax.plot(bestEffsorted[item]["IVData"][0],bestEffsorted[item]["IVData"][1], label=bestEffsorted[item]["SampleName"]) 
+                    rowlabel.append(bestEffsorted[item]["SampleName"])
+                    tabledata.append(['%.f' % float(bestEffsorted[item]["Voc"]),'%.2f' % float(bestEffsorted[item]["Jsc"]),'%.2f' % float(bestEffsorted[item]["FF"]),'%.2f' % float(bestEffsorted[item]["Eff"]),'%.2f' % float(bestEffsorted[item]["Roc"]),'%.2f' % float(bestEffsorted[item]["Rsc"]),'%.2f' % float(bestEffsorted[item]["Vstart"]),'%.2f' % float(bestEffsorted[item]["Vend"]),'%.2f' % float(bestEffsorted[item]["CellSurface"])])
+                ax.set_xlabel('Voltage (mV)')
+                ax.set_ylabel('Current density (mA/cm'+'\xb2'+')')
+                ax.axhline(y=0, color='k')
+                ax.axvline(x=0, color='k')
+                x1=min(bestEffsorted[0]["IVData"][0])
+                x2=max(bestEffsorted[0]["IVData"][0])
+                y1=1.3*min(bestEffsorted[0]["IVData"][1])
+                if max(bestEffsorted[0]["IVData"][1])>10:
+                    y2=10
+                else:
+                    y2=max(bestEffsorted[item]["IVData"][1])
+                ax.axis([x1,x2,y1,y2])
+                handles, labels = ax.get_legend_handles_labels()
+                lgd = ax.legend(handles, labels, loc='center left', bbox_to_anchor=(1, 0.5))
+                fig.savefig(batchname+'_MostEfficientCells.png',dpi=300, bbox_extra_artists=(lgd,),bbox_inches="tight")
+                plt.close()
+                collabel=("Voc","Jsc","FF","Eff","Roc","Rsc","Vstart","Vend","CellSurface")
+                nrows, ncols = len(bestEffsorted)+1, len(collabel)
+                hcell, wcell = 0.3, 1.
+                hpad, wpad = 0, 0 
+                fig=plt.figure(figsize=(ncols*wcell+wpad, nrows*hcell+hpad))
+                ax = fig.add_subplot(111)
+                rowlabel=tuple(rowlabel)
+                the_table = ax.table(cellText=tabledata,colLabels=collabel,rowLabels=rowlabel,loc='center')
+                the_table.set_fontsize(18)
+                ax.axis('off')
+                fig.savefig('MostEfficientCellstable.png',dpi=300,bbox_inches="tight")
+                plt.close("all")
+                images = list(map(ImageTk.open, [batchname+'_MostEfficientCells.png','MostEfficientCellstable.png']))
+                widths, heights = zip(*(i.size for i in images))
+                total_width = max(widths)
+                max_height = sum(heights)
+                new_im = ImageTk.new('RGB', (total_width, max_height), (255, 255, 255))
+                new_im.paste(im=images[0],box=(0,0))
+                new_im.paste(im=images[1],box=(0,heights[0]))
+                new_im.save(batchname+'_MostEfficientCells.png')
+                os.remove('MostEfficientCellstable.png')
+                plt.close()
+                plt.clf()
+                #graph with all best voc*FF cells from all substrates  
+                fig=plt.figure()
+                ax=fig.add_subplot(111)
+                bestvocffsorted = sorted(bestvocff, key=itemgetter('VocFF'), reverse=True) 
+                tabledata=[]
+                rowlabel=[]
+                for item in range(len(bestEffsorted)):
+                    ax.plot(bestvocffsorted[item]["IVData"][0],bestvocffsorted[item]["IVData"][1], label=bestvocffsorted[item]["SampleName"]) 
+                    rowlabel.append(bestvocffsorted[item]["SampleName"])
+                    tabledata.append(['%.f' % float(bestvocffsorted[item]["Voc"]),'%.2f' % float(bestvocffsorted[item]["Jsc"]),'%.2f' % float(bestvocffsorted[item]["FF"]),'%.2f' % float(bestvocffsorted[item]["Eff"]),'%.2f' % float(bestvocffsorted[item]["Roc"]),'%.2f' % float(bestvocffsorted[item]["Rsc"]),'%.2f' % float(bestvocffsorted[item]["Vstart"]),'%.2f' % float(bestvocffsorted[item]["Vend"]),'%.2f' % float(bestvocffsorted[item]["CellSurface"])])
+                ax.set_xlabel('Voltage (mV)')
+                ax.set_ylabel('Current density (mA/cm'+'\xb2'+')')
+                ax.axhline(y=0, color='k')
+                ax.axvline(x=0, color='k')
+                x1=min(bestvocffsorted[0]["IVData"][0])
+                x2=max(bestvocffsorted[0]["IVData"][0])
+                y1=1.3*min(bestvocffsorted[0]["IVData"][1])
+                if max(bestvocffsorted[0]["IVData"][1])>10:
+                    y2=10
+                else:
+                    y2=max(bestvocffsorted[0]["IVData"][1])
+                ax.axis([x1,x2,y1,y2])
+                handles, labels = ax.get_legend_handles_labels()
+                lgd = ax.legend(handles, labels, loc='center left', bbox_to_anchor=(1, 0.5))
+                fig.savefig(batchname+'_bestvocff.png',dpi=300, bbox_extra_artists=(lgd,),bbox_inches="tight")
+                plt.close(fig)
+                plt.clf()
+                collabel=("Voc","Jsc","FF","Eff","Roc","Rsc","Vstart","Vend","CellSurface")
+                nrows, ncols = len(bestvocffsorted)+1, len(collabel)
+                hcell, wcell = 0.3, 1.
+                hpad, wpad = 0, 0 
+                fig=plt.figure(figsize=(ncols*wcell+wpad, nrows*hcell+hpad))
+                ax = fig.add_subplot(111)
+                rowlabel=tuple(rowlabel)
+                the_table = ax.table(cellText=tabledata,colLabels=collabel,rowLabels=rowlabel,loc='center')
+                the_table.set_fontsize(18)
+                ax.axis('off')
+                fig.savefig('bestvocfftable.png',dpi=300,bbox_inches="tight")
+                plt.close(fig)
+                plt.clf()
+                images = list(map(ImageTk.open, [batchname+'_bestvocff.png','bestvocfftable.png']))
+                widths, heights = zip(*(i.size for i in images))
+                total_width = max(widths)
+                max_height = sum(heights)
+                new_im = ImageTk.new('RGB', (total_width, max_height), (255, 255, 255))
+                new_im.paste(im=images[0],box=(0,0))
+                new_im.paste(im=images[1],box=(0,heights[0]))
+                new_im.save(batchname+'_bestvocff.png')
+                os.remove('bestvocfftable.png')
+                plt.close("all")
+                plt.clf()
+#            except:
+#                print("there's an issue with creating Bestof graphs")
+        plt.clf()    
+        plt.close("all")    
         if len(samplesgroups)>1:            
             grouplistdict=[]
             for item in range(len(samplesgroups)):
@@ -2995,16 +3035,17 @@ class IVApp(Toplevel):
                 
                 grouplistdict.append(groupdict)
         
-            
+        plt.close("all")  
+        plt.clf()
         #excel summary file with all data: tabs (rawdataLight, rawdatadark, besteff, bestvocff, pmpp, fixedvoltage)
-        try:
-            if self.CheckXlsxSum.get():   
-                workbook = xlsxwriter.Workbook(batchname+'_Summary.xlsx')
-                
-                LandD=DATAx + DATAdark
-                timeLandD =sorted(LandD, key=itemgetter('MeasDayTime')) 
-                
-                if len(samplesgroups)>1:
+        if self.CheckXlsxSum.get():   
+            workbook = xlsxwriter.Workbook(batchname+'_Summary.xlsx')
+            
+            LandD=DATAx + DATAdark
+            timeLandD =sorted(LandD, key=itemgetter('MeasDayTime')) 
+            
+            if len(samplesgroups)>1:
+                try:
                     worksheet = workbook.add_worksheet("GroupStat")
                     summary=[]
                     for item in range(len(samplesgroups)):
@@ -3027,8 +3068,11 @@ class IVApp(Toplevel):
                     for item in range(len(summary)):
                         for item0 in range(len(summary[item])):
                             worksheet.write(item,item0,summary[item][item0])
-            
-                if timeLandD!=[]:
+                except:
+                    print("exception: excel summary - groupstat")
+        
+            if timeLandD!=[]:
+                try:
                     worksheet = workbook.add_worksheet("AllJVrawdata")
                     summary=[]
                     for item in range(len(timeLandD)):
@@ -3038,8 +3082,11 @@ class IVApp(Toplevel):
                     for item in range(len(summary)):
                         for item0 in range(len(summary[item])):
                             worksheet.write(item,item0,summary[item][item0])
-                
-                if DATAx!=[]:
+                except:
+                    print("exception: excel summary - AllJVrawdata")
+            
+            if DATAx!=[]:
+                try:
                     worksheet = workbook.add_worksheet("rawdataLight")
                     summary=[]
                     for item in range(len(DATAx)):
@@ -3060,7 +3107,8 @@ class IVApp(Toplevel):
                     for item in range(len(summary)):
                         for item0 in range(len(summary[item])):
                             worksheet.write(item,item0,summary[item][item0])
-                
+                except:
+                    print("exception: excel summary - rawdataLight")
 #                if DATAdark!=[]:
 #                    worksheet = workbook.add_worksheet("rawdatadark")
 #                    summary=[]
@@ -3071,9 +3119,10 @@ class IVApp(Toplevel):
 #                    for item in range(len(summary)):
 #                        for item0 in range(len(summary[item])):
 #                            worksheet.write(item,item0,summary[item][item0])
-                            
-                sorted_bestEff= sorted(bestEff, key=itemgetter('Eff'), reverse=True) 
-                if sorted_bestEff!=[]:        
+                        
+            sorted_bestEff= sorted(bestEff, key=itemgetter('Eff'), reverse=True) 
+            if sorted_bestEff!=[]:  
+                try:
                     worksheet = workbook.add_worksheet("besteff")
                     summary=[]
                     for item in range(len(sorted_bestEff)):
@@ -3083,8 +3132,11 @@ class IVApp(Toplevel):
                     for item in range(len(summary)):
                         for item0 in range(len(summary[item])):
                             worksheet.write(item,item0,summary[item][item0])
-                sorted_bestvocff= sorted(bestvocff, key=itemgetter('VocFF'), reverse=True) 
-                if sorted_bestvocff!=[]: 
+                except:
+                    print("exception: excel summary - besteff")
+            sorted_bestvocff= sorted(bestvocff, key=itemgetter('VocFF'), reverse=True) 
+            if sorted_bestvocff!=[]: 
+                try:
                     worksheet = workbook.add_worksheet("bestvocff")
                     summary=[]
                     for item in range(len(sorted_bestvocff)):
@@ -3094,8 +3146,11 @@ class IVApp(Toplevel):
                     for item in range(len(summary)):
                         for item0 in range(len(summary[item])):
                             worksheet.write(item,item0,summary[item][item0])
-                
-                if DATAMPP!=[]: 
+                except:
+                    print("exception: excel summary - bestvocff")
+            
+            if DATAMPP!=[]: 
+                try:
                     worksheet = workbook.add_worksheet("Pmpp")
                     summary=[]
                     for item in range(len(DATAMPP)):
@@ -3104,8 +3159,11 @@ class IVApp(Toplevel):
                     for item in range(len(summary)):
                         for item0 in range(len(summary[item])):
                             worksheet.write(item,item0,summary[item][item0])
-                
-                if DATAFV!=[]: 
+                except:
+                    print("exception: excel summary - Pmpp")
+            
+            if DATAFV!=[]: 
+                try:
                     worksheet = workbook.add_worksheet("fixedvoltage")
                     summary=[]
                     for item in range(len(DATAFV)):
@@ -3114,8 +3172,11 @@ class IVApp(Toplevel):
                     for item in range(len(summary)):
                         for item0 in range(len(summary[item])):
                             worksheet.write(item,item0,summary[item][item0])
-                        
-                if LandD!=[]:            
+                except:
+                    print("exception: excel summary - fixedvoltage")
+                    
+            if LandD!=[]:   
+                try:
                     sorted_dataall = sorted(LandD, key=itemgetter('DepID')) 
                     for key, group in groupby(sorted_dataall, key=lambda x:x['DepID']):
                         partdat=list(group)
@@ -3128,144 +3189,147 @@ class IVApp(Toplevel):
                         for item in range(len(summary)):
                             for item0 in range(len(summary[item])):
                                 worksheet.write(item,item0,summary[item][item0])
-                                
-                workbook.close()
-        except:
-            print("there's an issue with creating excel summary file")
+                except:
+                    print("exception: excel summary - LandD")
+                            
+            workbook.close()
             
-        
+        plt.close("all")
+        plt.clf()
         if DATAx[0]["Setup"]=="SSIgorC215":
-            fig = plt.figure()
-            Effsubfig = fig.add_subplot(224)
-            Vocsubfig = fig.add_subplot(221)
-            Jscsubfig = fig.add_subplot(222)
-            FFsubfig = fig.add_subplot(223)
-            
-            
-            eff=[[],[],[],[],[],[]]
-            for item in DATAx:
-                if item["Illumination"]=='Light':
-                    if item["Cellletter"]=="A":
-                        eff[0].append(item["Eff"])
-                    elif item["Cellletter"]=="B":
-                        eff[1].append(item["Eff"]) 
-                    elif item["Cellletter"]=="C":
-                        eff[2].append(item["Eff"]) 
-                    elif item["Cellletter"]=="D":
-                        eff[3].append(item["Eff"]) 
-                    elif item["Cellletter"]=="E":
-                        eff[4].append(item["Eff"]) 
-                    elif item["Cellletter"]=="F":
-                        eff[5].append(item["Eff"]) 
-            names=["A","B","C","D","E","F"]
-            for i in range(len(names)):
-                y=eff[i]
-                if len(y)>0:
-                    x=np.random.normal(i+1,0.04,size=len(y))
-                    Effsubfig.scatter(x,y,s=15,color='red', alpha=0.5)
-            span=range(1,len(names)+1)
-            Effsubfig.set_xticks(span)
-            Effsubfig.set_xticklabels(names)
-            Effsubfig.set_xlim([0.5,span[-1]+0.5])
-            Effsubfig.set_ylim([min([*eff[0],*eff[1],*eff[2],*eff[3],*eff[4],*eff[5]])-1,max([*eff[0],*eff[1],*eff[2],*eff[3],*eff[4],*eff[5]])+1])
-            Effsubfig.set_ylabel('Efficiency (%)')
-            
-            eff=[[],[],[],[],[],[]]
-            for item in DATAx:
-                if item["Illumination"]=='Light':
-                    if item["Cellletter"]=="A":
-                        eff[0].append(item["Voc"])
-                    elif item["Cellletter"]=="B":
-                        eff[1].append(item["Voc"]) 
-                    elif item["Cellletter"]=="C":
-                        eff[2].append(item["Voc"]) 
-                    elif item["Cellletter"]=="D":
-                        eff[3].append(item["Voc"]) 
-                    elif item["Cellletter"]=="E":
-                        eff[4].append(item["Voc"]) 
-                    elif item["Cellletter"]=="F":
-                        eff[5].append(item["Voc"]) 
-#            names=["A","B","C","D","E","F"]
-            for i in range(len(names)):
-                y=eff[i]
-                if len(y)>0:
-                    x=np.random.normal(i+1,0.04,size=len(y))
-                    Vocsubfig.scatter(x,y,s=15,color='red', alpha=0.5)
-            span=range(1,len(names)+1)
-            Vocsubfig.set_xticks(span)
-            Vocsubfig.set_xticklabels(names)
-            Vocsubfig.set_xlim([0.5,span[-1]+0.5])
-            Vocsubfig.set_ylim([min([*eff[0],*eff[1],*eff[2],*eff[3],*eff[4],*eff[5]])-5,max([*eff[0],*eff[1],*eff[2],*eff[3],*eff[4],*eff[5]])+5])
-            Vocsubfig.set_ylabel('Voc (mV)')
-            
-            eff=[[],[],[],[],[],[]]
-            for item in DATAx:
-                if item["Illumination"]=='Light':
-                    if item["Cellletter"]=="A":
-                        eff[0].append(item["Jsc"])
-                    elif item["Cellletter"]=="B":
-                        eff[1].append(item["Jsc"]) 
-                    elif item["Cellletter"]=="C":
-                        eff[2].append(item["Jsc"]) 
-                    elif item["Cellletter"]=="D":
-                        eff[3].append(item["Jsc"]) 
-                    elif item["Cellletter"]=="E":
-                        eff[4].append(item["Jsc"]) 
-                    elif item["Cellletter"]=="F":
-                        eff[5].append(item["Jsc"]) 
-#            names=["A","B","C","D","E","F"]
-            for i in range(len(names)):
-                y=eff[i]
-                if len(y)>0:
-                    x=np.random.normal(i+1,0.04,size=len(y))
-                    Jscsubfig.scatter(x,y,s=15,color='red', alpha=0.5)
-            span=range(1,len(names)+1)
-            Jscsubfig.set_xticks(span)
-            Jscsubfig.set_xticklabels(names)
-            Jscsubfig.set_xlim([0.5,span[-1]+0.5])
-            Jscsubfig.set_ylim([min([*eff[0],*eff[1],*eff[2],*eff[3],*eff[4],*eff[5]])-5,max([*eff[0],*eff[1],*eff[2],*eff[3],*eff[4],*eff[5]])+5])
-            Jscsubfig.set_ylabel('Jsc (mA/cm'+'\xb2'+')')
-            
-            eff=[[],[],[],[],[],[]]
-            for item in DATAx:
-                if item["Illumination"]=='Light':
-                    if item["Cellletter"]=="A":
-                        eff[0].append(item["FF"])
-                    elif item["Cellletter"]=="B":
-                        eff[1].append(item["FF"]) 
-                    elif item["Cellletter"]=="C":
-                        eff[2].append(item["FF"]) 
-                    elif item["Cellletter"]=="D":
-                        eff[3].append(item["FF"]) 
-                    elif item["Cellletter"]=="E":
-                        eff[4].append(item["FF"]) 
-                    elif item["Cellletter"]=="F":
-                        eff[5].append(item["FF"]) 
-#            names=["A","B","C","D","E","F"]
-            for i in range(len(names)):
-                y=eff[i]
-                if len(y)>0:
-                    x=np.random.normal(i+1,0.04,size=len(y))
-                    FFsubfig.scatter(x,y,s=15,color='red', alpha=0.5)
-            span=range(1,len(names)+1)
-            FFsubfig.set_xticks(span)
-            FFsubfig.set_xticklabels(names)
-            FFsubfig.set_xlim([0.5,span[-1]+0.5])
-            FFsubfig.set_ylim([min([*eff[0],*eff[1],*eff[2],*eff[3],*eff[4],*eff[5]])-5,max([*eff[0],*eff[1],*eff[2],*eff[3],*eff[4],*eff[5]])+5])
-            FFsubfig.set_ylabel('FF (%)')
-            
-            
-            fig.subplots_adjust(wspace=.25)
-            fig.savefig(batchname+'_StatCells.png',dpi=300,bbox_inches="tight")
-            
-            plt.close("all")
-            
-        try:
-            #stat graphs
-            if self.AutoGraphs.get():
-                #group
-                plt.close("all")
+            if self.statGraphs.get():
+                fig = plt.figure()
+                Effsubfig = fig.add_subplot(224)
+                Vocsubfig = fig.add_subplot(221)
+                Jscsubfig = fig.add_subplot(222)
+                FFsubfig = fig.add_subplot(223)
                 
+                
+                eff=[[],[],[],[],[],[]]
+                for item in DATAx:
+                    if item["Illumination"]=='Light':
+                        if item["Cellletter"]=="A":
+                            eff[0].append(item["Eff"])
+                        elif item["Cellletter"]=="B":
+                            eff[1].append(item["Eff"]) 
+                        elif item["Cellletter"]=="C":
+                            eff[2].append(item["Eff"]) 
+                        elif item["Cellletter"]=="D":
+                            eff[3].append(item["Eff"]) 
+                        elif item["Cellletter"]=="E":
+                            eff[4].append(item["Eff"]) 
+                        elif item["Cellletter"]=="F":
+                            eff[5].append(item["Eff"]) 
+                names=["A","B","C","D","E","F"]
+                for i in range(len(names)):
+                    y=eff[i]
+                    if len(y)>0:
+                        x=np.random.normal(i+1,0.04,size=len(y))
+                        Effsubfig.scatter(x,y,s=15,color='red', alpha=0.5)
+                span=range(1,len(names)+1)
+                Effsubfig.set_xticks(span)
+                Effsubfig.set_xticklabels(names)
+                Effsubfig.set_xlim([0.5,span[-1]+0.5])
+                Effsubfig.set_ylim([min([*eff[0],*eff[1],*eff[2],*eff[3],*eff[4],*eff[5]])-1,max([*eff[0],*eff[1],*eff[2],*eff[3],*eff[4],*eff[5]])+1])
+                Effsubfig.set_ylabel('Efficiency (%)')
+                
+                eff=[[],[],[],[],[],[]]
+                for item in DATAx:
+                    if item["Illumination"]=='Light':
+                        if item["Cellletter"]=="A":
+                            eff[0].append(item["Voc"])
+                        elif item["Cellletter"]=="B":
+                            eff[1].append(item["Voc"]) 
+                        elif item["Cellletter"]=="C":
+                            eff[2].append(item["Voc"]) 
+                        elif item["Cellletter"]=="D":
+                            eff[3].append(item["Voc"]) 
+                        elif item["Cellletter"]=="E":
+                            eff[4].append(item["Voc"]) 
+                        elif item["Cellletter"]=="F":
+                            eff[5].append(item["Voc"]) 
+    #            names=["A","B","C","D","E","F"]
+                for i in range(len(names)):
+                    y=eff[i]
+                    if len(y)>0:
+                        x=np.random.normal(i+1,0.04,size=len(y))
+                        Vocsubfig.scatter(x,y,s=15,color='red', alpha=0.5)
+                span=range(1,len(names)+1)
+                Vocsubfig.set_xticks(span)
+                Vocsubfig.set_xticklabels(names)
+                Vocsubfig.set_xlim([0.5,span[-1]+0.5])
+                Vocsubfig.set_ylim([min([*eff[0],*eff[1],*eff[2],*eff[3],*eff[4],*eff[5]])-5,max([*eff[0],*eff[1],*eff[2],*eff[3],*eff[4],*eff[5]])+5])
+                Vocsubfig.set_ylabel('Voc (mV)')
+                
+                eff=[[],[],[],[],[],[]]
+                for item in DATAx:
+                    if item["Illumination"]=='Light':
+                        if item["Cellletter"]=="A":
+                            eff[0].append(item["Jsc"])
+                        elif item["Cellletter"]=="B":
+                            eff[1].append(item["Jsc"]) 
+                        elif item["Cellletter"]=="C":
+                            eff[2].append(item["Jsc"]) 
+                        elif item["Cellletter"]=="D":
+                            eff[3].append(item["Jsc"]) 
+                        elif item["Cellletter"]=="E":
+                            eff[4].append(item["Jsc"]) 
+                        elif item["Cellletter"]=="F":
+                            eff[5].append(item["Jsc"]) 
+    #            names=["A","B","C","D","E","F"]
+                for i in range(len(names)):
+                    y=eff[i]
+                    if len(y)>0:
+                        x=np.random.normal(i+1,0.04,size=len(y))
+                        Jscsubfig.scatter(x,y,s=15,color='red', alpha=0.5)
+                span=range(1,len(names)+1)
+                Jscsubfig.set_xticks(span)
+                Jscsubfig.set_xticklabels(names)
+                Jscsubfig.set_xlim([0.5,span[-1]+0.5])
+                Jscsubfig.set_ylim([min([*eff[0],*eff[1],*eff[2],*eff[3],*eff[4],*eff[5]])-5,max([*eff[0],*eff[1],*eff[2],*eff[3],*eff[4],*eff[5]])+5])
+                Jscsubfig.set_ylabel('Jsc (mA/cm'+'\xb2'+')')
+                
+                eff=[[],[],[],[],[],[]]
+                for item in DATAx:
+                    if item["Illumination"]=='Light':
+                        if item["Cellletter"]=="A":
+                            eff[0].append(item["FF"])
+                        elif item["Cellletter"]=="B":
+                            eff[1].append(item["FF"]) 
+                        elif item["Cellletter"]=="C":
+                            eff[2].append(item["FF"]) 
+                        elif item["Cellletter"]=="D":
+                            eff[3].append(item["FF"]) 
+                        elif item["Cellletter"]=="E":
+                            eff[4].append(item["FF"]) 
+                        elif item["Cellletter"]=="F":
+                            eff[5].append(item["FF"]) 
+    #            names=["A","B","C","D","E","F"]
+                for i in range(len(names)):
+                    y=eff[i]
+                    if len(y)>0:
+                        x=np.random.normal(i+1,0.04,size=len(y))
+                        FFsubfig.scatter(x,y,s=15,color='red', alpha=0.5)
+                span=range(1,len(names)+1)
+                FFsubfig.set_xticks(span)
+                FFsubfig.set_xticklabels(names)
+                FFsubfig.set_xlim([0.5,span[-1]+0.5])
+                FFsubfig.set_ylim([min([*eff[0],*eff[1],*eff[2],*eff[3],*eff[4],*eff[5]])-5,max([*eff[0],*eff[1],*eff[2],*eff[3],*eff[4],*eff[5]])+5])
+                FFsubfig.set_ylabel('FF (%)')
+                
+                
+                fig.subplots_adjust(wspace=.25)
+                fig.savefig(batchname+'_StatCells.png',dpi=300,bbox_inches="tight")
+                
+                plt.close("all")
+                plt.clf()
+            
+        #stat graphs
+        if self.statGraphs.get():
+            #group
+            try:
+                plt.close("all")
+                plt.clf()
                 if len(samplesgroups)>1:
                     fig = plt.figure()
                     Effsubfig = fig.add_subplot(224) 
@@ -3447,11 +3511,13 @@ class IVApp(Toplevel):
                     
                     
                     plt.close("all")
-                
-                
-                #time
-                if DATAx[0]["Setup"]=="TFIV" or DATAx[0]["Setup"]=='SSIgorC215':
-                    
+                plt.clf()
+            except:
+                print("Exception: statgraphs - group")
+            
+            #time
+            if DATAx[0]["Setup"]=="TFIV" or DATAx[0]["Setup"]=='SSIgorC215':
+                try: 
                     if DATAx[0]["Setup"]=="TFIV":
                         time=[float(i["MeasDayTime"].split()[1].split(':')[0])+ float(i["MeasDayTime"].split()[1].split(':')[1])/60 + float(i["MeasDayTime"].split()[1].split(':')[2])/3600 for i in DATAx]
                     elif DATAx[0]["Setup"]=='SSIgorC215':
@@ -3509,10 +3575,12 @@ class IVApp(Toplevel):
                     fig.subplots_adjust(wspace=.25)
                     fig.savefig(batchname+'_StatTimegraph.png',dpi=300,bbox_inches="tight")
                     plt.close("all")
-                
-                
-                #Resistances
-                
+                except:
+                    print("Exception: statgraph - time")
+            plt.clf()
+            
+            #Resistances
+            try:
                 Rsclist=[float(i["Rsc"]) for i in DATAx]
                 Roclist=[float(i["Roc"]) for i in DATAx]
                 Voct=[i["Voc"] for i in DATAx]
@@ -3624,305 +3692,304 @@ class IVApp(Toplevel):
                 fig.subplots_adjust(wspace=.3)
                 fig.savefig(batchname+'_StatRocgraph.png',dpi=300,bbox_inches="tight")
                 plt.close("all")
-                
-                
-                #stat graph with diff colors for ABC and Forw Rev, by substrate
-                #get substrate number without run number
-                if DATAx[0]["Setup"]=="TFIV" or DATAx[0]["Setup"]=='SSIgorC215':
-                    try:
-                        fig = plt.figure()
-                        
-                        VocAFy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        VocAFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        
-                        VocBFy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        VocBFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        
-                        VocCFy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        VocCFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        
-                        VocDFy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='D' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        VocDFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='D' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        
-                        VocEFy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='E' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        VocEFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='E' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        
-                        VocFFy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='F' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        VocFFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='F' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        
-                        VocARy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        VocARx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        
-                        VocBRy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        VocBRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        
-                        VocCRy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        VocCRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        
-                        VocDRy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='D' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        VocDRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='D' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        
-                        VocERy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='E' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        VocERx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='E' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        
-                        VocFRy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='F' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        VocFRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='F' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        
-                        Vocsubfig = fig.add_subplot(221) 
-                        Vocsubfig.scatter(VocAFx, VocAFy, s=5, facecolors='none', edgecolors='r', lw=0.5)
-                        Vocsubfig.scatter(VocBFx, VocBFy, s=5, facecolors='none', edgecolors='g', lw=0.5)
-                        Vocsubfig.scatter(VocCFx, VocCFy, s=5, facecolors='none', edgecolors='b', lw=0.5)
-                        Vocsubfig.scatter(VocARx, VocARy, s=5, edgecolors='r', lw=0.5)
-                        Vocsubfig.scatter(VocBRx, VocBRy, s=5, edgecolors='g', lw=0.5)
-                        Vocsubfig.scatter(VocCRx, VocCRy, s=5, edgecolors='b', lw=0.5)
-                        Vocsubfig.scatter(VocDFx, VocDFy, s=5, facecolors='none', edgecolors='c', lw=0.5)
-                        Vocsubfig.scatter(VocEFx, VocEFy, s=5, facecolors='none', edgecolors='m', lw=0.5)
-                        Vocsubfig.scatter(VocFFx, VocFFy, s=5, facecolors='none', edgecolors='k', lw=0.5)
-                        Vocsubfig.scatter(VocDRx, VocDRy, s=5, edgecolors='c', lw=0.5)
-                        Vocsubfig.scatter(VocERx, VocERy, s=5, edgecolors='m', lw=0.5)
-                        Vocsubfig.scatter(VocFRx, VocFRy, s=5, edgecolors='k', lw=0.5)
-                        
-    #                    Vocsubfig.scatter(VocSFx, VocSFy, s=5, facecolors='none', edgecolors='k', lw=0.5)
-    #                    Vocsubfig.scatter(VocSRx, VocSRy, s=5, edgecolors='k', lw=0.5)
-                        Vocsubfig.set_ylabel('Voc (mV)')
-                        Vocsubfig.set_xlabel("Sample #")
-                        for item in ([Vocsubfig.title, Vocsubfig.xaxis.label, Vocsubfig.yaxis.label] + Vocsubfig.get_xticklabels() + Vocsubfig.get_yticklabels()):
-                            item.set_fontsize(4)
-                        Vocsubfig.set_ylim(bottom=0)
-                        Vocsubfig.xaxis.set_major_locator(MaxNLocator(integer=True))
-                        
-                        Vocsubfig.set_xticks(np.arange(float(min(VocAFx+VocBFx+VocCFx+VocARx+VocBRx+VocCRx+VocDFx+VocEFx+VocFFx+VocDRx+VocERx+VocFRx))-0.5,float(max(VocAFx+VocBFx+VocCFx+VocARx+VocBRx+VocCRx+VocDFx+VocEFx+VocFFx+VocDRx+VocERx+VocFRx))+0.5,1), minor=True)
-                        #Vocsubfig.set_xticks(np.arange(float(min(VocAFx))-0.5,float(max(VocAFx))+0.5,1), minor=True)
-                        Vocsubfig.xaxis.grid(False, which='major')
-                        Vocsubfig.xaxis.grid(True, which='minor', color='k', linestyle='-', alpha=0.2)
-                        
-                        Vocsubfig.axis([float(min(VocAFx+VocBFx+VocCFx+VocARx+VocBRx+VocCRx+VocDFx+VocEFx+VocFFx+VocDRx+VocERx+VocFRx))-0.5,float(max(VocAFx+VocBFx+VocCFx+VocARx+VocBRx+VocCRx+VocDFx+VocEFx+VocFFx+VocDRx+VocERx+VocFRx))+0.5,0.5*float(min(VocAFy+VocBFy+VocCFy+VocARy+VocBRy+VocCRy+VocDFy+VocEFy+VocFFy+VocDRy+VocERy+VocFRy)),1.1*float(max(VocAFy+VocBFy+VocCFy+VocARy+VocBRy+VocCRy+VocDFy+VocEFy+VocFFy+VocDRy+VocERy+VocFRy))])
-                        for axis in ['top','bottom','left','right']:
-                          Vocsubfig.spines[axis].set_linewidth(0.5)
-                        Vocsubfig.tick_params(axis='x', which='both',bottom='off', top='off')
-                        
-                        
-                        
-                        JscAFy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        JscAFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        
-                        JscBFy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        JscBFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        
-                        JscCFy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        JscCFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        
-                        JscARy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        JscARx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        
-                        JscBRy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        JscBRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        
-                        JscCRy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        JscCRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-    
-                        JscDFy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='D' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        JscDFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='D' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        
-                        JscEFy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='E' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        JscEFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='E' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        
-                        JscFFy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='F' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        JscFFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='F' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        
-                        JscDRy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='D' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        JscDRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='D' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        
-                        JscERy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='E' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        JscERx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='E' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        
-                        JscFRy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='F' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        JscFRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='F' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]                    
-                        
-                        Jscsubfig = fig.add_subplot(222) 
-                        Jscsubfig.scatter(JscAFx, JscAFy, s=5, facecolors='none', edgecolors='r', lw=0.5)
-                        Jscsubfig.scatter(JscBFx, JscBFy, s=5, facecolors='none', edgecolors='g', lw=0.5)
-                        Jscsubfig.scatter(JscCFx, JscCFy, s=5, facecolors='none', edgecolors='b', lw=0.5)
-                        Jscsubfig.scatter(JscARx, JscARy, s=5, edgecolors='r', lw=0.5)
-                        Jscsubfig.scatter(JscBRx, JscBRy, s=5, edgecolors='g', lw=0.5)
-                        Jscsubfig.scatter(JscCRx, JscCRy, s=5, edgecolors='b', lw=0.5)
-                        Jscsubfig.scatter(JscDFx, JscDFy, s=5, facecolors='none', edgecolors='c', lw=0.5)
-                        Jscsubfig.scatter(JscEFx, JscEFy, s=5, facecolors='none', edgecolors='m', lw=0.5)
-                        Jscsubfig.scatter(JscFFx, JscFFy, s=5, facecolors='none', edgecolors='k', lw=0.5)
-                        Jscsubfig.scatter(JscDRx, JscDRy, s=5, edgecolors='c', lw=0.5)
-                        Jscsubfig.scatter(JscERx, JscERy, s=5, edgecolors='m', lw=0.5)
-                        Jscsubfig.scatter(JscFRx, JscFRy, s=5, edgecolors='k', lw=0.5)
-                        
-                        Jscsubfig.set_ylabel('Jsc (mA/cm'+'\xb2'+')')
-                        Jscsubfig.set_xlabel("Sample #")
-                        for item in ([Jscsubfig.title, Jscsubfig.xaxis.label, Jscsubfig.yaxis.label] +
-                                     Jscsubfig.get_xticklabels() + Jscsubfig.get_yticklabels()):
-                            item.set_fontsize(4)
-                        Jscsubfig.set_ylim(bottom=0)
-                        Jscsubfig.xaxis.set_major_locator(MaxNLocator(integer=True))
-                        
-                        Jscsubfig.set_xticks(np.arange(float(min(JscAFx+JscBFx+JscCFx+JscARx+JscBRx+JscCRx+JscDFx+JscEFx+JscFFx+JscDRx+JscERx+JscFRx))-0.5,float(max(JscAFx+JscBFx+JscCFx+JscARx+JscBRx+JscCRx+JscDFx+JscEFx+JscFFx+JscDRx+JscERx+JscFRx))+0.5,1), minor=True)
-                        #Jscsubfig.set_xticks(np.arange(float(min(JscAFx))-0.5,float(max(JscAFx))+0.5,1), minor=True)
-                        Jscsubfig.xaxis.grid(False, which='major')
-                        Jscsubfig.xaxis.grid(True, which='minor', color='k', linestyle='-', alpha=0.2)
-                        
-                        Jscsubfig.axis([float(min(JscAFx+JscBFx+JscCFx+JscARx+JscBRx+JscCRx+JscDFx+JscEFx+JscFFx+JscDRx+JscERx+JscFRx))-0.5,float(max(JscAFx+JscBFx+JscCFx+JscARx+JscBRx+JscCRx+JscDFx+JscEFx+JscFFx+JscDRx+JscERx+JscFRx))+0.5,0.5*float(min(JscAFy+JscBFy+JscCFy+JscARy+JscBRy+JscCRy+JscDFy+JscEFy+JscFFy+JscDRy+JscERy+JscFRy)),1.1*float(max(JscAFy+JscBFy+JscCFy+JscARy+JscBRy+JscCRy+JscDFy+JscEFy+JscFFy+JscDRy+JscERy+JscFRy))])
-    #                    print([float(min(JscAFx+JscBFx+JscCFx+JscARx+JscBRx+JscCRx+JscDFx+JscEFx+JscFFx+JscDRx+JscERx+JscFRx))-0.5,float(max(JscAFx+JscBFx+JscCFx+JscARx+JscBRx+JscCRx+JscDFx+JscEFx+JscFFx+JscDRx+JscERx+JscFRx))+0.5,0.5*float(min(JscAFx+JscBFx+JscCFx+JscARx+JscBRx+JscCRx+JscDFx+JscEFx+JscFFx+JscDRx+JscERx+JscFRx)),1.1*float(max(JscAFx+JscBFx+JscCFx+JscARx+JscBRx+JscCRx+JscDFx+JscEFx+JscFFx+JscDRx+JscERx+JscFRx))])
-                        for axis in ['top','bottom','left','right']:
-                          Jscsubfig.spines[axis].set_linewidth(0.5)
-                        Jscsubfig.tick_params(axis='x', which='both',bottom='off', top='off')
-                        
-                        
-                        FFAFy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        FFAFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        
-                        FFBFy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        FFBFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        
-                        FFCFy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        FFCFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        
-                        FFARy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        FFARx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        
-                        FFBRy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        FFBRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        
-                        FFCRy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        FFCRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-    
-                        FFDFy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='D' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        FFDFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='D' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        
-                        FFEFy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='E' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        FFEFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='E' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        
-                        FFFFy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='F' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        FFFFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='F' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        
-                        FFDRy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='D' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        FFDRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='D' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        
-                        FFERy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='E' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        FFERx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='E' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        
-                        FFFRy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='F' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        FFFRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='F' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]                    
-                        
-                        FFsubfig = fig.add_subplot(223) 
-                        FFsubfig.scatter(FFAFx, FFAFy, s=5, facecolors='none', edgecolors='r', lw=0.5)
-                        FFsubfig.scatter(FFBFx, FFBFy, s=5, facecolors='none', edgecolors='g', lw=0.5)
-                        FFsubfig.scatter(FFCFx, FFCFy, s=5, facecolors='none', edgecolors='b', lw=0.5)
-                        FFsubfig.scatter(FFARx, FFARy, s=5, edgecolors='r', lw=0.5)
-                        FFsubfig.scatter(FFBRx, FFBRy, s=5, edgecolors='g', lw=0.5)
-                        FFsubfig.scatter(FFCRx, FFCRy, s=5, edgecolors='b', lw=0.5)
-                        FFsubfig.scatter(FFDFx, FFDFy, s=5, facecolors='none', edgecolors='c', lw=0.5)
-                        FFsubfig.scatter(FFEFx, FFEFy, s=5, facecolors='none', edgecolors='m', lw=0.5)
-                        FFsubfig.scatter(FFFFx, FFFFy, s=5, facecolors='none', edgecolors='k', lw=0.5)
-                        FFsubfig.scatter(FFDRx, FFDRy, s=5, edgecolors='c', lw=0.5)
-                        FFsubfig.scatter(FFERx, FFERy, s=5, edgecolors='m', lw=0.5)
-                        FFsubfig.scatter(FFFRx, FFFRy, s=5, edgecolors='k', lw=0.5)
-                        
-                        FFsubfig.set_ylabel('FF (%)')
-                        FFsubfig.set_xlabel("Sample #")
-                        for item in ([FFsubfig.title, FFsubfig.xaxis.label, FFsubfig.yaxis.label] +
-                                     FFsubfig.get_xticklabels() + FFsubfig.get_yticklabels()):
-                            item.set_fontsize(4)
-                        FFsubfig.set_ylim(bottom=0)
-                        FFsubfig.xaxis.set_major_locator(MaxNLocator(integer=True))
-                        
-                        FFsubfig.set_xticks(np.arange(float(min(FFAFx+FFBFx+FFCFx+FFARx+FFBRx+FFCRx+FFDFx+FFEFx+FFFFx+FFDRx+FFERx+FFFRx))-0.5,float(max(FFAFx+FFBFx+FFCFx+FFARx+FFBRx+FFCRx+FFDFx+FFEFx+FFFFx+FFDRx+FFERx+FFFRx))+0.5,1), minor=True)
-                        #FFsubfig.set_xticks(np.arange(float(min(FFAFx))-0.5,float(max(FFAFx))+0.5,1), minor=True)
-                        FFsubfig.xaxis.grid(False, which='major')
-                        FFsubfig.xaxis.grid(True, which='minor', color='k', linestyle='-', alpha=0.2)
-                        
-                        FFsubfig.axis([float(min(FFAFx+FFBFx+FFCFx+FFARx+FFBRx+FFCRx+FFDFx+FFEFx+FFFFx+FFDRx+FFERx+FFFRx))-0.5,float(max(FFAFx+FFBFx+FFCFx+FFARx+FFBRx+FFCRx+FFDFx+FFEFx+FFFFx+FFDRx+FFERx+FFFRx))+0.5,0.5*float(min(FFAFy+FFBFy+FFCFy+FFARy+FFBRy+FFCRy+FFDFy+FFEFy+FFFFy+FFDRy+FFERy+FFFRy)),1.1*float(max(FFAFy+FFBFy+FFCFy+FFARy+FFBRy+FFCRy+FFDFy+FFEFy+FFFFy+FFDRy+FFERy+FFFRy))])
-                        for axis in ['top','bottom','left','right']:
-                          FFsubfig.spines[axis].set_linewidth(0.5)
-                        FFsubfig.tick_params(axis='x', which='both',bottom='off', top='off')
-                        
-                        
-                        EffAFy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        EffAFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        
-                        EffBFy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        EffBFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        
-                        EffCFy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        EffCFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        
-                        EffARy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        EffARx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        
-                        EffBRy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        EffBRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        
-                        EffCRy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        EffCRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        
-                        EffDFy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='D' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        EffDFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='D' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        
-                        EffEFy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='E' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        EffEFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='E' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        
-                        EffFFy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='F' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        EffFFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='F' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
-                        
-                        EffDRy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='D' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        EffDRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='D' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        
-                        EffERy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='E' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        EffERx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='E' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        
-                        EffFRy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='F' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        EffFRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='F' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
-                        
-                        Effsubfig = fig.add_subplot(224) 
-                        Effsubfig.scatter(EffAFx, EffAFy, s=5, facecolors='none', edgecolors='r', lw=0.5)
-                        Effsubfig.scatter(EffBFx, EffBFy, s=5, facecolors='none', edgecolors='g', lw=0.5)
-                        Effsubfig.scatter(EffCFx, EffCFy, s=5, facecolors='none', edgecolors='b', lw=0.5)
-                        Effsubfig.scatter(EffARx, EffARy, s=5, edgecolors='r', lw=0.5)
-                        Effsubfig.scatter(EffBRx, EffBRy, s=5, edgecolors='g', lw=0.5)
-                        Effsubfig.scatter(EffCRx, EffCRy, s=5, edgecolors='b', lw=0.5)
-                        Effsubfig.scatter(EffDFx, EffDFy, s=5, facecolors='none', edgecolors='c', lw=0.5)
-                        Effsubfig.scatter(EffEFx, EffEFy, s=5, facecolors='none', edgecolors='m', lw=0.5)
-                        Effsubfig.scatter(EffFFx, EffFFy, s=5, facecolors='none', edgecolors='k', lw=0.5)
-                        Effsubfig.scatter(EffDRx, EffDRy, s=5, edgecolors='c', lw=0.5)
-                        Effsubfig.scatter(EffERx, EffERy, s=5, edgecolors='m', lw=0.5)
-                        Effsubfig.scatter(EffFRx, EffFRy, s=5, edgecolors='k', lw=0.5)
-                        Effsubfig.set_ylabel('Eff (%)')
-                        Effsubfig.set_xlabel("Sample #")
-                        for item in ([Effsubfig.title, Effsubfig.xaxis.label, Effsubfig.yaxis.label] +
-                                     Effsubfig.get_xticklabels() + Effsubfig.get_yticklabels()):
-                            item.set_fontsize(4)
-                        Effsubfig.set_ylim(bottom=0)
-                        Effsubfig.xaxis.set_major_locator(MaxNLocator(integer=True))
-                        
-                        Effsubfig.set_xticks(np.arange(float(min(EffAFx+EffBFx+EffCFx+EffARx+EffBRx+EffCRx+EffDFx+EffEFx+EffFFx+EffDRx+EffERx+EffFRx))-0.5,float(max(EffAFx+EffBFx+EffCFx+EffARx+EffBRx+EffCRx+EffDFx+EffEFx+EffFFx+EffDRx+EffERx+EffFRx))+0.5,1), minor=True)
-                        Effsubfig.xaxis.grid(False, which='major')
-                        Effsubfig.xaxis.grid(True, which='minor', color='k', linestyle='-', alpha=0.2)
-                        
-                        Effsubfig.axis([float(min(EffAFx+EffBFx+EffCFx+EffARx+EffBRx+EffCRx+EffDFx+EffEFx+EffFFx+EffDRx+EffERx+EffFRx))-0.5,float(max(EffAFx+EffBFx+EffCFx+EffARx+EffBRx+EffCRx+EffDFx+EffEFx+EffFFx+EffDRx+EffERx+EffFRx))+0.5,0.5*float(min(EffAFy+EffBFy+EffCFy+EffARy+EffBRy+EffCRy+EffDFy+EffEFy+EffFFy+EffDRy+EffERy+EffFRy)),1.1*float(max(EffAFy+EffBFy+EffCFy+EffARy+EffBRy+EffCRy+EffDFy+EffEFy+EffFFy+EffDRy+EffERy+EffFRy))])
-                        for axis in ['top','bottom','left','right']:
-                          Effsubfig.spines[axis].set_linewidth(0.5)
-                        Effsubfig.tick_params(axis='x', which='both',bottom='off', top='off')
-                        
-                        
-                        FFsubfig.annotate('Red=A; Green=B; Blue=C; Cyan=D; Magenta=E; Black=F; empty=Forward; full=Reverse;', xy=(1.55,-0.3), xycoords='axes fraction', fontsize=4,
-                                        horizontalalignment='right', verticalalignment='bottom')
-                        
-                        fig.savefig(batchname+'_StatJVgraph.png',dpi=300,bbox_inches="tight")
-                        plt.close("all")
-                    except IndexError:
-                        print("indexerror: list index out of range... it's probably an issue with sample names...")
-                        
-                        
-                        
-        except:
-            print("there's an issue with creating one of the stat graph")
+                plt.clf()
+            except:
+                print("Exception: statgraph - resistance")
+            
+            #stat graph with diff colors for ABC and Forw Rev, by substrate
+            #get substrate number without run number
+            if DATAx[0]["Setup"]=="TFIV" or DATAx[0]["Setup"]=='SSIgorC215':
+                try:
+                    fig = plt.figure()
+                    
+                    VocAFy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    VocAFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    
+                    VocBFy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    VocBFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    
+                    VocCFy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    VocCFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    
+                    VocDFy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='D' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    VocDFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='D' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    
+                    VocEFy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='E' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    VocEFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='E' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    
+                    VocFFy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='F' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    VocFFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='F' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    
+                    VocARy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    VocARx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    
+                    VocBRy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    VocBRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    
+                    VocCRy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    VocCRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    
+                    VocDRy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='D' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    VocDRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='D' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    
+                    VocERy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='E' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    VocERx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='E' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    
+                    VocFRy=[float(i["Voc"]) for i in DATAx if i["Cellletter"]=='F' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    VocFRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='F' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    
+                    Vocsubfig = fig.add_subplot(221) 
+                    Vocsubfig.scatter(VocAFx, VocAFy, s=5, facecolors='none', edgecolors='r', lw=0.5)
+                    Vocsubfig.scatter(VocBFx, VocBFy, s=5, facecolors='none', edgecolors='g', lw=0.5)
+                    Vocsubfig.scatter(VocCFx, VocCFy, s=5, facecolors='none', edgecolors='b', lw=0.5)
+                    Vocsubfig.scatter(VocARx, VocARy, s=5, edgecolors='r', lw=0.5)
+                    Vocsubfig.scatter(VocBRx, VocBRy, s=5, edgecolors='g', lw=0.5)
+                    Vocsubfig.scatter(VocCRx, VocCRy, s=5, edgecolors='b', lw=0.5)
+                    Vocsubfig.scatter(VocDFx, VocDFy, s=5, facecolors='none', edgecolors='c', lw=0.5)
+                    Vocsubfig.scatter(VocEFx, VocEFy, s=5, facecolors='none', edgecolors='m', lw=0.5)
+                    Vocsubfig.scatter(VocFFx, VocFFy, s=5, facecolors='none', edgecolors='k', lw=0.5)
+                    Vocsubfig.scatter(VocDRx, VocDRy, s=5, edgecolors='c', lw=0.5)
+                    Vocsubfig.scatter(VocERx, VocERy, s=5, edgecolors='m', lw=0.5)
+                    Vocsubfig.scatter(VocFRx, VocFRy, s=5, edgecolors='k', lw=0.5)
+                    
+#                    Vocsubfig.scatter(VocSFx, VocSFy, s=5, facecolors='none', edgecolors='k', lw=0.5)
+#                    Vocsubfig.scatter(VocSRx, VocSRy, s=5, edgecolors='k', lw=0.5)
+                    Vocsubfig.set_ylabel('Voc (mV)')
+                    Vocsubfig.set_xlabel("Sample #")
+                    for item in ([Vocsubfig.title, Vocsubfig.xaxis.label, Vocsubfig.yaxis.label] + Vocsubfig.get_xticklabels() + Vocsubfig.get_yticklabels()):
+                        item.set_fontsize(4)
+                    Vocsubfig.set_ylim(bottom=0)
+                    Vocsubfig.xaxis.set_major_locator(MaxNLocator(integer=True))
+                    
+                    Vocsubfig.set_xticks(np.arange(float(min(VocAFx+VocBFx+VocCFx+VocARx+VocBRx+VocCRx+VocDFx+VocEFx+VocFFx+VocDRx+VocERx+VocFRx))-0.5,float(max(VocAFx+VocBFx+VocCFx+VocARx+VocBRx+VocCRx+VocDFx+VocEFx+VocFFx+VocDRx+VocERx+VocFRx))+0.5,1), minor=True)
+                    #Vocsubfig.set_xticks(np.arange(float(min(VocAFx))-0.5,float(max(VocAFx))+0.5,1), minor=True)
+                    Vocsubfig.xaxis.grid(False, which='major')
+                    Vocsubfig.xaxis.grid(True, which='minor', color='k', linestyle='-', alpha=0.2)
+                    
+                    Vocsubfig.axis([float(min(VocAFx+VocBFx+VocCFx+VocARx+VocBRx+VocCRx+VocDFx+VocEFx+VocFFx+VocDRx+VocERx+VocFRx))-0.5,float(max(VocAFx+VocBFx+VocCFx+VocARx+VocBRx+VocCRx+VocDFx+VocEFx+VocFFx+VocDRx+VocERx+VocFRx))+0.5,0.5*float(min(VocAFy+VocBFy+VocCFy+VocARy+VocBRy+VocCRy+VocDFy+VocEFy+VocFFy+VocDRy+VocERy+VocFRy)),1.1*float(max(VocAFy+VocBFy+VocCFy+VocARy+VocBRy+VocCRy+VocDFy+VocEFy+VocFFy+VocDRy+VocERy+VocFRy))])
+                    for axis in ['top','bottom','left','right']:
+                      Vocsubfig.spines[axis].set_linewidth(0.5)
+                    Vocsubfig.tick_params(axis='x', which='both',bottom='off', top='off')
+                    
+                    
+                    
+                    JscAFy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    JscAFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    
+                    JscBFy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    JscBFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    
+                    JscCFy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    JscCFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    
+                    JscARy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    JscARx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    
+                    JscBRy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    JscBRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    
+                    JscCRy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    JscCRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+
+                    JscDFy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='D' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    JscDFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='D' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    
+                    JscEFy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='E' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    JscEFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='E' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    
+                    JscFFy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='F' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    JscFFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='F' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    
+                    JscDRy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='D' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    JscDRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='D' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    
+                    JscERy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='E' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    JscERx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='E' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    
+                    JscFRy=[float(i["Jsc"]) for i in DATAx if i["Cellletter"]=='F' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    JscFRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='F' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]                    
+                    
+                    Jscsubfig = fig.add_subplot(222) 
+                    Jscsubfig.scatter(JscAFx, JscAFy, s=5, facecolors='none', edgecolors='r', lw=0.5)
+                    Jscsubfig.scatter(JscBFx, JscBFy, s=5, facecolors='none', edgecolors='g', lw=0.5)
+                    Jscsubfig.scatter(JscCFx, JscCFy, s=5, facecolors='none', edgecolors='b', lw=0.5)
+                    Jscsubfig.scatter(JscARx, JscARy, s=5, edgecolors='r', lw=0.5)
+                    Jscsubfig.scatter(JscBRx, JscBRy, s=5, edgecolors='g', lw=0.5)
+                    Jscsubfig.scatter(JscCRx, JscCRy, s=5, edgecolors='b', lw=0.5)
+                    Jscsubfig.scatter(JscDFx, JscDFy, s=5, facecolors='none', edgecolors='c', lw=0.5)
+                    Jscsubfig.scatter(JscEFx, JscEFy, s=5, facecolors='none', edgecolors='m', lw=0.5)
+                    Jscsubfig.scatter(JscFFx, JscFFy, s=5, facecolors='none', edgecolors='k', lw=0.5)
+                    Jscsubfig.scatter(JscDRx, JscDRy, s=5, edgecolors='c', lw=0.5)
+                    Jscsubfig.scatter(JscERx, JscERy, s=5, edgecolors='m', lw=0.5)
+                    Jscsubfig.scatter(JscFRx, JscFRy, s=5, edgecolors='k', lw=0.5)
+                    
+                    Jscsubfig.set_ylabel('Jsc (mA/cm'+'\xb2'+')')
+                    Jscsubfig.set_xlabel("Sample #")
+                    for item in ([Jscsubfig.title, Jscsubfig.xaxis.label, Jscsubfig.yaxis.label] +
+                                 Jscsubfig.get_xticklabels() + Jscsubfig.get_yticklabels()):
+                        item.set_fontsize(4)
+                    Jscsubfig.set_ylim(bottom=0)
+                    Jscsubfig.xaxis.set_major_locator(MaxNLocator(integer=True))
+                    
+                    Jscsubfig.set_xticks(np.arange(float(min(JscAFx+JscBFx+JscCFx+JscARx+JscBRx+JscCRx+JscDFx+JscEFx+JscFFx+JscDRx+JscERx+JscFRx))-0.5,float(max(JscAFx+JscBFx+JscCFx+JscARx+JscBRx+JscCRx+JscDFx+JscEFx+JscFFx+JscDRx+JscERx+JscFRx))+0.5,1), minor=True)
+                    #Jscsubfig.set_xticks(np.arange(float(min(JscAFx))-0.5,float(max(JscAFx))+0.5,1), minor=True)
+                    Jscsubfig.xaxis.grid(False, which='major')
+                    Jscsubfig.xaxis.grid(True, which='minor', color='k', linestyle='-', alpha=0.2)
+                    
+                    Jscsubfig.axis([float(min(JscAFx+JscBFx+JscCFx+JscARx+JscBRx+JscCRx+JscDFx+JscEFx+JscFFx+JscDRx+JscERx+JscFRx))-0.5,float(max(JscAFx+JscBFx+JscCFx+JscARx+JscBRx+JscCRx+JscDFx+JscEFx+JscFFx+JscDRx+JscERx+JscFRx))+0.5,0.5*float(min(JscAFy+JscBFy+JscCFy+JscARy+JscBRy+JscCRy+JscDFy+JscEFy+JscFFy+JscDRy+JscERy+JscFRy)),1.1*float(max(JscAFy+JscBFy+JscCFy+JscARy+JscBRy+JscCRy+JscDFy+JscEFy+JscFFy+JscDRy+JscERy+JscFRy))])
+#                    print([float(min(JscAFx+JscBFx+JscCFx+JscARx+JscBRx+JscCRx+JscDFx+JscEFx+JscFFx+JscDRx+JscERx+JscFRx))-0.5,float(max(JscAFx+JscBFx+JscCFx+JscARx+JscBRx+JscCRx+JscDFx+JscEFx+JscFFx+JscDRx+JscERx+JscFRx))+0.5,0.5*float(min(JscAFx+JscBFx+JscCFx+JscARx+JscBRx+JscCRx+JscDFx+JscEFx+JscFFx+JscDRx+JscERx+JscFRx)),1.1*float(max(JscAFx+JscBFx+JscCFx+JscARx+JscBRx+JscCRx+JscDFx+JscEFx+JscFFx+JscDRx+JscERx+JscFRx))])
+                    for axis in ['top','bottom','left','right']:
+                      Jscsubfig.spines[axis].set_linewidth(0.5)
+                    Jscsubfig.tick_params(axis='x', which='both',bottom='off', top='off')
+                    
+                    
+                    FFAFy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    FFAFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    
+                    FFBFy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    FFBFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    
+                    FFCFy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    FFCFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    
+                    FFARy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    FFARx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    
+                    FFBRy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    FFBRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    
+                    FFCRy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    FFCRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+
+                    FFDFy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='D' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    FFDFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='D' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    
+                    FFEFy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='E' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    FFEFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='E' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    
+                    FFFFy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='F' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    FFFFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='F' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    
+                    FFDRy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='D' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    FFDRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='D' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    
+                    FFERy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='E' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    FFERx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='E' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    
+                    FFFRy=[float(i["FF"]) for i in DATAx if i["Cellletter"]=='F' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    FFFRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='F' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]                    
+                    
+                    FFsubfig = fig.add_subplot(223) 
+                    FFsubfig.scatter(FFAFx, FFAFy, s=5, facecolors='none', edgecolors='r', lw=0.5)
+                    FFsubfig.scatter(FFBFx, FFBFy, s=5, facecolors='none', edgecolors='g', lw=0.5)
+                    FFsubfig.scatter(FFCFx, FFCFy, s=5, facecolors='none', edgecolors='b', lw=0.5)
+                    FFsubfig.scatter(FFARx, FFARy, s=5, edgecolors='r', lw=0.5)
+                    FFsubfig.scatter(FFBRx, FFBRy, s=5, edgecolors='g', lw=0.5)
+                    FFsubfig.scatter(FFCRx, FFCRy, s=5, edgecolors='b', lw=0.5)
+                    FFsubfig.scatter(FFDFx, FFDFy, s=5, facecolors='none', edgecolors='c', lw=0.5)
+                    FFsubfig.scatter(FFEFx, FFEFy, s=5, facecolors='none', edgecolors='m', lw=0.5)
+                    FFsubfig.scatter(FFFFx, FFFFy, s=5, facecolors='none', edgecolors='k', lw=0.5)
+                    FFsubfig.scatter(FFDRx, FFDRy, s=5, edgecolors='c', lw=0.5)
+                    FFsubfig.scatter(FFERx, FFERy, s=5, edgecolors='m', lw=0.5)
+                    FFsubfig.scatter(FFFRx, FFFRy, s=5, edgecolors='k', lw=0.5)
+                    
+                    FFsubfig.set_ylabel('FF (%)')
+                    FFsubfig.set_xlabel("Sample #")
+                    for item in ([FFsubfig.title, FFsubfig.xaxis.label, FFsubfig.yaxis.label] +
+                                 FFsubfig.get_xticklabels() + FFsubfig.get_yticklabels()):
+                        item.set_fontsize(4)
+                    FFsubfig.set_ylim(bottom=0)
+                    FFsubfig.xaxis.set_major_locator(MaxNLocator(integer=True))
+                    
+                    FFsubfig.set_xticks(np.arange(float(min(FFAFx+FFBFx+FFCFx+FFARx+FFBRx+FFCRx+FFDFx+FFEFx+FFFFx+FFDRx+FFERx+FFFRx))-0.5,float(max(FFAFx+FFBFx+FFCFx+FFARx+FFBRx+FFCRx+FFDFx+FFEFx+FFFFx+FFDRx+FFERx+FFFRx))+0.5,1), minor=True)
+                    #FFsubfig.set_xticks(np.arange(float(min(FFAFx))-0.5,float(max(FFAFx))+0.5,1), minor=True)
+                    FFsubfig.xaxis.grid(False, which='major')
+                    FFsubfig.xaxis.grid(True, which='minor', color='k', linestyle='-', alpha=0.2)
+                    
+                    FFsubfig.axis([float(min(FFAFx+FFBFx+FFCFx+FFARx+FFBRx+FFCRx+FFDFx+FFEFx+FFFFx+FFDRx+FFERx+FFFRx))-0.5,float(max(FFAFx+FFBFx+FFCFx+FFARx+FFBRx+FFCRx+FFDFx+FFEFx+FFFFx+FFDRx+FFERx+FFFRx))+0.5,0.5*float(min(FFAFy+FFBFy+FFCFy+FFARy+FFBRy+FFCRy+FFDFy+FFEFy+FFFFy+FFDRy+FFERy+FFFRy)),1.1*float(max(FFAFy+FFBFy+FFCFy+FFARy+FFBRy+FFCRy+FFDFy+FFEFy+FFFFy+FFDRy+FFERy+FFFRy))])
+                    for axis in ['top','bottom','left','right']:
+                      FFsubfig.spines[axis].set_linewidth(0.5)
+                    FFsubfig.tick_params(axis='x', which='both',bottom='off', top='off')
+                    
+                    
+                    EffAFy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    EffAFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    
+                    EffBFy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    EffBFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    
+                    EffCFy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    EffCFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    
+                    EffARy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    EffARx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='A' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    
+                    EffBRy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    EffBRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='B' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    
+                    EffCRy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    EffCRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='C' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    
+                    EffDFy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='D' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    EffDFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='D' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    
+                    EffEFy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='E' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    EffEFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='E' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    
+                    EffFFy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='F' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    EffFFx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='F' and i["ScanDirection"]=="Forward" and i["Illumination"]=="Light"]
+                    
+                    EffDRy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='D' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    EffDRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='D' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    
+                    EffERy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='E' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    EffERx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='E' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    
+                    EffFRy=[float(i["Eff"]) for i in DATAx if i["Cellletter"]=='F' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    EffFRx=[int(i["DepID"].split('_')[1]) for i in DATAx if i["Cellletter"]=='F' and i["ScanDirection"]=="Reverse" and i["Illumination"]=="Light"]
+                    
+                    Effsubfig = fig.add_subplot(224) 
+                    Effsubfig.scatter(EffAFx, EffAFy, s=5, facecolors='none', edgecolors='r', lw=0.5)
+                    Effsubfig.scatter(EffBFx, EffBFy, s=5, facecolors='none', edgecolors='g', lw=0.5)
+                    Effsubfig.scatter(EffCFx, EffCFy, s=5, facecolors='none', edgecolors='b', lw=0.5)
+                    Effsubfig.scatter(EffARx, EffARy, s=5, edgecolors='r', lw=0.5)
+                    Effsubfig.scatter(EffBRx, EffBRy, s=5, edgecolors='g', lw=0.5)
+                    Effsubfig.scatter(EffCRx, EffCRy, s=5, edgecolors='b', lw=0.5)
+                    Effsubfig.scatter(EffDFx, EffDFy, s=5, facecolors='none', edgecolors='c', lw=0.5)
+                    Effsubfig.scatter(EffEFx, EffEFy, s=5, facecolors='none', edgecolors='m', lw=0.5)
+                    Effsubfig.scatter(EffFFx, EffFFy, s=5, facecolors='none', edgecolors='k', lw=0.5)
+                    Effsubfig.scatter(EffDRx, EffDRy, s=5, edgecolors='c', lw=0.5)
+                    Effsubfig.scatter(EffERx, EffERy, s=5, edgecolors='m', lw=0.5)
+                    Effsubfig.scatter(EffFRx, EffFRy, s=5, edgecolors='k', lw=0.5)
+                    Effsubfig.set_ylabel('Eff (%)')
+                    Effsubfig.set_xlabel("Sample #")
+                    for item in ([Effsubfig.title, Effsubfig.xaxis.label, Effsubfig.yaxis.label] +
+                                 Effsubfig.get_xticklabels() + Effsubfig.get_yticklabels()):
+                        item.set_fontsize(4)
+                    Effsubfig.set_ylim(bottom=0)
+                    Effsubfig.xaxis.set_major_locator(MaxNLocator(integer=True))
+                    
+                    Effsubfig.set_xticks(np.arange(float(min(EffAFx+EffBFx+EffCFx+EffARx+EffBRx+EffCRx+EffDFx+EffEFx+EffFFx+EffDRx+EffERx+EffFRx))-0.5,float(max(EffAFx+EffBFx+EffCFx+EffARx+EffBRx+EffCRx+EffDFx+EffEFx+EffFFx+EffDRx+EffERx+EffFRx))+0.5,1), minor=True)
+                    Effsubfig.xaxis.grid(False, which='major')
+                    Effsubfig.xaxis.grid(True, which='minor', color='k', linestyle='-', alpha=0.2)
+                    
+                    Effsubfig.axis([float(min(EffAFx+EffBFx+EffCFx+EffARx+EffBRx+EffCRx+EffDFx+EffEFx+EffFFx+EffDRx+EffERx+EffFRx))-0.5,float(max(EffAFx+EffBFx+EffCFx+EffARx+EffBRx+EffCRx+EffDFx+EffEFx+EffFFx+EffDRx+EffERx+EffFRx))+0.5,0.5*float(min(EffAFy+EffBFy+EffCFy+EffARy+EffBRy+EffCRy+EffDFy+EffEFy+EffFFy+EffDRy+EffERy+EffFRy)),1.1*float(max(EffAFy+EffBFy+EffCFy+EffARy+EffBRy+EffCRy+EffDFy+EffEFy+EffFFy+EffDRy+EffERy+EffFRy))])
+                    for axis in ['top','bottom','left','right']:
+                      Effsubfig.spines[axis].set_linewidth(0.5)
+                    Effsubfig.tick_params(axis='x', which='both',bottom='off', top='off')
+                    
+                    
+                    FFsubfig.annotate('Red=A; Green=B; Blue=C; Cyan=D; Magenta=E; Black=F; empty=Forward; full=Reverse;', xy=(1.55,-0.3), xycoords='axes fraction', fontsize=4,
+                                    horizontalalignment='right', verticalalignment='bottom')
+                    
+                    fig.savefig(batchname+'_StatJVgraph.png',dpi=300,bbox_inches="tight")
+                    plt.close("all")
+                    plt.clf()
+                except:
+                    print("Exception: statgraph - bysubstrate")
+                    
         plt.close("all")
-        
+        plt.clf()
         self.window.destroy()
         self.destroy()
         self.__init__()
@@ -3947,35 +4014,83 @@ class IVApp(Toplevel):
         
 #%%######################################################################
         
+#    def CreateWindowExportAA(self):
+#        self.window = tk.Toplevel()
+#        self.window.wm_title("Export Auto-Analysis")
+#        center(self.window)
+#        self.window.geometry("360x100")
+#        self.windowRef.destroy()
+#        self.CheckXlsxSum = IntVar()
+#        legend=Checkbutton(self.window,text='Xlsx Summary',variable=self.CheckXlsxSum, 
+#                           onvalue=1,offvalue=0,height=1, width=10)
+#        legend.grid(row=0, column=0, columnspan=10)
+#        self.CheckXlsxSum.set(1)
+#        self.AutoGraphs = IntVar()
+#        legend=Checkbutton(self.window,text='Auto-Graphs',variable=self.AutoGraphs, 
+#                           onvalue=1,offvalue=0,height=1, width=10)
+#        legend.grid(row=0, column=11, columnspan=10)
+#        self.AutoGraphs.set(1)
+#        self.TxtforOrigin = IntVar()
+#        legend=Checkbutton(self.window,text='Txt for Origin',variable=self.TxtforOrigin, 
+#                           onvalue=1,offvalue=0,height=1, width=10)
+#        legend.grid(row=0, column=23, columnspan=10)
+#        self.TxtforOrigin.set(1)
+#        
+#        label = tk.Label(self.window, text="...this window will be automatically shut down when the task is completed...", font=("Helvetica", 6))
+#        label.grid(row=2, column=0,columnspan=30)
+#        
+#        self.ExportAll = Button(self.window, text="Start Auto-Analysis",
+#                            command = self.ExportAutoAnalysis)
+#        self.ExportAll.grid(row=1, column=0, columnspan=30,rowspan=1) 
+
     def CreateWindowExportAA(self):
         self.window = tk.Toplevel()
         self.window.wm_title("Export Auto-Analysis")
         center(self.window)
-        self.window.geometry("360x100")
+        self.window.geometry("300x400")
         self.windowRef.destroy()
+        
+        
         self.CheckXlsxSum = IntVar()
         legend=Checkbutton(self.window,text='Xlsx Summary',variable=self.CheckXlsxSum, 
                            onvalue=1,offvalue=0,height=1, width=10)
-        legend.grid(row=0, column=0, columnspan=10)
+        legend.pack()
         self.CheckXlsxSum.set(1)
-        self.AutoGraphs = IntVar()
-        legend=Checkbutton(self.window,text='Auto-Graphs',variable=self.AutoGraphs, 
+        
+        #main stat graphs
+        self.statGraphs = IntVar()
+        legend=Checkbutton(self.window,text='statGraphs',variable=self.statGraphs, 
                            onvalue=1,offvalue=0,height=1, width=10)
-        legend.grid(row=0, column=11, columnspan=10)
-        self.AutoGraphs.set(1)
+        legend.pack()
+        self.statGraphs.set(1)
+        
+        #substrate IV summary graphs
+        self.IVgraphs = IntVar()
+        legend=Checkbutton(self.window,text='IVgraphs',variable=self.IVgraphs, 
+                           onvalue=1,offvalue=0,height=1, width=10)
+        legend.pack()
+        self.IVgraphs.set(1)
+        
+        #substrate mpp and specific power graphs
+        self.mppgraphs = IntVar()
+        legend=Checkbutton(self.window,text='mppgraphs',variable=self.mppgraphs, 
+                           onvalue=1,offvalue=0,height=1, width=10)
+        legend.pack()
+        self.mppgraphs.set(1)
+        
+        #text files with data
         self.TxtforOrigin = IntVar()
         legend=Checkbutton(self.window,text='Txt for Origin',variable=self.TxtforOrigin, 
                            onvalue=1,offvalue=0,height=1, width=10)
-        legend.grid(row=0, column=23, columnspan=10)
+        legend.pack()
         self.TxtforOrigin.set(1)
         
         label = tk.Label(self.window, text="...this window will be automatically shut down when the task is completed...", font=("Helvetica", 6))
-        label.grid(row=2, column=0,columnspan=30)
+        label.pack()
         
         self.ExportAll = Button(self.window, text="Start Auto-Analysis",
                             command = self.ExportAutoAnalysis)
-        self.ExportAll.grid(row=1, column=0, columnspan=30,rowspan=1) 
-     
+        self.ExportAll.pack()
         
     def AskforRefcells(self):
         global DATA

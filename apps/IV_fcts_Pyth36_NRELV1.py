@@ -57,15 +57,8 @@ TODOLIST
 
 -distinguish before and after mpp, make group graph with 4 colors (RevBefore, RevAfter, ForBefore, ForAfter)
 
-add options in autoanalysis for exporting only the main stats graphs, without all the other substrates... and also inverse without stat graphs...
-add all graphs as options
-
-add legend to specificpower graph: with mention before/after mpp
-
-
 does not produce the dark log/linear auto graph as the DATAdark list is empty
 
-error lign 2917: indexerror list index out of range
 
 """
 #%%############# Global variable definition
@@ -1668,6 +1661,10 @@ class IVApp(Toplevel):
                     if "Comments: " in filerawdata[item]:
                         partdict["MeasComment"]=filerawdata[item][10:-1]
                         break
+                if "aftermpp" in partdict["MeasComment"]:
+                    partdict["afermpp"]=1
+                else:
+                    partdict["afermpp"]=0
                 for item in range(len(filerawdata)):
                     if "Start V:" in filerawdata[item]:
                         partdict["Vstart"]=float(filerawdata[item][9:-1])
@@ -2741,7 +2738,7 @@ class IVApp(Toplevel):
                 file.close()
             #graphs by substrate with JV table, separate graph and table production, then reassemble to export...
             plt.clf()
-            if self.IVgraphs.get():
+            if self.IVgraphs.get() or self.statGraphs.get() or self.mppgraphs.get():
                 collabel=("Voc","Jsc","FF","Eff","Roc","Rsc","Vstart","Vend","CellSurface")
                 nrows, ncols = len(substratpartdat[1])+1, len(collabel)
                 hcell, wcell = 0.3, 1.
@@ -2782,26 +2779,27 @@ class IVApp(Toplevel):
                 ax3.axhline(y=0, color='k')
                 ax3.axvline(x=0, color='k')
                 ax3.axis([x1,x2,y1,y2])
-            
-                rowlabel=tuple(rowlabel)
-                the_table = ax2.table(cellText=tabledata,colLabels=collabel,rowLabels=rowlabel,loc='center')
-                the_table.set_fontsize(18)
-                ax2.axis('off')
-                fig2.savefig(str(substratpartdat[0])+'_table.png',dpi=200,bbox_inches="tight")
-                handles, labels = ax3.get_legend_handles_labels()
-                lgd = ax3.legend(handles, labels, loc='center left', bbox_to_anchor=(1, 0.5))
-                fig1.savefig(str(substratpartdat[0])+'.png',dpi=200, bbox_extra_artists=(lgd,),bbox_inches="tight")
                 
-                images = list(map(ImageTk.open, [str(substratpartdat[0])+'.png',str(substratpartdat[0])+'_table.png']))
-                widths, heights = zip(*(i.size for i in images))
-                total_width = max(widths)
-                max_height = sum(heights)
-                new_im = ImageTk.new('RGB', (total_width, max_height), (255, 255, 255))
-                new_im.paste(im=images[0],box=(0,0))
-                new_im.paste(im=images[1],box=(0,heights[0]))
-                new_im.save(str(substratpartdat[0])+'.png')
+                if self.IVgraphs.get():
+                    rowlabel=tuple(rowlabel)
+                    the_table = ax2.table(cellText=tabledata,colLabels=collabel,rowLabels=rowlabel,loc='center')
+                    the_table.set_fontsize(18)
+                    ax2.axis('off')
+                    fig2.savefig(str(substratpartdat[0])+'_table.png',dpi=200,bbox_inches="tight")
+                    handles, labels = ax3.get_legend_handles_labels()
+                    lgd = ax3.legend(handles, labels, loc='center left', bbox_to_anchor=(1, 0.5))
+                    fig1.savefig(str(substratpartdat[0])+'.png',dpi=200, bbox_extra_artists=(lgd,),bbox_inches="tight")
                 
-                os.remove(str(substratpartdat[0])+'_table.png')
+                    images = list(map(ImageTk.open, [str(substratpartdat[0])+'.png',str(substratpartdat[0])+'_table.png']))
+                    widths, heights = zip(*(i.size for i in images))
+                    total_width = max(widths)
+                    max_height = sum(heights)
+                    new_im = ImageTk.new('RGB', (total_width, max_height), (255, 255, 255))
+                    new_im.paste(im=images[0],box=(0,0))
+                    new_im.paste(im=images[1],box=(0,heights[0]))
+                    new_im.save(str(substratpartdat[0])+'.png')
+                    
+                    os.remove(str(substratpartdat[0])+'_table.png')
                 plt.close(fig2)
                 plt.close(fig1)
                 plt.close('all')
@@ -2863,9 +2861,10 @@ class IVApp(Toplevel):
                             else:
                                 y2=max(best[item]["IVData"][1]+best[pos]["IVData"][1])
                             ax.axis([x1,x2,y1,y2])
-                            handles, labels = ax.get_legend_handles_labels()
-                            lgd = ax.legend(handles, labels, loc='center left', bbox_to_anchor=(1, 0.5))
-                            fig.savefig(str(substratpartdat[0])+'_BestRevForw.png',dpi=300, bbox_extra_artists=(lgd,),bbox_inches="tight")
+                            if self.IVgraphs.get():
+                                handles, labels = ax.get_legend_handles_labels()
+                                lgd = ax.legend(handles, labels, loc='center left', bbox_to_anchor=(1, 0.5))
+                                fig.savefig(str(substratpartdat[0])+'_BestRevForw.png',dpi=300, bbox_extra_artists=(lgd,),bbox_inches="tight")
                             plt.close('all')
                             plt.clf()
                             break
@@ -2879,9 +2878,16 @@ class IVApp(Toplevel):
                             for item0 in range(len(DATAmppbysubstrate[item][1])):
                                 fig=plt.figure()
                                 ax=fig.add_subplot(111)
+                                ax.plot([],[],label="Initial scans",color="White") 
+                                checkafermpp=1
                                 for item1 in range(len(DATAbysubstrate[-1][1])):
-                                    if DATAmppbysubstrate[item][1][item0]["Cellletter"]==DATAbysubstrate[-1][1][item1]["Cellletter"]:
-                                        ax.plot(DATAbysubstrate[-1][1][item1]["IVData"][0],[-a*b for a,b in zip(DATAbysubstrate[-1][1][item1]["IVData"][0],DATAbysubstrate[-1][1][item1]["IVData"][1])])
+                                    if DATAmppbysubstrate[item][1][item0]["Cellletter"]==DATAbysubstrate[-1][1][item1]["Cellletter"] and DATAbysubstrate[-1][1][item1]["Illumination"]=="Light":
+                                        if DATAbysubstrate[-1][1][item1]["afermpp"] and checkafermpp:
+                                            ax.plot([],[],label="After mpp",color="White") 
+                                            checkafermpp=0
+                                            ax.plot(DATAbysubstrate[-1][1][item1]["IVData"][0],[-a*b for a,b in zip(DATAbysubstrate[-1][1][item1]["IVData"][0],DATAbysubstrate[-1][1][item1]["IVData"][1])],label=DATAbysubstrate[-1][1][item1]["SampleName"])   
+                                        else:
+                                            ax.plot(DATAbysubstrate[-1][1][item1]["IVData"][0],[-a*b for a,b in zip(DATAbysubstrate[-1][1][item1]["IVData"][0],DATAbysubstrate[-1][1][item1]["IVData"][1])],label=DATAbysubstrate[-1][1][item1]["SampleName"])
                                 ax.plot([abs(a) for a in DATAmppbysubstrate[item][1][item0]["MppData"][0]],DATAmppbysubstrate[item][1][item0]["MppData"][3])
                                 ax.set_xlabel('Voltage (mV)')
                                 ax.set_ylabel('Specific power (mW/cm$^2$)')
@@ -2889,6 +2895,7 @@ class IVApp(Toplevel):
                                 ax.axvline(x=0, color='k')
                                 ax.set_xlim(left=0)
                                 ax.set_ylim(bottom=0)
+                                ax.legend()
                                 fig.savefig(DATAmppbysubstrate[item][1][item0]["SampleName"]+'_specpower.png',dpi=300,bbox_inches="tight")
                                 plt.close("all")
                                 plt.clf()
@@ -2906,21 +2913,29 @@ class IVApp(Toplevel):
                 bestEffsorted = sorted(bestEff, key=itemgetter('Eff'), reverse=True) 
                 tabledata=[]
                 rowlabel=[]
+                minJscfind=[]
+                maxcurrentfind=[]
+                minVfind=[]
+                maxVfind=[]
                 for item in range(len(bestEffsorted)):
                     ax.plot(bestEffsorted[item]["IVData"][0],bestEffsorted[item]["IVData"][1], label=bestEffsorted[item]["SampleName"]) 
                     rowlabel.append(bestEffsorted[item]["SampleName"])
                     tabledata.append(['%.f' % float(bestEffsorted[item]["Voc"]),'%.2f' % float(bestEffsorted[item]["Jsc"]),'%.2f' % float(bestEffsorted[item]["FF"]),'%.2f' % float(bestEffsorted[item]["Eff"]),'%.2f' % float(bestEffsorted[item]["Roc"]),'%.2f' % float(bestEffsorted[item]["Rsc"]),'%.2f' % float(bestEffsorted[item]["Vstart"]),'%.2f' % float(bestEffsorted[item]["Vend"]),'%.2f' % float(bestEffsorted[item]["CellSurface"])])
+                    minJscfind.append(min(bestEffsorted[item]["IVData"][1]))
+                    maxcurrentfind.append(max(bestEffsorted[item]["IVData"][1]))
+                    minVfind.append(min(bestEffsorted[item]["IVData"][0]))
+                    maxVfind.append(max(bestEffsorted[item]["IVData"][0]))
                 ax.set_xlabel('Voltage (mV)')
                 ax.set_ylabel('Current density (mA/cm'+'\xb2'+')')
                 ax.axhline(y=0, color='k')
                 ax.axvline(x=0, color='k')
-                x1=min(bestEffsorted[0]["IVData"][0])
-                x2=max(bestEffsorted[0]["IVData"][0])
-                y1=1.3*min(bestEffsorted[0]["IVData"][1])
-                if max(bestEffsorted[0]["IVData"][1])>10:
+                x1=min(minVfind)
+                x2=max(maxVfind)
+                y1=1.1*min(minJscfind)
+                if max(maxcurrentfind)>10:
                     y2=10
                 else:
-                    y2=max(bestEffsorted[item]["IVData"][1])
+                    y2=max(maxcurrentfind)
                 ax.axis([x1,x2,y1,y2])
                 handles, labels = ax.get_legend_handles_labels()
                 lgd = ax.legend(handles, labels, loc='center left', bbox_to_anchor=(1, 0.5))
@@ -2955,21 +2970,29 @@ class IVApp(Toplevel):
                 bestvocffsorted = sorted(bestvocff, key=itemgetter('VocFF'), reverse=True) 
                 tabledata=[]
                 rowlabel=[]
+                minJscfind=[]
+                maxcurrentfind=[]
+                minVfind=[]
+                maxVfind=[]
                 for item in range(len(bestEffsorted)):
                     ax.plot(bestvocffsorted[item]["IVData"][0],bestvocffsorted[item]["IVData"][1], label=bestvocffsorted[item]["SampleName"]) 
                     rowlabel.append(bestvocffsorted[item]["SampleName"])
                     tabledata.append(['%.f' % float(bestvocffsorted[item]["Voc"]),'%.2f' % float(bestvocffsorted[item]["Jsc"]),'%.2f' % float(bestvocffsorted[item]["FF"]),'%.2f' % float(bestvocffsorted[item]["Eff"]),'%.2f' % float(bestvocffsorted[item]["Roc"]),'%.2f' % float(bestvocffsorted[item]["Rsc"]),'%.2f' % float(bestvocffsorted[item]["Vstart"]),'%.2f' % float(bestvocffsorted[item]["Vend"]),'%.2f' % float(bestvocffsorted[item]["CellSurface"])])
+                    minJscfind.append(min(bestvocffsorted[item]["IVData"][1]))
+                    maxcurrentfind.append(max(bestvocffsorted[item]["IVData"][1]))
+                    minVfind.append(min(bestvocffsorted[item]["IVData"][0]))
+                    maxVfind.append(max(bestvocffsorted[item]["IVData"][0]))
                 ax.set_xlabel('Voltage (mV)')
                 ax.set_ylabel('Current density (mA/cm'+'\xb2'+')')
                 ax.axhline(y=0, color='k')
                 ax.axvline(x=0, color='k')
-                x1=min(bestvocffsorted[0]["IVData"][0])
-                x2=max(bestvocffsorted[0]["IVData"][0])
-                y1=1.3*min(bestvocffsorted[0]["IVData"][1])
-                if max(bestvocffsorted[0]["IVData"][1])>10:
+                x1=min(minVfind)
+                x2=max(maxVfind)
+                y1=1.1*min(minJscfind)
+                if max(maxcurrentfind)>10:
                     y2=10
                 else:
-                    y2=max(bestvocffsorted[0]["IVData"][1])
+                    y2=max(maxcurrentfind)
                 ax.axis([x1,x2,y1,y2])
                 handles, labels = ax.get_legend_handles_labels()
                 lgd = ax.legend(handles, labels, loc='center left', bbox_to_anchor=(1, 0.5))

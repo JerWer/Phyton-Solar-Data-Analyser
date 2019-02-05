@@ -56,9 +56,12 @@ TODOLIST
 
 
 -distinguish before and after mpp, make group graph with 4 colors (RevBefore, RevAfter, ForBefore, ForAfter)
+=> works partially: still issue when want to see RF with aftermpp
+works with boxplot or not. 
+now only for Eff => need to fix the RF issue and then generallise to other parameters
 
-does not produce the dark log/linear auto graph as the DATAdark list is empty
 
+exception: excel summarygroupstat tab: typeError NAN/INF not supported in write_number
 
 """
 #%%############# Global variable definition
@@ -211,6 +214,13 @@ class IVApp(Toplevel):
         entry.grid(row=rowpos+2,column=8,columnspan=1)
         tk.Label(self.superframe, text="RotLab",fg='black',background='white').grid(row=rowpos+1,column=8,columnspan=2)
         self.rotationGroupGraph.set(30)
+        
+        self.aftermppcheck = IntVar()
+        aftermppcheck=Checkbutton(self.superframe,text="aftermpp",variable=self.aftermppcheck, 
+                           onvalue=1,offvalue=0,height=1, width=6, command = lambda: self.UpdateGroupGraph(1),fg='black',background='white')
+        aftermppcheck.grid(row=rowpos+1, column=12, columnspan=6)
+#        tk.Label(self.superframe, text="RotLab",fg='black',background='white').grid(row=rowpos+1,column=8,columnspan=2)
+
         
         #### JV ####
 
@@ -591,10 +601,11 @@ class IVApp(Toplevel):
         fontsizegroup=self.fontsizeGroupGraph.get()
         DATAx=copy.deepcopy(DATA)
         
-        try:
-            if len(samplesgroups)>1:    #if user defined group names different than "Default group"        
-                grouplistdict=[]
-                if self.RF.get()==0:    #select all data points
+#        try:
+        if len(samplesgroups)>1:    #if user defined group names different than "Default group"        
+            grouplistdict=[]
+            if self.RF.get()==0:    #select all data points
+                if self.aftermppcheck.get()==0:
                     for item in range(1,len(samplesgroups),1):
                         groupdict={}
                         groupdict["Group"]=samplesgroups[item]
@@ -629,44 +640,23 @@ class IVApp(Toplevel):
                             groupdict["ForJmpp"]=[x['Jmpp'] for x in listofthegroupFor if 'Jmpp' in x]
                             
                             grouplistdict.append(groupdict)
-                        
-                elif self.RF.get()==1:      #select only the best RevFor of each cell
-                    
+                else:
                     for item in range(1,len(samplesgroups),1):
                         groupdict={}
                         groupdict["Group"]=samplesgroups[item]
                         listofthegroup=[]
                         for item1 in range(len(DATAx)):
-                            if DATAx[item1]["Group"]==groupdict["Group"] and DATAx[item1]["Illumination"]=='Light':
+                            if DATAx[item1]["Group"]==groupdict["Group"] and DATAx[item1]["Illumination"]=='Light' and DATAx[item1]["aftermpp"]==0:
                                 listofthegroup.append(DATAx[item1])
                         if len(listofthegroup)!=0:
-                            grouper = itemgetter("DepID", "Cellletter",'ScanDirection')
-                            result = []
-                            for key, grp in groupby(sorted(listofthegroup, key = grouper), grouper):
-                                result.append(list(grp))
-                            
-                            result1=[]
-                            
-                            for item in result:
-                                result1.append(sorted(item,key=itemgetter('Eff'),reverse=True)[0])
-                            
-                            grouper = itemgetter('ScanDirection')
-                            result2 = []
-                            for key, grp in groupby(sorted(result1, key = grouper), grouper):
-                                result2.append(list(grp))
-                            
                             listofthegroupRev=[]
                             listofthegroupFor=[]
+                            for item1 in range(len(listofthegroup)):
+                                if listofthegroup[item1]["ScanDirection"]=="Reverse":
+                                    listofthegroupRev.append(listofthegroup[item1])
+                                else:
+                                    listofthegroupFor.append(listofthegroup[item1])
                             
-                            if result2[0][0]['ScanDirection']=='Forward':
-                                listofthegroupFor=result2[0]
-                                if len(result2)>1:
-                                    listofthegroupRev=result2[1]
-                            else:
-                                listofthegroupRev=result2[0]
-                                if len(result2)>1:
-                                    listofthegroupFor=result2[1]
-        
                             groupdict["RevVoc"]=[x['Voc'] for x in listofthegroupRev if 'Voc' in x]
                             groupdict["ForVoc"]=[x['Voc'] for x in listofthegroupFor if 'Voc' in x]
                             groupdict["RevJsc"]=[x['Jsc'] for x in listofthegroupRev if 'Jsc' in x]
@@ -685,10 +675,101 @@ class IVApp(Toplevel):
                             groupdict["ForJmpp"]=[x['Jmpp'] for x in listofthegroupFor if 'Jmpp' in x]
                             
                             grouplistdict.append(groupdict)
-                if len(listofthegroup)!=0:    
-                    self.GroupStatfig.clear()
-                    names=samplesgroups[1:]
-                    if self.GroupChoice.get()=="Eff":
+                        listofthegroup=[]
+                        for item1 in range(len(DATAx)):
+                            if DATAx[item1]["Group"]==groupdict["Group"] and DATAx[item1]["Illumination"]=='Light' and DATAx[item1]["aftermpp"]==1:
+                                listofthegroup.append(DATAx[item1])
+                        if len(listofthegroup)!=0:
+                            listofthegroupRev=[]
+                            listofthegroupFor=[]
+                            for item1 in range(len(listofthegroup)):
+                                if listofthegroup[item1]["ScanDirection"]=="Reverse":
+                                    listofthegroupRev.append(listofthegroup[item1])
+                                else:
+                                    listofthegroupFor.append(listofthegroup[item1])
+                            
+                            groupdict["RevVocAMPP"]=[x['Voc'] for x in listofthegroupRev if 'Voc' in x]
+                            groupdict["ForVocAMPP"]=[x['Voc'] for x in listofthegroupFor if 'Voc' in x]
+                            groupdict["RevJscAMPP"]=[x['Jsc'] for x in listofthegroupRev if 'Jsc' in x]
+                            groupdict["ForJscAMPP"]=[x['Jsc'] for x in listofthegroupFor if 'Jsc' in x]
+                            groupdict["RevFFAMPP"]=[x['FF'] for x in listofthegroupRev if 'FF' in x]
+                            groupdict["ForFFAMPP"]=[x['FF'] for x in listofthegroupFor if 'FF' in x]
+                            groupdict["RevEffAMPP"]=[x['Eff'] for x in listofthegroupRev if 'Eff' in x]
+                            groupdict["ForEffAMPP"]=[x['Eff'] for x in listofthegroupFor if 'Eff' in x]
+                            groupdict["RevRocAMPP"]=[x['Roc'] for x in listofthegroupRev if 'Roc' in x]
+                            groupdict["ForRocAMPP"]=[x['Roc'] for x in listofthegroupFor if 'Roc' in x]
+                            groupdict["RevRscAMPP"]=[x['Rsc'] for x in listofthegroupRev if 'Rsc' in x]
+                            groupdict["ForRscAMPP"]=[x['Rsc'] for x in listofthegroupFor if 'Rsc' in x]
+                            groupdict["RevVmppAMPP"]=[x['Vmpp'] for x in listofthegroupRev if 'Vmpp' in x]
+                            groupdict["ForVmppAMPP"]=[x['Vmpp'] for x in listofthegroupFor if 'Vmpp' in x]
+                            groupdict["RevJmppAMPP"]=[x['Jmpp'] for x in listofthegroupRev if 'Jmpp' in x]
+                            groupdict["ForJmppAMPP"]=[x['Jmpp'] for x in listofthegroupFor if 'Jmpp' in x]
+                            
+                            grouplistdict.append(groupdict)
+                    
+                    
+            elif self.RF.get()==1:      #select only the best RevFor of each cell
+                
+                for item in range(1,len(samplesgroups),1):
+                    groupdict={}
+                    groupdict["Group"]=samplesgroups[item]
+                    listofthegroup=[]
+                    for item1 in range(len(DATAx)):
+                        if DATAx[item1]["Group"]==groupdict["Group"] and DATAx[item1]["Illumination"]=='Light':
+                            listofthegroup.append(DATAx[item1])
+                    if len(listofthegroup)!=0:
+                        grouper = itemgetter("DepID", "Cellletter",'ScanDirection')
+                        result = []
+                        for key, grp in groupby(sorted(listofthegroup, key = grouper), grouper):
+                            result.append(list(grp))
+                        
+                        result1=[]
+                        
+                        for item in result:
+                            result1.append(sorted(item,key=itemgetter('Eff'),reverse=True)[0])
+                        
+                        grouper = itemgetter('ScanDirection')
+                        result2 = []
+                        for key, grp in groupby(sorted(result1, key = grouper), grouper):
+                            result2.append(list(grp))
+                        
+                        listofthegroupRev=[]
+                        listofthegroupFor=[]
+                        
+                        if result2[0][0]['ScanDirection']=='Forward':
+                            listofthegroupFor=result2[0]
+                            if len(result2)>1:
+                                listofthegroupRev=result2[1]
+                        else:
+                            listofthegroupRev=result2[0]
+                            if len(result2)>1:
+                                listofthegroupFor=result2[1]
+    
+                        groupdict["RevVoc"]=[x['Voc'] for x in listofthegroupRev if 'Voc' in x]
+                        groupdict["ForVoc"]=[x['Voc'] for x in listofthegroupFor if 'Voc' in x]
+                        groupdict["RevJsc"]=[x['Jsc'] for x in listofthegroupRev if 'Jsc' in x]
+                        groupdict["ForJsc"]=[x['Jsc'] for x in listofthegroupFor if 'Jsc' in x]
+                        groupdict["RevFF"]=[x['FF'] for x in listofthegroupRev if 'FF' in x]
+                        groupdict["ForFF"]=[x['FF'] for x in listofthegroupFor if 'FF' in x]
+                        groupdict["RevEff"]=[x['Eff'] for x in listofthegroupRev if 'Eff' in x]
+                        groupdict["ForEff"]=[x['Eff'] for x in listofthegroupFor if 'Eff' in x]
+                        groupdict["RevRoc"]=[x['Roc'] for x in listofthegroupRev if 'Roc' in x]
+                        groupdict["ForRoc"]=[x['Roc'] for x in listofthegroupFor if 'Roc' in x]
+                        groupdict["RevRsc"]=[x['Rsc'] for x in listofthegroupRev if 'Rsc' in x]
+                        groupdict["ForRsc"]=[x['Rsc'] for x in listofthegroupFor if 'Rsc' in x]
+                        groupdict["RevVmpp"]=[x['Vmpp'] for x in listofthegroupRev if 'Vmpp' in x]
+                        groupdict["ForVmpp"]=[x['Vmpp'] for x in listofthegroupFor if 'Vmpp' in x]
+                        groupdict["RevJmpp"]=[x['Jmpp'] for x in listofthegroupRev if 'Jmpp' in x]
+                        groupdict["ForJmpp"]=[x['Jmpp'] for x in listofthegroupFor if 'Jmpp' in x]
+                        
+                        grouplistdict.append(groupdict)
+                        
+            if len(listofthegroup)!=0:  
+#                print("is listofthegroup non zero length")
+                self.GroupStatfig.clear()
+                names=samplesgroups[1:]
+                if self.GroupChoice.get()=="Eff":
+                    if self.aftermppcheck.get()==0:
                         Effsubfig = self.GroupStatfig 
                         #names=samplesgroups
                         valsRev=[]
@@ -708,16 +789,21 @@ class IVApp(Toplevel):
                         Forw=[]
                         namelist=[]
                         for i in range(len(names)):
-                            if valsRev[i][0]==[] and valsFor[i][0]==[]:
-                                print(" ")
-                            else:
-                                Rev.append(valsRev[i][0])
-                                Forw.append(valsFor[i][0])
-                                valstot.append(valsRev[i][0]+valsFor[i][0])
-                                namelist.append(names[i])
+                             if valsRev[i][0]!=[]:
+                                 Rev.append(valsRev[i][0])
+                             else:
+                                 Rev.append([])
+                             if valsFor[i][0]!=[]:
+                                 Forw.append(valsFor[i][0])
+                             else:
+                                 Forw.append([])
+                             if valsRev[i][0]!=[] or valsFor[i][0]!=[]:
+                                 valstot.append(valsRev[i][0]+valsFor[i][0])
+                                 namelist.append(names[i])
+                              
                         if self.boxplot.get()==1:
                             Effsubfig.boxplot(valstot,0,'',labels=namelist)
-                        
+                    
                         for i in range(len(namelist)):
                             y=Rev[i]
                             if len(y)>0:
@@ -727,383 +813,455 @@ class IVApp(Toplevel):
                             if len(y)>0:
                                 x=np.random.normal(i+1,0.04,size=len(y))
                                 Effsubfig.scatter(x,y,s=15,color='blue', alpha=0.5) 
-                        if self.boxplot.get()==0:
-                            span=range(1,len(namelist)+1)
-                            plt.xticks(span,namelist)
-                            Effsubfig.set_xlim([0.5,span[-1]+0.5])
-                            
-                        Effsubfig.set_ylabel('Efficiency (%)')
-                        for item in ([Effsubfig.title, Effsubfig.xaxis.label, Effsubfig.yaxis.label] +
-                                     Effsubfig.get_xticklabels() + Effsubfig.get_yticklabels()):
-                            item.set_fontsize(fontsizegroup)
-                        
-                        for tick in Effsubfig.get_xticklabels():
-                            tick.set_rotation(self.rotationGroupGraph.get())
-                            
-                    elif self.GroupChoice.get()=="Voc":
-                        Vocsubfig = self.GroupStatfig 
+                    else:
+                        Effsubfig = self.GroupStatfig 
                         #names=samplesgroups
                         valsRev=[]
                         for item in names:
-                            valsRev.append([i["RevVoc"] for i in grouplistdict if i["Group"]==item and "RevVoc" in i])
+                            valsRev.append([i["RevEff"] for i in grouplistdict if i["Group"]==item and "RevEff" in i])
                         valsFor=[]
                         for item in names:
-                            valsFor.append([i["ForVoc"] for i in grouplistdict if i["Group"]==item and "ForVoc" in i])
-                         
+                            valsFor.append([i["ForEff"] for i in grouplistdict if i["Group"]==item and "ForEff" in i])
+                        valsRevAMPP=[]
                         for item in names:
-                            DATAgroupforexport.append([item,"RevVoc"]+[i["RevVoc"] for i in grouplistdict if i["Group"]==item and "RevVoc" in i][0])
-                            DATAgroupforexport.append([item,"ForVoc"]+[i["ForVoc"] for i in grouplistdict if i["Group"]==item and "ForVoc" in i][0])
+                            valsRevAMPP.append([i["RevEffAMPP"] for i in grouplistdict if i["Group"]==item and "RevEffAMPP" in i])
+                        valsForAMPP=[]
+                        for item in names:
+                            valsForAMPP.append([i["ForEffAMPP"] for i in grouplistdict if i["Group"]==item and "ForEffAMPP" in i])
+
+                        valstot=[]
+                        
+                        for item in names:
+                            DATAgroupforexport.append([item,"RevEff"]+[i["RevEff"] for i in grouplistdict if i["Group"]==item and "RevEff" in i][0])
+                            DATAgroupforexport.append([item,"ForEff"]+[i["ForEff"] for i in grouplistdict if i["Group"]==item and "ForEff" in i][0])
+                            DATAgroupforexport.append([item,"RevEffAMPP"]+[i["RevEffAMPP"] for i in grouplistdict if i["Group"]==item and "RevEffAMPP" in i][0])
+                            DATAgroupforexport.append([item,"ForEffAMPP"]+[i["ForEffAMPP"] for i in grouplistdict if i["Group"]==item and "ForEffAMPP" in i][0])
+
                         DATAgroupforexport=map(list, six.moves.zip_longest(*DATAgroupforexport, fillvalue=' '))
         
-                        valstot=[]
                         Rev=[]
                         Forw=[]
+                        RevAMPP=[]
+                        ForwAMPP=[]
                         namelist=[]
                         for i in range(len(names)):
-                            if valsRev[i][0]==[] and valsFor[i][0]==[]:
-                                print(" ")
-                            else:
-                                Rev.append(valsRev[i][0])
-                                Forw.append(valsFor[i][0])
-                                valstot.append(valsRev[i][0]+valsFor[i][0])
-                                namelist.append(names[i])
-                        
+                             if valsRev[i][0]!=[]:
+                                 Rev.append(valsRev[i][0])
+                             else:
+                                 Rev.append([])
+                             if valsFor[i][0]!=[]:
+                                 Forw.append(valsFor[i][0])
+                             else:
+                                 Forw.append([])
+                             if valsRevAMPP[i][0]!=[]:
+                                 RevAMPP.append(valsRevAMPP[i][0])
+                             else:
+                                 RevAMPP.append([])
+                             if valsForAMPP[i][0]!=[]:
+                                 ForwAMPP.append(valsForAMPP[i][0])
+                             else:
+                                 ForwAMPP.append([])    
+                             if valsRev[i][0]!=[] or valsFor[i][0]!=[] or valsRevAMPP[i][0]!=[] or valsForAMPP[i][0]!=[]:
+                                 valstot.append(valsRev[i][0]+valsFor[i][0]+valsRevAMPP[i][0]+valsForAMPP[i][0])
+                                 namelist.append(names[i])
                         if self.boxplot.get()==1:
-                            Vocsubfig.boxplot(valstot,0,'',labels=namelist)
-                        
-                        for i in range(len(namelist)):
-                            y=Rev[i]
-                            if len(y)>0:
-                                x=np.random.normal(i+1,0.04,size=len(y))
-                                Vocsubfig.scatter(x,y,s=15,color='red', alpha=0.5)
-                            y=Forw[i]
-                            if len(y)>0:
-                                x=np.random.normal(i+1,0.04,size=len(y))
-                                Vocsubfig.scatter(x,y,s=15,color='blue', alpha=0.5)  
-                        if self.boxplot.get()==0:
-                            span=range(1,len(namelist)+1)
-                            plt.xticks(span,namelist)
-                            Vocsubfig.set_xlim([0.5,span[-1]+0.5])
-                        Vocsubfig.set_ylabel('Voc (mV)')
-                        for item in ([Vocsubfig.title, Vocsubfig.xaxis.label, Vocsubfig.yaxis.label] +
-                                     Vocsubfig.get_xticklabels() + Vocsubfig.get_yticklabels()):
-                            item.set_fontsize(fontsizegroup)
-                        for tick in Vocsubfig.get_xticklabels():
-                            tick.set_rotation(self.rotationGroupGraph.get())
-                            
-                    elif self.GroupChoice.get()=="Jsc":    
-                        Jscsubfig = self.GroupStatfig 
-                        #names=samplesgroups
-                        valsRev=[]
-                        for item in names:
-                            valsRev.append([i["RevJsc"] for i in grouplistdict if i["Group"]==item and "RevJsc" in i])
-                        valsFor=[]
-                        for item in names:
-                            valsFor.append([i["ForJsc"] for i in grouplistdict if i["Group"]==item and "ForJsc" in i])
-                         
-                        for item in names:
-                            DATAgroupforexport.append([item,"RevJsc"]+[i["RevJsc"] for i in grouplistdict if i["Group"]==item and "RevJsc" in i][0])
-                            DATAgroupforexport.append([item,"ForJsc"]+[i["ForJsc"] for i in grouplistdict if i["Group"]==item and "ForJsc" in i][0])
-                        DATAgroupforexport=map(list, six.moves.zip_longest(*DATAgroupforexport, fillvalue=' '))
-                        
-                        valstot=[]
-                        Rev=[]
-                        Forw=[]
-                        namelist=[]
-                        for i in range(len(names)):
-                            if valsRev[i][0]==[] and valsFor[i][0]==[]:
-                                print(" ")
-                            else:
-                                Rev.append(valsRev[i][0])
-                                Forw.append(valsFor[i][0])
-                                valstot.append(valsRev[i][0]+valsFor[i][0])
-                                namelist.append(names[i])
-                        
-                        if self.boxplot.get()==1:
-                            Jscsubfig.boxplot(valstot,0,'',labels=namelist)
-                        
-                        for i in range(len(namelist)):
-                            y=Rev[i]
-                            if len(y)>0:
-                                x=np.random.normal(i+1,0.04,size=len(y))
-                                Jscsubfig.scatter(x,y,s=15,color='red', alpha=0.5)
-                            y=Forw[i]
-                            if len(y)>0:
-                                x=np.random.normal(i+1,0.04,size=len(y))
-                                Jscsubfig.scatter(x,y,s=15,color='blue', alpha=0.5)  
-                        if self.boxplot.get()==0:
-                            span=range(1,len(namelist)+1)
-                            plt.xticks(span,namelist)
-                            Jscsubfig.set_xlim([0.5,span[-1]+0.5])
-                        Jscsubfig.set_ylabel('Jsc (mA/cm'+'\xb2'+')')
-                        for item in ([Jscsubfig.title, Jscsubfig.xaxis.label, Jscsubfig.yaxis.label] +
-                                     Jscsubfig.get_xticklabels() + Jscsubfig.get_yticklabels()):
-                            item.set_fontsize(fontsizegroup)
-                        for tick in Jscsubfig.get_xticklabels():
-                            tick.set_rotation(self.rotationGroupGraph.get())
-                            
-                    elif self.GroupChoice.get()=="FF":
-                        FFsubfig = self.GroupStatfig 
-                        #names=samplesgroups
-                        valsRev=[]
-                        for item in names:
-                            valsRev.append([i["RevFF"] for i in grouplistdict if i["Group"]==item and "RevFF" in i])
-                        valsFor=[]
-                        for item in names:
-                            valsFor.append([i["ForFF"] for i in grouplistdict if i["Group"]==item and "ForFF" in i])
-                        
-                        for item in names:
-                            DATAgroupforexport.append([item,"RevFF"]+[i["RevFF"] for i in grouplistdict if i["Group"]==item and "RevFF" in i][0])
-                            DATAgroupforexport.append([item,"ForFF"]+[i["ForFF"] for i in grouplistdict if i["Group"]==item and "ForFF" in i][0])
-                        DATAgroupforexport=map(list, six.moves.zip_longest(*DATAgroupforexport, fillvalue=' '))
-                        
-                        valstot=[]
-                        Rev=[]
-                        Forw=[]
-                        namelist=[]
-                        for i in range(len(names)):
-                            if valsRev[i][0]==[] and valsFor[i][0]==[]:
-                                print(" ")
-                            else:
-                                Rev.append(valsRev[i][0])
-                                Forw.append(valsFor[i][0])
-                                valstot.append(valsRev[i][0]+valsFor[i][0])
-                                namelist.append(names[i])
-                        
-                        if self.boxplot.get()==1:
-                            FFsubfig.boxplot(valstot,0,'',labels=namelist)
-                        
-                        for i in range(len(namelist)):
-                            y=Rev[i]
-                            if len(y)>0:
-                                x=np.random.normal(i+1,0.04,size=len(y))
-                                FFsubfig.scatter(x,y,s=15,color='red', alpha=0.5)
-                            y=Forw[i]
-                            if len(y)>0:
-                                x=np.random.normal(i+1,0.04,size=len(y))
-                                FFsubfig.scatter(x,y,s=15,color='blue', alpha=0.5)  
-                        if self.boxplot.get()==0:
-                            span=range(1,len(namelist)+1)
-                            plt.xticks(span,namelist)
-                            FFsubfig.set_xlim([0.5,span[-1]+0.5])
-                        FFsubfig.set_ylabel('FF (%)')
-                        for item in ([FFsubfig.title, FFsubfig.xaxis.label, FFsubfig.yaxis.label] +
-                                     FFsubfig.get_xticklabels() + FFsubfig.get_yticklabels()):
-                            item.set_fontsize(fontsizegroup)
-                        for tick in FFsubfig.get_xticklabels():
-                            tick.set_rotation(self.rotationGroupGraph.get())
-                            
-                    elif self.GroupChoice.get()=="Roc":
-                        Rocsubfig = self.GroupStatfig 
-                        #names=samplesgroups
-                        valsRev=[]
-                        for item in names:
-                            valsRev.append([i["RevRoc"] for i in grouplistdict if i["Group"]==item and "RevRoc" in i])
-                        valsFor=[]
-                        for item in names:
-                            valsFor.append([i["ForRoc"] for i in grouplistdict if i["Group"]==item and "ForRoc" in i])
-                         
-                        for item in names:
-                            DATAgroupforexport.append([item,"RevRoc"]+[i["RevRoc"] for i in grouplistdict if i["Group"]==item and "RevRoc" in i][0])
-                            DATAgroupforexport.append([item,"ForRoc"]+[i["ForRoc"] for i in grouplistdict if i["Group"]==item and "ForRoc" in i][0])
-                        DATAgroupforexport=map(list, six.moves.zip_longest(*DATAgroupforexport, fillvalue=' '))
-                        
-                        valstot=[]
-                        Rev=[]
-                        Forw=[]
-                        namelist=[]
-                        for i in range(len(names)):
-                            if valsRev[i][0]==[] and valsFor[i][0]==[]:
-                                print(" ")
-                            else:
-                                Rev.append(valsRev[i][0])
-                                Forw.append(valsFor[i][0])
-                                valstot.append(valsRev[i][0]+valsFor[i][0])
-                                namelist.append(names[i])
-                        
-                        if self.boxplot.get()==1:
-                            Rocsubfig.boxplot(valstot,0,'',labels=namelist)
-                        
-                        for i in range(len(namelist)):
-                            y=Rev[i]
-                            if len(y)>0:
-                                x=np.random.normal(i+1,0.04,size=len(y))
-                                Rocsubfig.scatter(x,y,s=15,color='red', alpha=0.5)
-                            y=Forw[i]
-                            if len(y)>0:
-                                x=np.random.normal(i+1,0.04,size=len(y))
-                                Rocsubfig.scatter(x,y,s=15,color='blue', alpha=0.5)  
-                        if self.boxplot.get()==0:
-                            span=range(1,len(namelist)+1)
-                            plt.xticks(span,namelist)
-                            Rocsubfig.set_xlim([0.5,span[-1]+0.5])
-                        Rocsubfig.set_ylabel('Roc')
-                        for item in ([Rocsubfig.title, Rocsubfig.xaxis.label, Rocsubfig.yaxis.label] +
-                                     Rocsubfig.get_xticklabels() + Rocsubfig.get_yticklabels()):
-                            item.set_fontsize(fontsizegroup)
-                        for tick in Rocsubfig.get_xticklabels():
-                            tick.set_rotation(self.rotationGroupGraph.get())
-                            
-                    elif self.GroupChoice.get()=="Rsc":
-                        Rscsubfig = self.GroupStatfig 
-                        #names=samplesgroups
-                        valsRev=[]
-                        for item in names:
-                            valsRev.append([i["RevRsc"] for i in grouplistdict if i["Group"]==item and "RevRsc" in i])
-                        valsFor=[]
-                        for item in names:
-                            valsFor.append([i["ForRsc"] for i in grouplistdict if i["Group"]==item and "ForRsc" in i])
-                        
-                        for item in names:
-                            DATAgroupforexport.append([item,"RevRsc"]+[i["RevRsc"] for i in grouplistdict if i["Group"]==item and "RevRsc" in i][0])
-                            DATAgroupforexport.append([item,"ForRsc"]+[i["ForRsc"] for i in grouplistdict if i["Group"]==item and "ForRsc" in i][0])
-                        DATAgroupforexport=map(list, six.moves.zip_longest(*DATAgroupforexport, fillvalue=' '))
-                        
-                        valstot=[]
-                        Rev=[]
-                        Forw=[]
-                        namelist=[]
-                        for i in range(len(names)):
-                            if valsRev[i][0]==[] and valsFor[i][0]==[]:
-                                print(" ")
-                            else:
-                                Rev.append(valsRev[i][0])
-                                Forw.append(valsFor[i][0])
-                                valstot.append(valsRev[i][0]+valsFor[i][0])
-                                namelist.append(names[i])
-                        
-                        if self.boxplot.get()==1:
-                            Rscsubfig.boxplot(valstot,0,'',labels=namelist)
-                        
-                        for i in range(len(namelist)):
-                            y=Rev[i]
-                            if len(y)>0:
-                                x=np.random.normal(i+1,0.04,size=len(y))
-                                Rscsubfig.scatter(x,y,s=15,color='red', alpha=0.5)
-                            y=Forw[i]
-                            if len(y)>0:
-                                x=np.random.normal(i+1,0.04,size=len(y))
-                                Rscsubfig.scatter(x,y,s=15,color='blue', alpha=0.5)  
-                        if self.boxplot.get()==0:
-                            span=range(1,len(namelist)+1)
-                            plt.xticks(span,namelist)
-                            Rscsubfig.set_xlim([0.5,span[-1]+0.5])
-                        Rscsubfig.set_ylabel('Rsc')
-                        for item in ([Rscsubfig.title, Rscsubfig.xaxis.label, Rscsubfig.yaxis.label] +
-                                     Rscsubfig.get_xticklabels() + Rscsubfig.get_yticklabels()):
-                            item.set_fontsize(fontsizegroup)
-                        for tick in Rscsubfig.get_xticklabels():
-                            tick.set_rotation(self.rotationGroupGraph.get())
-                            
-                    elif self.GroupChoice.get()=="Vmpp":
-                        Rscsubfig = self.GroupStatfig 
-                        #names=samplesgroups
-                        valsRev=[]
-                        for item in names:
-                            valsRev.append([i["RevVmpp"] for i in grouplistdict if i["Group"]==item and "RevVmpp" in i])
-                        valsFor=[]
-                        for item in names:
-                            valsFor.append([i["ForVmpp"] for i in grouplistdict if i["Group"]==item and "ForVmpp" in i])
-                         
-                        for item in names:
-                            DATAgroupforexport.append([item,"RevVmpp"]+[i["RevVmpp"] for i in grouplistdict if i["Group"]==item and "RevVmpp" in i][0])
-                            DATAgroupforexport.append([item,"ForVmpp"]+[i["ForVmpp"] for i in grouplistdict if i["Group"]==item and "ForVmpp" in i][0])
-                        DATAgroupforexport=map(list, six.moves.zip_longest(*DATAgroupforexport, fillvalue=' '))
-                        
-                        valstot=[]
-                        Rev=[]
-                        Forw=[]
-                        namelist=[]
-                        for i in range(len(names)):
-                            if valsRev[i][0]==[] and valsFor[i][0]==[]:
-                                print(" ")
-                            else:
-                                Rev.append(valsRev[i][0])
-                                Forw.append(valsFor[i][0])
-                                valstot.append(valsRev[i][0]+valsFor[i][0])
-                                namelist.append(names[i])
-                        
-                        if self.boxplot.get()==1:
-                            Rscsubfig.boxplot(valstot,0,'',labels=namelist)
-                        
-                        for i in range(len(namelist)):
-                            y=Rev[i]
-                            if len(y)>0:
-                                x=np.random.normal(i+1,0.04,size=len(y))
-                                Rscsubfig.scatter(x,y,s=15,color='red', alpha=0.5)
-                            y=Forw[i]
-                            if len(y)>0:
-                                x=np.random.normal(i+1,0.04,size=len(y))
-                                Rscsubfig.scatter(x,y,s=15,color='blue', alpha=0.5)  
-                        if self.boxplot.get()==0:
-                            span=range(1,len(namelist)+1)
-                            plt.xticks(span,namelist)
-                            Rscsubfig.set_xlim([0.5,span[-1]+0.5])
-                        Rscsubfig.set_ylabel('Vmpp (mV)')
-                        for item in ([Rscsubfig.title, Rscsubfig.xaxis.label, Rscsubfig.yaxis.label] +
-                                     Rscsubfig.get_xticklabels() + Rscsubfig.get_yticklabels()):
-                            item.set_fontsize(fontsizegroup) 
-                        for tick in Rscsubfig.get_xticklabels():
-                            tick.set_rotation(self.rotationGroupGraph.get())
-                            
-                    elif self.GroupChoice.get()=="Jmpp":
-                        Rscsubfig = self.GroupStatfig 
-                        #names=samplesgroups
-                        valsRev=[]
-                        for item in names:
-                            valsRev.append([i["RevJmpp"] for i in grouplistdict if i["Group"]==item and "RevJmpp" in i])
-                        valsFor=[]
-                        for item in names:
-                            valsFor.append([i["ForJmpp"] for i in grouplistdict if i["Group"]==item and "ForJmpp" in i])
-                         
-                        for item in names:
-                            DATAgroupforexport.append([item,"RevJmpp"]+[i["RevJmpp"] for i in grouplistdict if i["Group"]==item and "RevJmpp" in i][0])
-                            DATAgroupforexport.append([item,"ForJmpp"]+[i["ForJmpp"] for i in grouplistdict if i["Group"]==item and "ForJmpp" in i][0])
-                        DATAgroupforexport=map(list, six.moves.zip_longest(*DATAgroupforexport, fillvalue=' '))
-                        
-                        valstot=[]
-                        Rev=[]
-                        Forw=[]
-                        namelist=[]
-                        for i in range(len(names)):
-                            if valsRev[i][0]==[] and valsFor[i][0]==[]:
-                                print(" ")
-                            else:
-                                Rev.append(valsRev[i][0])
-                                Forw.append(valsFor[i][0])
-                                valstot.append(valsRev[i][0]+valsFor[i][0])
-                                namelist.append(names[i])
-                        
-                        if self.boxplot.get()==1:
-                            Rscsubfig.boxplot(valstot,0,'',labels=namelist)
-                        
-                        for i in range(len(namelist)):
-                            y=Rev[i]
-                            if len(y)>0:
-                                x=np.random.normal(i+1,0.04,size=len(y))
-                                Rscsubfig.scatter(x,y,s=15,color='red', alpha=0.5)
-                            y=Forw[i]
-                            if len(y)>0:
-                                x=np.random.normal(i+1,0.04,size=len(y))
-                                Rscsubfig.scatter(x,y,s=15,color='blue', alpha=0.5)  
-                        if self.boxplot.get()==0:
-                            span=range(1,len(namelist)+1)
-                            plt.xticks(span,namelist)
-                            Rscsubfig.set_xlim([0.5,span[-1]+0.5])
-                        Rscsubfig.set_ylabel('Jmpp (mA/cm'+'\xb2'+')')
-                        for item in ([Rscsubfig.title, Rscsubfig.xaxis.label, Rscsubfig.yaxis.label] +
-                                     Rscsubfig.get_xticklabels() + Rscsubfig.get_yticklabels()):
-                            item.set_fontsize(fontsizegroup)    
-                        for tick in Rscsubfig.get_xticklabels():
-                            tick.set_rotation(self.rotationGroupGraph.get())
+                            Effsubfig.boxplot(valstot,0,'',labels=namelist)
                     
+                        for i in range(len(namelist)):
+                            y=Rev[i]
+                            if len(y)>0:
+                                x=np.random.normal(i+0.9,0.04,size=len(y))
+                                Effsubfig.scatter(x,y,s=15,color='red', alpha=0.5)
+                            y=Forw[i]
+                            if len(y)>0:
+                                x=np.random.normal(i+0.9,0.04,size=len(y))
+                                Effsubfig.scatter(x,y,s=15,color='blue', alpha=0.5) 
+                            y=RevAMPP[i]
+                            if len(y)>0:
+                                x=np.random.normal(i+1.1,0.04,size=len(y))
+                                Effsubfig.scatter(x,y,s=15,color='orange', alpha=0.5)
+                            y=ForwAMPP[i]
+                            if len(y)>0:
+                                x=np.random.normal(i+1.1,0.04,size=len(y))
+                                Effsubfig.scatter(x,y,s=15,color='lightblue', alpha=0.5) 
+                                
+                    if self.boxplot.get()==0:
+                        span=range(1,len(namelist)+1)
+                        plt.xticks(span,namelist)
+                        Effsubfig.set_xlim([0.5,span[-1]+0.5])
                         
-                    self.GroupStatfig.annotate('Red=reverse; Blue=forward', xy=(0.7,1.05), xycoords='axes fraction', fontsize=7,
-                                horizontalalignment='right', verticalalignment='bottom')
-        
-                    plt.gcf().canvas.draw()
-        except:
-            pass
+                    Effsubfig.set_ylabel('Efficiency (%)')
+                    for item in ([Effsubfig.title, Effsubfig.xaxis.label, Effsubfig.yaxis.label] +
+                                 Effsubfig.get_xticklabels() + Effsubfig.get_yticklabels()):
+                        item.set_fontsize(fontsizegroup)
+                    
+                    for tick in Effsubfig.get_xticklabels():
+                        tick.set_rotation(self.rotationGroupGraph.get())
+                        
+                elif self.GroupChoice.get()=="Voc":
+                    Vocsubfig = self.GroupStatfig 
+                    #names=samplesgroups
+                    valsRev=[]
+                    for item in names:
+                        valsRev.append([i["RevVoc"] for i in grouplistdict if i["Group"]==item and "RevVoc" in i])
+                    valsFor=[]
+                    for item in names:
+                        valsFor.append([i["ForVoc"] for i in grouplistdict if i["Group"]==item and "ForVoc" in i])
+                     
+                    for item in names:
+                        DATAgroupforexport.append([item,"RevVoc"]+[i["RevVoc"] for i in grouplistdict if i["Group"]==item and "RevVoc" in i][0])
+                        DATAgroupforexport.append([item,"ForVoc"]+[i["ForVoc"] for i in grouplistdict if i["Group"]==item and "ForVoc" in i][0])
+                    DATAgroupforexport=map(list, six.moves.zip_longest(*DATAgroupforexport, fillvalue=' '))
+    
+                    valstot=[]
+                    Rev=[]
+                    Forw=[]
+                    namelist=[]
+                    for i in range(len(names)):
+                        if valsRev[i][0]==[] and valsFor[i][0]==[]:
+                            print(" ")
+                        else:
+                            Rev.append(valsRev[i][0])
+                            Forw.append(valsFor[i][0])
+                            valstot.append(valsRev[i][0]+valsFor[i][0])
+                            namelist.append(names[i])
+                    
+                    if self.boxplot.get()==1:
+                        Vocsubfig.boxplot(valstot,0,'',labels=namelist)
+                    
+                    for i in range(len(namelist)):
+                        y=Rev[i]
+                        if len(y)>0:
+                            x=np.random.normal(i+1,0.04,size=len(y))
+                            Vocsubfig.scatter(x,y,s=15,color='red', alpha=0.5)
+                        y=Forw[i]
+                        if len(y)>0:
+                            x=np.random.normal(i+1,0.04,size=len(y))
+                            Vocsubfig.scatter(x,y,s=15,color='blue', alpha=0.5)  
+                    if self.boxplot.get()==0:
+                        span=range(1,len(namelist)+1)
+                        plt.xticks(span,namelist)
+                        Vocsubfig.set_xlim([0.5,span[-1]+0.5])
+                    Vocsubfig.set_ylabel('Voc (mV)')
+                    for item in ([Vocsubfig.title, Vocsubfig.xaxis.label, Vocsubfig.yaxis.label] +
+                                 Vocsubfig.get_xticklabels() + Vocsubfig.get_yticklabels()):
+                        item.set_fontsize(fontsizegroup)
+                    for tick in Vocsubfig.get_xticklabels():
+                        tick.set_rotation(self.rotationGroupGraph.get())
+                        
+                elif self.GroupChoice.get()=="Jsc":    
+                    Jscsubfig = self.GroupStatfig 
+                    #names=samplesgroups
+                    valsRev=[]
+                    for item in names:
+                        valsRev.append([i["RevJsc"] for i in grouplistdict if i["Group"]==item and "RevJsc" in i])
+                    valsFor=[]
+                    for item in names:
+                        valsFor.append([i["ForJsc"] for i in grouplistdict if i["Group"]==item and "ForJsc" in i])
+                     
+                    for item in names:
+                        DATAgroupforexport.append([item,"RevJsc"]+[i["RevJsc"] for i in grouplistdict if i["Group"]==item and "RevJsc" in i][0])
+                        DATAgroupforexport.append([item,"ForJsc"]+[i["ForJsc"] for i in grouplistdict if i["Group"]==item and "ForJsc" in i][0])
+                    DATAgroupforexport=map(list, six.moves.zip_longest(*DATAgroupforexport, fillvalue=' '))
+                    
+                    valstot=[]
+                    Rev=[]
+                    Forw=[]
+                    namelist=[]
+                    for i in range(len(names)):
+                        if valsRev[i][0]==[] and valsFor[i][0]==[]:
+                            print(" ")
+                        else:
+                            Rev.append(valsRev[i][0])
+                            Forw.append(valsFor[i][0])
+                            valstot.append(valsRev[i][0]+valsFor[i][0])
+                            namelist.append(names[i])
+                    
+                    if self.boxplot.get()==1:
+                        Jscsubfig.boxplot(valstot,0,'',labels=namelist)
+                    
+                    for i in range(len(namelist)):
+                        y=Rev[i]
+                        if len(y)>0:
+                            x=np.random.normal(i+1,0.04,size=len(y))
+                            Jscsubfig.scatter(x,y,s=15,color='red', alpha=0.5)
+                        y=Forw[i]
+                        if len(y)>0:
+                            x=np.random.normal(i+1,0.04,size=len(y))
+                            Jscsubfig.scatter(x,y,s=15,color='blue', alpha=0.5)  
+                    if self.boxplot.get()==0:
+                        span=range(1,len(namelist)+1)
+                        plt.xticks(span,namelist)
+                        Jscsubfig.set_xlim([0.5,span[-1]+0.5])
+                    Jscsubfig.set_ylabel('Jsc (mA/cm'+'\xb2'+')')
+                    for item in ([Jscsubfig.title, Jscsubfig.xaxis.label, Jscsubfig.yaxis.label] +
+                                 Jscsubfig.get_xticklabels() + Jscsubfig.get_yticklabels()):
+                        item.set_fontsize(fontsizegroup)
+                    for tick in Jscsubfig.get_xticklabels():
+                        tick.set_rotation(self.rotationGroupGraph.get())
+                        
+                elif self.GroupChoice.get()=="FF":
+                    FFsubfig = self.GroupStatfig 
+                    #names=samplesgroups
+                    valsRev=[]
+                    for item in names:
+                        valsRev.append([i["RevFF"] for i in grouplistdict if i["Group"]==item and "RevFF" in i])
+                    valsFor=[]
+                    for item in names:
+                        valsFor.append([i["ForFF"] for i in grouplistdict if i["Group"]==item and "ForFF" in i])
+                    
+                    for item in names:
+                        DATAgroupforexport.append([item,"RevFF"]+[i["RevFF"] for i in grouplistdict if i["Group"]==item and "RevFF" in i][0])
+                        DATAgroupforexport.append([item,"ForFF"]+[i["ForFF"] for i in grouplistdict if i["Group"]==item and "ForFF" in i][0])
+                    DATAgroupforexport=map(list, six.moves.zip_longest(*DATAgroupforexport, fillvalue=' '))
+                    
+                    valstot=[]
+                    Rev=[]
+                    Forw=[]
+                    namelist=[]
+                    for i in range(len(names)):
+                        if valsRev[i][0]==[] and valsFor[i][0]==[]:
+                            print(" ")
+                        else:
+                            Rev.append(valsRev[i][0])
+                            Forw.append(valsFor[i][0])
+                            valstot.append(valsRev[i][0]+valsFor[i][0])
+                            namelist.append(names[i])
+                    
+                    if self.boxplot.get()==1:
+                        FFsubfig.boxplot(valstot,0,'',labels=namelist)
+                    
+                    for i in range(len(namelist)):
+                        y=Rev[i]
+                        if len(y)>0:
+                            x=np.random.normal(i+1,0.04,size=len(y))
+                            FFsubfig.scatter(x,y,s=15,color='red', alpha=0.5)
+                        y=Forw[i]
+                        if len(y)>0:
+                            x=np.random.normal(i+1,0.04,size=len(y))
+                            FFsubfig.scatter(x,y,s=15,color='blue', alpha=0.5)  
+                    if self.boxplot.get()==0:
+                        span=range(1,len(namelist)+1)
+                        plt.xticks(span,namelist)
+                        FFsubfig.set_xlim([0.5,span[-1]+0.5])
+                    FFsubfig.set_ylabel('FF (%)')
+                    for item in ([FFsubfig.title, FFsubfig.xaxis.label, FFsubfig.yaxis.label] +
+                                 FFsubfig.get_xticklabels() + FFsubfig.get_yticklabels()):
+                        item.set_fontsize(fontsizegroup)
+                    for tick in FFsubfig.get_xticklabels():
+                        tick.set_rotation(self.rotationGroupGraph.get())
+                        
+                elif self.GroupChoice.get()=="Roc":
+                    Rocsubfig = self.GroupStatfig 
+                    #names=samplesgroups
+                    valsRev=[]
+                    for item in names:
+                        valsRev.append([i["RevRoc"] for i in grouplistdict if i["Group"]==item and "RevRoc" in i])
+                    valsFor=[]
+                    for item in names:
+                        valsFor.append([i["ForRoc"] for i in grouplistdict if i["Group"]==item and "ForRoc" in i])
+                     
+                    for item in names:
+                        DATAgroupforexport.append([item,"RevRoc"]+[i["RevRoc"] for i in grouplistdict if i["Group"]==item and "RevRoc" in i][0])
+                        DATAgroupforexport.append([item,"ForRoc"]+[i["ForRoc"] for i in grouplistdict if i["Group"]==item and "ForRoc" in i][0])
+                    DATAgroupforexport=map(list, six.moves.zip_longest(*DATAgroupforexport, fillvalue=' '))
+                    
+                    valstot=[]
+                    Rev=[]
+                    Forw=[]
+                    namelist=[]
+                    for i in range(len(names)):
+                        if valsRev[i][0]==[] and valsFor[i][0]==[]:
+                            print(" ")
+                        else:
+                            Rev.append(valsRev[i][0])
+                            Forw.append(valsFor[i][0])
+                            valstot.append(valsRev[i][0]+valsFor[i][0])
+                            namelist.append(names[i])
+                    
+                    if self.boxplot.get()==1:
+                        Rocsubfig.boxplot(valstot,0,'',labels=namelist)
+                    
+                    for i in range(len(namelist)):
+                        y=Rev[i]
+                        if len(y)>0:
+                            x=np.random.normal(i+1,0.04,size=len(y))
+                            Rocsubfig.scatter(x,y,s=15,color='red', alpha=0.5)
+                        y=Forw[i]
+                        if len(y)>0:
+                            x=np.random.normal(i+1,0.04,size=len(y))
+                            Rocsubfig.scatter(x,y,s=15,color='blue', alpha=0.5)  
+                    if self.boxplot.get()==0:
+                        span=range(1,len(namelist)+1)
+                        plt.xticks(span,namelist)
+                        Rocsubfig.set_xlim([0.5,span[-1]+0.5])
+                    Rocsubfig.set_ylabel('Roc')
+                    for item in ([Rocsubfig.title, Rocsubfig.xaxis.label, Rocsubfig.yaxis.label] +
+                                 Rocsubfig.get_xticklabels() + Rocsubfig.get_yticklabels()):
+                        item.set_fontsize(fontsizegroup)
+                    for tick in Rocsubfig.get_xticklabels():
+                        tick.set_rotation(self.rotationGroupGraph.get())
+                        
+                elif self.GroupChoice.get()=="Rsc":
+                    Rscsubfig = self.GroupStatfig 
+                    #names=samplesgroups
+                    valsRev=[]
+                    for item in names:
+                        valsRev.append([i["RevRsc"] for i in grouplistdict if i["Group"]==item and "RevRsc" in i])
+                    valsFor=[]
+                    for item in names:
+                        valsFor.append([i["ForRsc"] for i in grouplistdict if i["Group"]==item and "ForRsc" in i])
+                    
+                    for item in names:
+                        DATAgroupforexport.append([item,"RevRsc"]+[i["RevRsc"] for i in grouplistdict if i["Group"]==item and "RevRsc" in i][0])
+                        DATAgroupforexport.append([item,"ForRsc"]+[i["ForRsc"] for i in grouplistdict if i["Group"]==item and "ForRsc" in i][0])
+                    DATAgroupforexport=map(list, six.moves.zip_longest(*DATAgroupforexport, fillvalue=' '))
+                    
+                    valstot=[]
+                    Rev=[]
+                    Forw=[]
+                    namelist=[]
+                    for i in range(len(names)):
+                        if valsRev[i][0]==[] and valsFor[i][0]==[]:
+                            print(" ")
+                        else:
+                            Rev.append(valsRev[i][0])
+                            Forw.append(valsFor[i][0])
+                            valstot.append(valsRev[i][0]+valsFor[i][0])
+                            namelist.append(names[i])
+                    
+                    if self.boxplot.get()==1:
+                        Rscsubfig.boxplot(valstot,0,'',labels=namelist)
+                    
+                    for i in range(len(namelist)):
+                        y=Rev[i]
+                        if len(y)>0:
+                            x=np.random.normal(i+1,0.04,size=len(y))
+                            Rscsubfig.scatter(x,y,s=15,color='red', alpha=0.5)
+                        y=Forw[i]
+                        if len(y)>0:
+                            x=np.random.normal(i+1,0.04,size=len(y))
+                            Rscsubfig.scatter(x,y,s=15,color='blue', alpha=0.5)  
+                    if self.boxplot.get()==0:
+                        span=range(1,len(namelist)+1)
+                        plt.xticks(span,namelist)
+                        Rscsubfig.set_xlim([0.5,span[-1]+0.5])
+                    Rscsubfig.set_ylabel('Rsc')
+                    for item in ([Rscsubfig.title, Rscsubfig.xaxis.label, Rscsubfig.yaxis.label] +
+                                 Rscsubfig.get_xticklabels() + Rscsubfig.get_yticklabels()):
+                        item.set_fontsize(fontsizegroup)
+                    for tick in Rscsubfig.get_xticklabels():
+                        tick.set_rotation(self.rotationGroupGraph.get())
+                        
+                elif self.GroupChoice.get()=="Vmpp":
+                    Rscsubfig = self.GroupStatfig 
+                    #names=samplesgroups
+                    valsRev=[]
+                    for item in names:
+                        valsRev.append([i["RevVmpp"] for i in grouplistdict if i["Group"]==item and "RevVmpp" in i])
+                    valsFor=[]
+                    for item in names:
+                        valsFor.append([i["ForVmpp"] for i in grouplistdict if i["Group"]==item and "ForVmpp" in i])
+                     
+                    for item in names:
+                        DATAgroupforexport.append([item,"RevVmpp"]+[i["RevVmpp"] for i in grouplistdict if i["Group"]==item and "RevVmpp" in i][0])
+                        DATAgroupforexport.append([item,"ForVmpp"]+[i["ForVmpp"] for i in grouplistdict if i["Group"]==item and "ForVmpp" in i][0])
+                    DATAgroupforexport=map(list, six.moves.zip_longest(*DATAgroupforexport, fillvalue=' '))
+                    
+                    valstot=[]
+                    Rev=[]
+                    Forw=[]
+                    namelist=[]
+                    for i in range(len(names)):
+                        if valsRev[i][0]==[] and valsFor[i][0]==[]:
+                            print(" ")
+                        else:
+                            Rev.append(valsRev[i][0])
+                            Forw.append(valsFor[i][0])
+                            valstot.append(valsRev[i][0]+valsFor[i][0])
+                            namelist.append(names[i])
+                    
+                    if self.boxplot.get()==1:
+                        Rscsubfig.boxplot(valstot,0,'',labels=namelist)
+                    
+                    for i in range(len(namelist)):
+                        y=Rev[i]
+                        if len(y)>0:
+                            x=np.random.normal(i+1,0.04,size=len(y))
+                            Rscsubfig.scatter(x,y,s=15,color='red', alpha=0.5)
+                        y=Forw[i]
+                        if len(y)>0:
+                            x=np.random.normal(i+1,0.04,size=len(y))
+                            Rscsubfig.scatter(x,y,s=15,color='blue', alpha=0.5)  
+                    if self.boxplot.get()==0:
+                        span=range(1,len(namelist)+1)
+                        plt.xticks(span,namelist)
+                        Rscsubfig.set_xlim([0.5,span[-1]+0.5])
+                    Rscsubfig.set_ylabel('Vmpp (mV)')
+                    for item in ([Rscsubfig.title, Rscsubfig.xaxis.label, Rscsubfig.yaxis.label] +
+                                 Rscsubfig.get_xticklabels() + Rscsubfig.get_yticklabels()):
+                        item.set_fontsize(fontsizegroup) 
+                    for tick in Rscsubfig.get_xticklabels():
+                        tick.set_rotation(self.rotationGroupGraph.get())
+                        
+                elif self.GroupChoice.get()=="Jmpp":
+                    Rscsubfig = self.GroupStatfig 
+                    #names=samplesgroups
+                    valsRev=[]
+                    for item in names:
+                        valsRev.append([i["RevJmpp"] for i in grouplistdict if i["Group"]==item and "RevJmpp" in i])
+                    valsFor=[]
+                    for item in names:
+                        valsFor.append([i["ForJmpp"] for i in grouplistdict if i["Group"]==item and "ForJmpp" in i])
+                     
+                    for item in names:
+                        DATAgroupforexport.append([item,"RevJmpp"]+[i["RevJmpp"] for i in grouplistdict if i["Group"]==item and "RevJmpp" in i][0])
+                        DATAgroupforexport.append([item,"ForJmpp"]+[i["ForJmpp"] for i in grouplistdict if i["Group"]==item and "ForJmpp" in i][0])
+                    DATAgroupforexport=map(list, six.moves.zip_longest(*DATAgroupforexport, fillvalue=' '))
+                    
+                    valstot=[]
+                    Rev=[]
+                    Forw=[]
+                    namelist=[]
+                    for i in range(len(names)):
+                        if valsRev[i][0]==[] and valsFor[i][0]==[]:
+                            print(" ")
+                        else:
+                            Rev.append(valsRev[i][0])
+                            Forw.append(valsFor[i][0])
+                            valstot.append(valsRev[i][0]+valsFor[i][0])
+                            namelist.append(names[i])
+                    
+                    if self.boxplot.get()==1:
+                        Rscsubfig.boxplot(valstot,0,'',labels=namelist)
+                    
+                    for i in range(len(namelist)):
+                        y=Rev[i]
+                        if len(y)>0:
+                            x=np.random.normal(i+1,0.04,size=len(y))
+                            Rscsubfig.scatter(x,y,s=15,color='red', alpha=0.5)
+                        y=Forw[i]
+                        if len(y)>0:
+                            x=np.random.normal(i+1,0.04,size=len(y))
+                            Rscsubfig.scatter(x,y,s=15,color='blue', alpha=0.5)  
+                    if self.boxplot.get()==0:
+                        span=range(1,len(namelist)+1)
+                        plt.xticks(span,namelist)
+                        Rscsubfig.set_xlim([0.5,span[-1]+0.5])
+                    Rscsubfig.set_ylabel('Jmpp (mA/cm'+'\xb2'+')')
+                    for item in ([Rscsubfig.title, Rscsubfig.xaxis.label, Rscsubfig.yaxis.label] +
+                                 Rscsubfig.get_xticklabels() + Rscsubfig.get_yticklabels()):
+                        item.set_fontsize(fontsizegroup)    
+                    for tick in Rscsubfig.get_xticklabels():
+                        tick.set_rotation(self.rotationGroupGraph.get())
+                
+                    
+                self.GroupStatfig.annotate('Red=reverse; Blue=forward', xy=(0.7,1.05), xycoords='axes fraction', fontsize=7,
+                            horizontalalignment='right', verticalalignment='bottom')
+    
+                plt.gcf().canvas.draw()
+#        except:
+#            pass
     
     def UpdateIVGraph(self):
         global DATA
@@ -1609,7 +1767,7 @@ class IVApp(Toplevel):
         return  params
     
     def getdatalistsfromNRELfiles(self, file_path): #reads JV and mpp files from NREL
-        global DATA
+        global DATA, DATAdark
         global DATAMPP, numbLightfiles, numbDarkfiles
         
         
@@ -1662,9 +1820,9 @@ class IVApp(Toplevel):
                         partdict["MeasComment"]=filerawdata[item][10:-1]
                         break
                 if "aftermpp" in partdict["MeasComment"]:
-                    partdict["afermpp"]=1
+                    partdict["aftermpp"]=1
                 else:
-                    partdict["afermpp"]=0
+                    partdict["aftermpp"]=0
                 for item in range(len(filerawdata)):
                     if "Start V:" in filerawdata[item]:
                         partdict["Vstart"]=float(filerawdata[item][9:-1])
@@ -1757,6 +1915,7 @@ class IVApp(Toplevel):
                 else:
                     partdict["SampleName"]=partdict["SampleName"]+'_D'
                     DATA.append(partdict)
+                    DATAdark.append(partdict)
                     numbDarkfiles+=1
                 
             elif filetype ==2 : #mpp files of SERF C215 labview program
@@ -2879,12 +3038,12 @@ class IVApp(Toplevel):
                                 fig=plt.figure()
                                 ax=fig.add_subplot(111)
                                 ax.plot([],[],label="Initial scans",color="White") 
-                                checkafermpp=1
+                                checkaftermpp=1
                                 for item1 in range(len(DATAbysubstrate[-1][1])):
                                     if DATAmppbysubstrate[item][1][item0]["Cellletter"]==DATAbysubstrate[-1][1][item1]["Cellletter"] and DATAbysubstrate[-1][1][item1]["Illumination"]=="Light":
-                                        if DATAbysubstrate[-1][1][item1]["afermpp"] and checkafermpp:
+                                        if DATAbysubstrate[-1][1][item1]["aftermpp"] and checkaftermpp:
                                             ax.plot([],[],label="After mpp",color="White") 
-                                            checkafermpp=0
+                                            checkaftermpp=0
                                             ax.plot(DATAbysubstrate[-1][1][item1]["IVData"][0],[-a*b for a,b in zip(DATAbysubstrate[-1][1][item1]["IVData"][0],DATAbysubstrate[-1][1][item1]["IVData"][1])],label=DATAbysubstrate[-1][1][item1]["SampleName"])   
                                         else:
                                             ax.plot(DATAbysubstrate[-1][1][item1]["IVData"][0],[-a*b for a,b in zip(DATAbysubstrate[-1][1][item1]["IVData"][0],DATAbysubstrate[-1][1][item1]["IVData"][1])],label=DATAbysubstrate[-1][1][item1]["SampleName"])
@@ -3035,7 +3194,7 @@ class IVApp(Toplevel):
                 listofthegroup=[]
                 listofthegroupNames=[]
                 for item1 in range(len(DATAx)):
-                    if DATAx[item1]["Group"]==groupdict["Group"]:
+                    if DATAx[item1]["Group"]==groupdict["Group"] and DATAx[item1]["Illumination"]=="Light":
                         listofthegroup.append(DATAx[item1])
                         listofthegroupNames.append(DATAx[item1]['DepID']+'_'+DATAx[item1]['Cellletter'])
                 groupdict["numbCell"]=len(list(set(listofthegroupNames)))
@@ -3068,31 +3227,31 @@ class IVApp(Toplevel):
             timeLandD =sorted(LandD, key=itemgetter('MeasDayTime')) 
             
             if len(samplesgroups)>1:
-                try:
-                    worksheet = workbook.add_worksheet("GroupStat")
-                    summary=[]
-                    for item in range(len(samplesgroups)):
-                        ncell=1
-                        if grouplistdict[item]["ForVoc"]!=[]:
-                            lengthofgroup=len(grouplistdict[item]["ForVoc"])
-                            summary.append([grouplistdict[item]["Group"],grouplistdict[item]["numbCell"],"Forward",lengthofgroup,sum(grouplistdict[item]["ForVoc"],0.0)/lengthofgroup,np.std(grouplistdict[item]["ForVoc"]),sum(grouplistdict[item]["ForJsc"],0.0)/lengthofgroup,np.std(grouplistdict[item]["ForJsc"]),sum(grouplistdict[item]["ForFF"],0.0)/lengthofgroup,np.std(grouplistdict[item]["ForFF"]),sum(grouplistdict[item]["ForEff"],0.0)/lengthofgroup,np.std(grouplistdict[item]["ForEff"])])
-                            ncell=0
-                        if grouplistdict[item]["RevVoc"]!=[]:  
-                            if ncell==0:
-                                lengthofgroup=len(grouplistdict[item]["RevVoc"])
-                                summary.append([grouplistdict[item]["Group"]," ","Reverse",lengthofgroup,sum(grouplistdict[item]["RevVoc"],0.0)/lengthofgroup,np.std(grouplistdict[item]["RevVoc"]),sum(grouplistdict[item]["RevJsc"],0.0)/lengthofgroup,np.std(grouplistdict[item]["RevJsc"]),sum(grouplistdict[item]["RevFF"],0.0)/lengthofgroup,np.std(grouplistdict[item]["RevFF"]),sum(grouplistdict[item]["RevEff"],0.0)/lengthofgroup,np.std(grouplistdict[item]["RevEff"])])
-                            else:
-                                lengthofgroup=len(grouplistdict[item]["RevVoc"])
-                                summary.append([grouplistdict[item]["Group"],grouplistdict[item]["numbCell"],"Reverse",lengthofgroup,sum(grouplistdict[item]["RevVoc"],0.0)/lengthofgroup,np.std(grouplistdict[item]["RevVoc"]),sum(grouplistdict[item]["RevJsc"],0.0)/lengthofgroup,np.std(grouplistdict[item]["RevJsc"]),sum(grouplistdict[item]["RevFF"],0.0)/lengthofgroup,np.std(grouplistdict[item]["RevFF"]),sum(grouplistdict[item]["RevEff"],0.0)/lengthofgroup,np.std(grouplistdict[item]["RevEff"])])
-        
-                    summary.insert(0, [" ", " "," ", "-", "mV","-","mA/cm2","-","%","-","%","-"])
-                    summary.insert(0, ["Group","#Cells","Scan Dir.","#ofmeas", "Voc"," ","Jsc"," ","FF"," ","Eff"," "])
-                    summary.insert(0, [" "," "," "," ", "Avg","StdDev","Avg","StdDev","Avg","StdDev","Avg","StdDev"])
-                    for item in range(len(summary)):
-                        for item0 in range(len(summary[item])):
-                            worksheet.write(item,item0,summary[item][item0])
-                except:
-                    print("exception: excel summary - groupstat")
+#                try:
+                worksheet = workbook.add_worksheet("GroupStat")
+                summary=[]
+                for item in range(len(samplesgroups)):
+                    ncell=1
+                    if grouplistdict[item]["ForVoc"]!=[]:
+                        lengthofgroup=len(grouplistdict[item]["ForVoc"])
+                        summary.append([grouplistdict[item]["Group"],grouplistdict[item]["numbCell"],"Forward",lengthofgroup,sum(grouplistdict[item]["ForVoc"],0.0)/lengthofgroup,np.std(grouplistdict[item]["ForVoc"]),sum(grouplistdict[item]["ForJsc"],0.0)/lengthofgroup,np.std(grouplistdict[item]["ForJsc"]),sum(grouplistdict[item]["ForFF"],0.0)/lengthofgroup,np.std(grouplistdict[item]["ForFF"]),sum(grouplistdict[item]["ForEff"],0.0)/lengthofgroup,np.std(grouplistdict[item]["ForEff"])])
+                        ncell=0
+                    if grouplistdict[item]["RevVoc"]!=[]:  
+                        if ncell==0:
+                            lengthofgroup=len(grouplistdict[item]["RevVoc"])
+                            summary.append([grouplistdict[item]["Group"]," ","Reverse",lengthofgroup,sum(grouplistdict[item]["RevVoc"],0.0)/lengthofgroup,np.std(grouplistdict[item]["RevVoc"]),sum(grouplistdict[item]["RevJsc"],0.0)/lengthofgroup,np.std(grouplistdict[item]["RevJsc"]),sum(grouplistdict[item]["RevFF"],0.0)/lengthofgroup,np.std(grouplistdict[item]["RevFF"]),sum(grouplistdict[item]["RevEff"],0.0)/lengthofgroup,np.std(grouplistdict[item]["RevEff"])])
+                        else:
+                            lengthofgroup=len(grouplistdict[item]["RevVoc"])
+                            summary.append([grouplistdict[item]["Group"],grouplistdict[item]["numbCell"],"Reverse",lengthofgroup,sum(grouplistdict[item]["RevVoc"],0.0)/lengthofgroup,np.std(grouplistdict[item]["RevVoc"]),sum(grouplistdict[item]["RevJsc"],0.0)/lengthofgroup,np.std(grouplistdict[item]["RevJsc"]),sum(grouplistdict[item]["RevFF"],0.0)/lengthofgroup,np.std(grouplistdict[item]["RevFF"]),sum(grouplistdict[item]["RevEff"],0.0)/lengthofgroup,np.std(grouplistdict[item]["RevEff"])])
+    
+                summary.insert(0, [" ", " "," ", "-", "mV","-","mA/cm2","-","%","-","%","-"])
+                summary.insert(0, ["Group","#Cells","Scan Dir.","#ofmeas", "Voc"," ","Jsc"," ","FF"," ","Eff"," "])
+                summary.insert(0, [" "," "," "," ", "Avg","StdDev","Avg","StdDev","Avg","StdDev","Avg","StdDev"])
+                for item in range(len(summary)):
+                    for item0 in range(len(summary[item])):
+                        worksheet.write(item,item0, summary[item][item0])
+#                except:
+#                    print("exception: excel summary - groupstat")
         
             if timeLandD!=[]:
                 try:
@@ -3350,193 +3509,193 @@ class IVApp(Toplevel):
         #stat graphs
         if self.statGraphs.get():
             #group
-            try:
+#            try:
+            plt.close("all")
+            plt.clf()
+            if len(samplesgroups)>1:
+                fig = plt.figure()
+                Effsubfig = fig.add_subplot(224) 
+                names=samplesgroups
+                valsRev=[]
+                for item in names:
+                    valsRev.append([i["RevEff"] for i in grouplistdict if i["Group"]==item and "RevEff" in i])
+                valsFor=[]
+                for item in names:
+                    valsFor.append([i["ForEff"] for i in grouplistdict if i["Group"]==item and "ForEff" in i])
+                    
+                valstot=[]
+                Rev=[]
+                Forw=[]
+                namelist=[]
+                for i in range(len(names)):
+                    if valsRev[i][0]==[] and valsFor[i][0]==[]:
+                        print(" ")
+                    else:
+                        Rev.append(valsRev[i][0])
+                        Forw.append(valsFor[i][0])
+                        valstot.append(valsRev[i][0]+valsFor[i][0])
+                        namelist.append(names[i])
+                
+                Effsubfig.boxplot(valstot,0,'',labels=namelist)
+                
+                for i in range(len(namelist)):
+                    y=Rev[i]
+                    if len(y)>0:
+                        x=np.random.normal(i+1,0.04,size=len(y))
+                        Effsubfig.scatter(x,y,s=5,color='red', alpha=0.5)
+                    y=Forw[i]
+                    if len(y)>0:
+                        x=np.random.normal(i+1,0.04,size=len(y))
+                        Effsubfig.scatter(x,y,s=5,color='blue', alpha=0.5)  
+                
+                #Effsubfig.set_xlabel('Red=reverse; Blue=forward')
+                
+                Effsubfig.set_ylabel('Efficiency (%)')
+                for item in ([Effsubfig.title, Effsubfig.xaxis.label, Effsubfig.yaxis.label] +
+                             Effsubfig.get_xticklabels() + Effsubfig.get_yticklabels()):
+                    item.set_fontsize(4)
+                
+                Vocsubfig = fig.add_subplot(221) 
+                names=samplesgroups
+                valsRev=[]
+                for item in names:
+                    valsRev.append([i["RevVoc"] for i in grouplistdict if i["Group"]==item and "RevVoc" in i])
+                valsFor=[]
+                for item in names:
+                    valsFor.append([i["ForVoc"] for i in grouplistdict if i["Group"]==item and "ForVoc" in i])
+                    
+                valstot=[]
+                Rev=[]
+                Forw=[]
+                namelist=[]
+                for i in range(len(names)):
+                    if valsRev[i][0]==[] and valsFor[i][0]==[]:
+                        print(" ")
+                    else:
+                        Rev.append(valsRev[i][0])
+                        Forw.append(valsFor[i][0])
+                        valstot.append(valsRev[i][0]+valsFor[i][0])
+                        namelist.append(names[i])
+                
+                Vocsubfig.boxplot(valstot,0,'',labels=namelist)
+                
+                for i in range(len(namelist)):
+                    y=Rev[i]
+                    if len(y)>0:
+                        x=np.random.normal(i+1,0.04,size=len(y))
+                        Vocsubfig.scatter(x,y,s=5,color='red', alpha=0.5)
+                    y=Forw[i]
+                    if len(y)>0:
+                        x=np.random.normal(i+1,0.04,size=len(y))
+                        Vocsubfig.scatter(x,y,s=5,color='blue', alpha=0.5)  
+                
+                #Vocsubfig.set_xlabel('Red=reverse; Blue=forward')
+                
+                Vocsubfig.set_ylabel('Voc (mV)')
+                for item in ([Vocsubfig.title, Vocsubfig.xaxis.label, Vocsubfig.yaxis.label] +
+                             Vocsubfig.get_xticklabels() + Vocsubfig.get_yticklabels()):
+                    item.set_fontsize(4)
+                    
+                Jscsubfig = fig.add_subplot(222) 
+                names=samplesgroups
+                valsRev=[]
+                for item in names:
+                    valsRev.append([i["RevJsc"] for i in grouplistdict if i["Group"]==item and "RevJsc" in i])
+                valsFor=[]
+                for item in names:
+                    valsFor.append([i["ForJsc"] for i in grouplistdict if i["Group"]==item and "ForJsc" in i])
+                    
+                valstot=[]
+                Rev=[]
+                Forw=[]
+                namelist=[]
+                for i in range(len(names)):
+                    if valsRev[i][0]==[] and valsFor[i][0]==[]:
+                        print(" ")
+                    else:
+                        Rev.append(valsRev[i][0])
+                        Forw.append(valsFor[i][0])
+                        valstot.append(valsRev[i][0]+valsFor[i][0])
+                        namelist.append(names[i])
+                
+                Jscsubfig.boxplot(valstot,0,'',labels=namelist)
+                
+                for i in range(len(namelist)):
+                    y=Rev[i]
+                    if len(y)>0:
+                        x=np.random.normal(i+1,0.04,size=len(y))
+                        Jscsubfig.scatter(x,y,s=5,color='red', alpha=0.5)
+                    y=Forw[i]
+                    if len(y)>0:
+                        x=np.random.normal(i+1,0.04,size=len(y))
+                        Jscsubfig.scatter(x,y,s=5,color='blue', alpha=0.5)  
+                
+                #Jscsubfig.set_xlabel('Red=reverse; Blue=forward')
+                
+                Jscsubfig.set_ylabel('Jsc (mA/cm'+'\xb2'+')')
+                for item in ([Jscsubfig.title, Jscsubfig.xaxis.label, Jscsubfig.yaxis.label] +
+                             Jscsubfig.get_xticklabels() + Jscsubfig.get_yticklabels()):
+                    item.set_fontsize(4)
+                
+                FFsubfig = fig.add_subplot(223) 
+                names=samplesgroups
+                valsRev=[]
+                for item in names:
+                    valsRev.append([i["RevFF"] for i in grouplistdict if i["Group"]==item and "RevFF" in i])
+                valsFor=[]
+                for item in names:
+                    valsFor.append([i["ForFF"] for i in grouplistdict if i["Group"]==item and "ForFF" in i])
+                    
+                valstot=[]
+                Rev=[]
+                Forw=[]
+                namelist=[]
+                for i in range(len(names)):
+                    if valsRev[i][0]==[] and valsFor[i][0]==[]:
+                        print(" ")
+                    else:
+                        Rev.append(valsRev[i][0])
+                        Forw.append(valsFor[i][0])
+                        valstot.append(valsRev[i][0]+valsFor[i][0])
+                        namelist.append(names[i])
+                
+                FFsubfig.boxplot(valstot,0,'',labels=namelist)
+                
+                for i in range(len(namelist)):
+                    y=Rev[i]
+                    if len(y)>0:
+                        x=np.random.normal(i+1,0.04,size=len(y))
+                        FFsubfig.scatter(x,y,s=5,color='red', alpha=0.5)
+                    y=Forw[i]
+                    if len(y)>0:
+                        x=np.random.normal(i+1,0.04,size=len(y))
+                        FFsubfig.scatter(x,y,s=5,color='blue', alpha=0.5)  
+                
+                #FFsubfig.set_xlabel('Red=reverse; Blue=forward')
+                
+                FFsubfig.set_ylabel('FF (%)')
+                for item in ([FFsubfig.title, FFsubfig.xaxis.label, FFsubfig.yaxis.label] +
+                             FFsubfig.get_xticklabels() + FFsubfig.get_yticklabels()):
+                    item.set_fontsize(4)
+                    
+                FFsubfig.annotate('Red=reverse; Blue=forward', xy=(1.3,-0.2), xycoords='axes fraction', fontsize=4,
+                            horizontalalignment='right', verticalalignment='bottom')
+                annotation="#ofCells: "
+                for item in range(len(samplesgroups)):
+                    if samplesgroups[item] in namelist:
+                        annotation+=samplesgroups[item]+"=>"+str(grouplistdict[item]["numbCell"])+"; "
+                FFsubfig.annotate(annotation, xy=(1.3,-0.3), xycoords='axes fraction', fontsize=4,
+                            horizontalalignment='right', verticalalignment='bottom')
+                
+                fig.subplots_adjust(wspace=.25)
+                fig.savefig(batchname+'_StatGroupgraph.png',dpi=300,bbox_inches="tight")
+                
+                
+                
                 plt.close("all")
-                plt.clf()
-                if len(samplesgroups)>1:
-                    fig = plt.figure()
-                    Effsubfig = fig.add_subplot(224) 
-                    names=samplesgroups
-                    valsRev=[]
-                    for item in names:
-                        valsRev.append([i["RevEff"] for i in grouplistdict if i["Group"]==item and "RevEff" in i  and i["Illumination"]=="Light"])
-                    valsFor=[]
-                    for item in names:
-                        valsFor.append([i["ForEff"] for i in grouplistdict if i["Group"]==item and "ForEff" in i and i["Illumination"]=="Light"])
-                        
-                    valstot=[]
-                    Rev=[]
-                    Forw=[]
-                    namelist=[]
-                    for i in range(len(names)):
-                        if valsRev[i][0]==[] and valsFor[i][0]==[]:
-                            print(" ")
-                        else:
-                            Rev.append(valsRev[i][0])
-                            Forw.append(valsFor[i][0])
-                            valstot.append(valsRev[i][0]+valsFor[i][0])
-                            namelist.append(names[i])
-                    
-                    Effsubfig.boxplot(valstot,0,'',labels=namelist)
-                    
-                    for i in range(len(namelist)):
-                        y=Rev[i]
-                        if len(y)>0:
-                            x=np.random.normal(i+1,0.04,size=len(y))
-                            Effsubfig.scatter(x,y,s=5,color='red', alpha=0.5)
-                        y=Forw[i]
-                        if len(y)>0:
-                            x=np.random.normal(i+1,0.04,size=len(y))
-                            Effsubfig.scatter(x,y,s=5,color='blue', alpha=0.5)  
-                    
-                    #Effsubfig.set_xlabel('Red=reverse; Blue=forward')
-                    
-                    Effsubfig.set_ylabel('Efficiency (%)')
-                    for item in ([Effsubfig.title, Effsubfig.xaxis.label, Effsubfig.yaxis.label] +
-                                 Effsubfig.get_xticklabels() + Effsubfig.get_yticklabels()):
-                        item.set_fontsize(4)
-                    
-                    Vocsubfig = fig.add_subplot(221) 
-                    names=samplesgroups
-                    valsRev=[]
-                    for item in names:
-                        valsRev.append([i["RevVoc"] for i in grouplistdict if i["Group"]==item and "RevVoc" in i and i["Illumination"]=="Light"])
-                    valsFor=[]
-                    for item in names:
-                        valsFor.append([i["ForVoc"] for i in grouplistdict if i["Group"]==item and "ForVoc" in i and i["Illumination"]=="Light"])
-                        
-                    valstot=[]
-                    Rev=[]
-                    Forw=[]
-                    namelist=[]
-                    for i in range(len(names)):
-                        if valsRev[i][0]==[] and valsFor[i][0]==[]:
-                            print(" ")
-                        else:
-                            Rev.append(valsRev[i][0])
-                            Forw.append(valsFor[i][0])
-                            valstot.append(valsRev[i][0]+valsFor[i][0])
-                            namelist.append(names[i])
-                    
-                    Vocsubfig.boxplot(valstot,0,'',labels=namelist)
-                    
-                    for i in range(len(namelist)):
-                        y=Rev[i]
-                        if len(y)>0:
-                            x=np.random.normal(i+1,0.04,size=len(y))
-                            Vocsubfig.scatter(x,y,s=5,color='red', alpha=0.5)
-                        y=Forw[i]
-                        if len(y)>0:
-                            x=np.random.normal(i+1,0.04,size=len(y))
-                            Vocsubfig.scatter(x,y,s=5,color='blue', alpha=0.5)  
-                    
-                    #Vocsubfig.set_xlabel('Red=reverse; Blue=forward')
-                    
-                    Vocsubfig.set_ylabel('Voc (mV)')
-                    for item in ([Vocsubfig.title, Vocsubfig.xaxis.label, Vocsubfig.yaxis.label] +
-                                 Vocsubfig.get_xticklabels() + Vocsubfig.get_yticklabels()):
-                        item.set_fontsize(4)
-                        
-                    Jscsubfig = fig.add_subplot(222) 
-                    names=samplesgroups
-                    valsRev=[]
-                    for item in names:
-                        valsRev.append([i["RevJsc"] for i in grouplistdict if i["Group"]==item and "RevJsc" in i and i["Illumination"]=="Light"])
-                    valsFor=[]
-                    for item in names:
-                        valsFor.append([i["ForJsc"] for i in grouplistdict if i["Group"]==item and "ForJsc" in i and i["Illumination"]=="Light"])
-                        
-                    valstot=[]
-                    Rev=[]
-                    Forw=[]
-                    namelist=[]
-                    for i in range(len(names)):
-                        if valsRev[i][0]==[] and valsFor[i][0]==[]:
-                            print(" ")
-                        else:
-                            Rev.append(valsRev[i][0])
-                            Forw.append(valsFor[i][0])
-                            valstot.append(valsRev[i][0]+valsFor[i][0])
-                            namelist.append(names[i])
-                    
-                    Jscsubfig.boxplot(valstot,0,'',labels=namelist)
-                    
-                    for i in range(len(namelist)):
-                        y=Rev[i]
-                        if len(y)>0:
-                            x=np.random.normal(i+1,0.04,size=len(y))
-                            Jscsubfig.scatter(x,y,s=5,color='red', alpha=0.5)
-                        y=Forw[i]
-                        if len(y)>0:
-                            x=np.random.normal(i+1,0.04,size=len(y))
-                            Jscsubfig.scatter(x,y,s=5,color='blue', alpha=0.5)  
-                    
-                    #Jscsubfig.set_xlabel('Red=reverse; Blue=forward')
-                    
-                    Jscsubfig.set_ylabel('Jsc (mA/cm'+'\xb2'+')')
-                    for item in ([Jscsubfig.title, Jscsubfig.xaxis.label, Jscsubfig.yaxis.label] +
-                                 Jscsubfig.get_xticklabels() + Jscsubfig.get_yticklabels()):
-                        item.set_fontsize(4)
-                    
-                    FFsubfig = fig.add_subplot(223) 
-                    names=samplesgroups
-                    valsRev=[]
-                    for item in names:
-                        valsRev.append([i["RevFF"] for i in grouplistdict if i["Group"]==item and "RevFF" in i and i["Illumination"]=="Light"])
-                    valsFor=[]
-                    for item in names:
-                        valsFor.append([i["ForFF"] for i in grouplistdict if i["Group"]==item and "ForFF" in i and i["Illumination"]=="Light"])
-                        
-                    valstot=[]
-                    Rev=[]
-                    Forw=[]
-                    namelist=[]
-                    for i in range(len(names)):
-                        if valsRev[i][0]==[] and valsFor[i][0]==[]:
-                            print(" ")
-                        else:
-                            Rev.append(valsRev[i][0])
-                            Forw.append(valsFor[i][0])
-                            valstot.append(valsRev[i][0]+valsFor[i][0])
-                            namelist.append(names[i])
-                    
-                    FFsubfig.boxplot(valstot,0,'',labels=namelist)
-                    
-                    for i in range(len(namelist)):
-                        y=Rev[i]
-                        if len(y)>0:
-                            x=np.random.normal(i+1,0.04,size=len(y))
-                            FFsubfig.scatter(x,y,s=5,color='red', alpha=0.5)
-                        y=Forw[i]
-                        if len(y)>0:
-                            x=np.random.normal(i+1,0.04,size=len(y))
-                            FFsubfig.scatter(x,y,s=5,color='blue', alpha=0.5)  
-                    
-                    #FFsubfig.set_xlabel('Red=reverse; Blue=forward')
-                    
-                    FFsubfig.set_ylabel('FF (%)')
-                    for item in ([FFsubfig.title, FFsubfig.xaxis.label, FFsubfig.yaxis.label] +
-                                 FFsubfig.get_xticklabels() + FFsubfig.get_yticklabels()):
-                        item.set_fontsize(4)
-                        
-                    FFsubfig.annotate('Red=reverse; Blue=forward', xy=(1.3,-0.2), xycoords='axes fraction', fontsize=4,
-                                horizontalalignment='right', verticalalignment='bottom')
-                    annotation="#ofCells: "
-                    for item in range(len(samplesgroups)):
-                        if samplesgroups[item] in namelist:
-                            annotation+=samplesgroups[item]+"=>"+str(grouplistdict[item]["numbCell"])+"; "
-                    FFsubfig.annotate(annotation, xy=(1.3,-0.3), xycoords='axes fraction', fontsize=4,
-                                horizontalalignment='right', verticalalignment='bottom')
-                    
-                    fig.subplots_adjust(wspace=.25)
-                    fig.savefig(batchname+'_StatGroupgraph.png',dpi=300,bbox_inches="tight")
-                    
-                    
-                    
-                    plt.close("all")
-                plt.clf()
-            except:
-                print("Exception: statgraphs - group")
+            plt.clf()
+#            except:
+#                print("Exception: statgraphs - group")
             
             #time
             if DATAx[0]["Setup"]=="TFIV" or DATAx[0]["Setup"]=='SSIgorC215':
@@ -4070,7 +4229,7 @@ class IVApp(Toplevel):
         self.window = tk.Toplevel()
         self.window.wm_title("Export Auto-Analysis")
         center(self.window)
-        self.window.geometry("300x400")
+        self.window.geometry("300x300")
         self.windowRef.destroy()
         
         

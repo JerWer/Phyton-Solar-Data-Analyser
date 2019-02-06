@@ -55,9 +55,6 @@ TODOLIST
 - !!!group: select which one to plot (so that we don't have to delete them)
 
 
-- scrolling bar to table
-
-
 
 """
 #%%############# Global variable definition
@@ -151,7 +148,7 @@ class IVApp(Toplevel):
         self.superframe.bind("<Configure>", self.onFrameConfigure)
         
         ############ the figures #################
-        self.fig = plt.figure(figsize=(13, 10))
+        self.fig = plt.figure(figsize=(18, 15))
         self.fig.patch.set_facecolor('white')
         canvas = FigureCanvasTkAgg(self.fig, self.superframe)
         canvas.get_tk_widget().grid(row=0,column=0,rowspan=80,columnspan=100)
@@ -365,7 +362,7 @@ class IVApp(Toplevel):
         global DATA
         
         self.frame0 = Frame(self.superframe,bg='white')
-        self.frame0.grid(row=48,column=35,rowspan=25,columnspan=65) #,sticky='wens'
+        self.frame0.grid(row=48,column=37,rowspan=25,columnspan=65) #,sticky='wens'
         for r in range(25):
             self.frame0.rowconfigure(r, weight=1)    
         for c in range(65):
@@ -396,7 +393,7 @@ class IVApp(Toplevel):
         
         self.TableBuilder()
         
-        self.workongoing = tk.Label(self.superframe, text='ready', font=12, relief=tk.RIDGE, width=10)
+        self.workongoing = tk.Label(self.superframe, text='ready', font=5, relief=tk.RIDGE, width=10)
         self.workongoing.grid(row=32, column=0,columnspan=8,rowspan=10)
     
 
@@ -5766,15 +5763,16 @@ class IVApp(Toplevel):
             self.tree.column(col, width=int(round(1.3*tkFont.Font().measure(col.title()))), anchor='n')   
             #print(int(round(1.2*tkFont.Font().measure(col.title()))))
         
-        vsb = Scrollbar(orient="vertical", command=self.tree.yview)
+        vsb = Scrollbar(self.frame01, orient="vertical", command=self.tree.yview)
         #hsb = ttk.Scrollbar(orient="horizontal",command=self.tree.xview)
         self.tree.configure(yscrollcommand=vsb.set, xscrollcommand=())
         self.tree.grid(row=1,column=0, columnspan=15,rowspan=10, sticky='nsew', in_=self.frame01)
-        #vsb.grid(column=11, row=1,rowspan=10, sticky='ns', in_=self.parent)
+        vsb.grid(column=20, row=1,rowspan=10, sticky='ns', in_=self.frame01)
         #hsb.grid(column=0, row=11, sticky='ew', in_=self.parent)
         self.treeview = self.tree
         
         self.insert_data(testdata)
+    
     
     def deletedatatreeview(self):
         global DATA

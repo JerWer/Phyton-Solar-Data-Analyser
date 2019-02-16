@@ -59,6 +59,14 @@ TODOLIST
 
 - database adaptation
 
+- issue with group graph when plotting after before mpp and not all groups have this data.
+
+
+- Vmpp not in V and not rounded correctly
+
+- separate all three graphs in pop up windows so that we can use the toolbar and zoom in
+
+
 """
 #%%############# Global variable definition
 testdata = []
@@ -671,18 +679,18 @@ class IVApp(Toplevel):
                             groupdict["ForJmpp"]=[x['Jmpp'] for x in listofthegroupFor if 'Jmpp' in x]
                             
                             grouplistdict.append(groupdict)
-                        listofthegroup=[]
+                        listofthegroup2=[]
                         for item1 in range(len(DATAx)):
                             if DATAx[item1]["Group"]==groupdict["Group"] and DATAx[item1]["Illumination"]=='Light' and DATAx[item1]["aftermpp"]==1:
-                                listofthegroup.append(DATAx[item1])
-                        if len(listofthegroup)!=0:
+                                listofthegroup2.append(DATAx[item1])
+                        if len(listofthegroup2)!=0:
                             listofthegroupRev=[]
                             listofthegroupFor=[]
-                            for item1 in range(len(listofthegroup)):
-                                if listofthegroup[item1]["ScanDirection"]=="Reverse":
-                                    listofthegroupRev.append(listofthegroup[item1])
+                            for item1 in range(len(listofthegroup2)):
+                                if listofthegroup2[item1]["ScanDirection"]=="Reverse":
+                                    listofthegroupRev.append(listofthegroup2[item1])
                                 else:
-                                    listofthegroupFor.append(listofthegroup[item1])
+                                    listofthegroupFor.append(listofthegroup2[item1])
                             
                             groupdict["RevVocAMPP"]=[x['Voc'] for x in listofthegroupRev if 'Voc' in x]
                             groupdict["ForVocAMPP"]=[x['Voc'] for x in listofthegroupFor if 'Voc' in x]
@@ -760,17 +768,20 @@ class IVApp(Toplevel):
                             
                             grouplistdict.append(groupdict)
                 else: #if aftermppchecked
+#                    print("aftermpp is checked")
+#                    print(samplesgroups)
                     for item in range(1,len(samplesgroups),1):
                         groupdict={}
                         groupdict["Group"]=samplesgroups[item]
-                        listofthegroup1=[]
+                        listofthegroup=[]
                         for item1 in range(len(DATAx)):
                             if DATAx[item1]["Group"]==groupdict["Group"] and DATAx[item1]["Illumination"]=='Light' and DATAx[item1]["aftermpp"]==0:
-                                listofthegroup1.append(DATAx[item1])
-                        if len(listofthegroup1)!=0:
+                                listofthegroup.append(DATAx[item1])
+                        if len(listofthegroup)!=0:
+#                            print("listofthegroup1nonzero")
                             grouper = itemgetter("DepID", "Cellletter",'ScanDirection')
                             result = []
-                            for key, grp in groupby(sorted(listofthegroup1, key = grouper), grouper):
+                            for key, grp in groupby(sorted(listofthegroup, key = grouper), grouper):
                                 result.append(list(grp))
                             
                             result1=[]
@@ -818,6 +829,7 @@ class IVApp(Toplevel):
                             if DATAx[item1]["Group"]==groupdict["Group"] and DATAx[item1]["Illumination"]=='Light' and DATAx[item1]["aftermpp"]==1:
                                 listofthegroup2.append(DATAx[item1])
                         if len(listofthegroup2)!=0:
+#                            print("listofthegroup2nonzero")
                             grouper = itemgetter("DepID", "Cellletter",'ScanDirection')
                             result = []
                             for key, grp in groupby(sorted(listofthegroup2, key = grouper), grouper):
@@ -863,20 +875,20 @@ class IVApp(Toplevel):
                             groupdict["ForJmppAMPP"]=[x['Jmpp'] for x in listofthegroupFor if 'Jmpp' in x]
                             
                             grouplistdict.append(groupdict)
-                        listofthegroup=listofthegroup1+listofthegroup2
+#                        listofthegroup=listofthegroup1+listofthegroup2
             print("aftermpp0") 
-            print(listofthegroup)
-            print(len(listofthegroup))
-            if len(listofthegroup)!=0:  
+#            print(listofthegroup)
+#            print(len(listofthegroup))
+            if len(listofthegroup)!=0 or len(listofthegroup2)!=0:  
 #                print("is listofthegroup non zero length")
                 self.GroupStatfig.clear()
                 names=samplesgroups[1:]
                 print("aftermpp1")
                 if self.GroupChoice.get()=="Eff":
-                    if self.aftermppcheck.get()==1:
-                        print("aftermpp")
+#                    if self.aftermppcheck.get()==1:
+#                        print("aftermpp")
                     if self.aftermppcheck.get()==0:
-                        print("all")
+#                        print("all")
                         Effsubfig = self.GroupStatfig 
                         #names=samplesgroups
                         valsRev=[]
@@ -923,99 +935,149 @@ class IVApp(Toplevel):
                             
                     else:
                         print("aftermpp")
-#                        Effsubfig = self.GroupStatfig 
-#                        #names=samplesgroups
-#                        valsRev=[]
-#                        for item in names:
-#                            valsRev.append([i["RevEff"] for i in grouplistdict if i["Group"]==item and "RevEff" in i])
-#                        valsFor=[]
-#                        for item in names:
-#                            valsFor.append([i["ForEff"] for i in grouplistdict if i["Group"]==item and "ForEff" in i])
-#                        valsRevAMPP=[]
-#                        for item in names:
-##                            v=[i["RevEffAMPP"] for i in grouplistdict if i["Group"]==item and "RevEffAMPP" in i]
-#                            valsRevAMPP.append([i["RevEffAMPP"] for i in grouplistdict if i["Group"]==item and "RevEffAMPP" in i])
-#                        print(len(valsRevAMPP))
-#                        valsForAMPP=[]
-#                        for item in names:
-#                            valsForAMPP.append([i["ForEffAMPP"] for i in grouplistdict if i["Group"]==item and "ForEffAMPP" in i])
-#                        print(len(valsForAMPP))
-#                        valstot=[]
-#                        
-#                        for item in names:
-#                            DATAgroupforexport.append([item,"RevEff"]+[i["RevEff"] for i in grouplistdict if i["Group"]==item and "RevEff" in i][0])
-#                            DATAgroupforexport.append([item,"ForEff"]+[i["ForEff"] for i in grouplistdict if i["Group"]==item and "ForEff" in i][0])
-#                            try:
-#                                DATAgroupforexport.append([item,"RevEffAMPP"]+[i["RevEffAMPP"] for i in grouplistdict if i["Group"]==item and "RevEffAMPP" in i][0])
-#                            except IndexError:
-#                                print("indexError1")
-#                                DATAgroupforexport.append([item,"RevEffAMPP"]+[])
-#                            try:
-#                                DATAgroupforexport.append([item,"ForEffAMPP"]+[i["ForEffAMPP"] for i in grouplistdict if i["Group"]==item and "ForEffAMPP" in i][0])
-#                            except IndexError:
-#                                print("indexError2")
-#                                DATAgroupforexport.append([item,"ForEffAMPP"]+[])
-#
-#                        DATAgroupforexport=map(list, six.moves.zip_longest(*DATAgroupforexport, fillvalue=' '))
-#        
-#                        Rev=[]
-#                        Forw=[]
-#                        RevAMPP=[]
-#                        ForwAMPP=[]
-#                        namelist=[]
-#                        for i in range(len(names)):
-#                             if valsRev[i]!=[]:
-#                                 if valsRev[i][0]!=[]:
-#                                     Rev.append(valsRev[i][0])
-#                                 else:
-#                                     Rev.append([])
-#                             else:
-#                                 Rev.append([])
-#                             if valsFor[i]!=[]:    
-#                                 if valsFor[i][0]!=[]:
-#                                     Forw.append(valsFor[i][0])
-#                                 else:
-#                                     Forw.append([])
-#                             else:
-#                                 Forw.append([])
-#                             if valsRevAMPP[i]!=[]:
-#                                 if valsRevAMPP[i][0]!=[]:
-#                                     RevAMPP.append(valsRevAMPP[i][0])
-#                                 else:
-#                                     RevAMPP.append([]) 
-#                             else:
-#                                 RevAMPP.append([])
-#                             if valsForAMPP[i][0]!=[]:    
-#                                 if valsForAMPP[i][0]!=[]:
-#                                     ForwAMPP.append(valsForAMPP[i][0])
-#                                 else:
-#                                     ForwAMPP.append([])
-#                             else:
-#                                 ForwAMPP.append([]) 
-#                                 
-#                             if valsRev[i][0]!=[] or valsFor[i][0]!=[] or valsRevAMPP[i][0]!=[] or valsForAMPP[i][0]!=[]:
-#                                 valstot.append(valsRev[i][0]+valsFor[i][0]+valsRevAMPP[i][0]+valsForAMPP[i][0])
-#                                 namelist.append(names[i])
-#                        if self.boxplot.get()==1:
-#                            Effsubfig.boxplot(valstot,0,'',labels=namelist)
-#                    
-#                        for i in range(len(namelist)):
-#                            y=Rev[i]
-#                            if len(y)>0:
-#                                x=np.random.normal(i+0.9,0.04,size=len(y))
-#                                Effsubfig.scatter(x,y,s=15,color='red', alpha=0.5)
-#                            y=Forw[i]
-#                            if len(y)>0:
-#                                x=np.random.normal(i+0.9,0.04,size=len(y))
-#                                Effsubfig.scatter(x,y,s=15,color='blue', alpha=0.5) 
-#                            y=RevAMPP[i]
-#                            if len(y)>0:
-#                                x=np.random.normal(i+1.1,0.04,size=len(y))
-#                                Effsubfig.scatter(x,y,s=15,color='orange', alpha=0.5)
-#                            y=ForwAMPP[i]
-#                            if len(y)>0:
-#                                x=np.random.normal(i+1.1,0.04,size=len(y))
-#                                Effsubfig.scatter(x,y,s=15,color='lightblue', alpha=0.5) 
+                        Effsubfig = self.GroupStatfig 
+                        #names=samplesgroups
+                        valsRev=[]
+                        for item in names:
+                            valsRev.append([i["RevEff"] for i in grouplistdict if i["Group"]==item and "RevEff" in i])
+                        valsFor=[]
+                        for item in names:
+                            valsFor.append([i["ForEff"] for i in grouplistdict if i["Group"]==item and "ForEff" in i])
+                        valsRevAMPP=[]
+                        for item in names:
+#                            v=[i["RevEffAMPP"] for i in grouplistdict if i["Group"]==item and "RevEffAMPP" in i]
+                            valsRevAMPP.append([i["RevEffAMPP"] for i in grouplistdict if i["Group"]==item and "RevEffAMPP" in i])
+                        print(len(valsRevAMPP))
+                        valsForAMPP=[]
+                        for item in names:
+                            valsForAMPP.append([i["ForEffAMPP"] for i in grouplistdict if i["Group"]==item and "ForEffAMPP" in i])
+                        print(len(valsForAMPP))
+                        valstot=[]
+                        
+                        for item in names:
+                            DATAgroupforexport.append([item,"RevEff"]+[i["RevEff"] for i in grouplistdict if i["Group"]==item and "RevEff" in i][0])
+                            DATAgroupforexport.append([item,"ForEff"]+[i["ForEff"] for i in grouplistdict if i["Group"]==item and "ForEff" in i][0])
+                            try:
+                                DATAgroupforexport.append([item,"RevEffAMPP"]+[i["RevEffAMPP"] for i in grouplistdict if i["Group"]==item and "RevEffAMPP" in i][0])
+                            except IndexError:
+                                print("indexError1")
+                                DATAgroupforexport.append([item,"RevEffAMPP"]+[])
+                            try:
+                                DATAgroupforexport.append([item,"ForEffAMPP"]+[i["ForEffAMPP"] for i in grouplistdict if i["Group"]==item and "ForEffAMPP" in i][0])
+                            except IndexError:
+                                print("indexError2")
+                                DATAgroupforexport.append([item,"ForEffAMPP"]+[])
+
+                        DATAgroupforexport=map(list, six.moves.zip_longest(*DATAgroupforexport, fillvalue=' '))
+        
+                        Rev=[]
+                        Forw=[]
+                        RevAMPP=[]
+                        ForwAMPP=[]
+                        namelist=[]
+                        if len(listofthegroup)!=0:
+                            for i in range(len(names)):
+                                found1=0
+                                found2=0
+                                try:
+                                    if valsRev[i]!=[]:
+                                         if valsRev[i][0]!=[]:
+                                             Rev.append(valsRev[i][0])
+                                             found1=1
+                                         else:
+                                             Rev.append([])
+                                    else:
+                                         Rev.append([])
+                                except:
+                                    print("indexError3")
+                                    Rev.append([])
+                                try:
+                                    if valsFor[i]!=[]:    
+                                         if valsFor[i][0]!=[]:
+                                             Forw.append(valsFor[i][0])
+                                             found2=1
+                                         else:
+                                             Forw.append([])
+                                    else:
+                                         Forw.append([])
+                                except:
+                                    print("indexError4")
+                                    Forw.append([])
+                                try:    
+                                    if found1 and found2 :
+                                         valstot.append(valsRev[i][0]+valsFor[i][0])
+                                         namelist.append(names[i])
+                                    elif found1 and not found2:
+                                         valstot.append(valsRev[i][0])
+                                         namelist.append(names[i])
+                                    elif not found1 and found2:
+                                         valstot.append(valsFor[i][0])
+                                         namelist.append(names[i])
+                                except:
+                                    print("indexError5")
+                                    
+                                     
+                        if len(listofthegroup2)!=0:   
+                            for i in range(len(names)):
+                                found1=0
+                                found2=0
+                                try:
+                                    if valsRevAMPP[i]!=[]:
+                                         if valsRevAMPP[i][0]!=[]:
+                                             RevAMPP.append(valsRevAMPP[i][0])
+                                             found1=0
+                                         else:
+                                             RevAMPP.append([]) 
+                                    else:
+                                         RevAMPP.append([])
+                                except:
+                                    print("indexError6")
+                                    RevAMPP.append([])
+                                try:    
+                                    if valsForAMPP[i][0]!=[]:    
+                                         if valsForAMPP[i][0]!=[]:
+                                             ForwAMPP.append(valsForAMPP[i][0])
+                                         else:
+                                             ForwAMPP.append([])
+                                    else:
+                                         ForwAMPP.append([]) 
+                                except:
+                                    print("indexError7")
+                                    ForwAMPP.append([]) 
+                                try:
+                                    if found1 and found2 :
+                                         valstot.append(valsRevAMPP[i][0]+valsForAMPP[i][0])
+                                         namelist.append(names[i])
+                                    elif found1 and not found2:
+                                         valstot.append(valsRevAMPP[i][0])
+                                         namelist.append(names[i])
+                                    elif not found1 and found2:
+                                         valstot.append(valsForAMPP[i][0])
+                                         namelist.append(names[i])
+                                except:
+                                    print("indexError8")
+                        if self.boxplot.get()==1:
+                            Effsubfig.boxplot(valstot,0,'',labels=namelist)
+                    
+                        for i in range(len(namelist)):
+                            if len(listofthegroup)!=0:
+                                y=Rev[i]
+                                if len(y)>0:
+                                    x=np.random.normal(i+0.9,0.04,size=len(y))
+                                    Effsubfig.scatter(x,y,s=15,color='red', alpha=0.5)
+                                y=Forw[i]
+                                if len(y)>0:
+                                    x=np.random.normal(i+0.9,0.04,size=len(y))
+                                    Effsubfig.scatter(x,y,s=15,color='blue', alpha=0.5) 
+                            if len(listofthegroup2)!=0:   
+                                y=RevAMPP[i]
+                                if len(y)>0:
+                                    x=np.random.normal(i+1.1,0.04,size=len(y))
+                                    Effsubfig.scatter(x,y,s=15,color='orange', alpha=0.5)
+                                y=ForwAMPP[i]
+                                if len(y)>0:
+                                    x=np.random.normal(i+1.1,0.04,size=len(y))
+                                    Effsubfig.scatter(x,y,s=15,color='lightblue', alpha=0.5) 
                                 
                     if self.boxplot.get()==0:
                         span=range(1,len(namelist)+1)
@@ -2376,7 +2438,7 @@ class IVApp(Toplevel):
             # Extract Voc by interpolating wrt J
             jv_interp_J = interp1d(jv[1], jv[0], bounds_error=False, fill_value=0.)
             Voc = jv_interp_J(0.)
-            params['Voc'] = np.around(Voc, decimals=2)
+            params['Voc'] = np.around(Voc, decimals=4)
         
             # Resample JV curve over standard interval and find Pmax
             Vrange_new = np.arange(0., params['Voc'], resample_step_size)
@@ -2384,7 +2446,7 @@ class IVApp(Toplevel):
             jv_resampled[:,0] = np.copy(Vrange_new)
             jv_resampled[:,1] = jv_interp_V(jv_resampled[:,0])
             jv_resampled[:,2] = np.abs(np.multiply(jv_resampled[:,0], jv_resampled[:,1]))
-            params['Pmax'] = np.around(np.max(np.abs(np.multiply(jv_resampled[:,0], jv_resampled[:,1]))), decimals=2)
+            params['Pmax'] = np.around(np.max(np.abs(np.multiply(jv_resampled[:,0], jv_resampled[:,1]))), decimals=4)
             indPmax=list(jv_resampled[:,2]).index(np.max(jv_resampled[:,2]))
             params['Jmpp']=abs(list(jv_resampled[:,1])[indPmax])
             params['Vmpp']=abs(list(jv_resampled[:,0])[indPmax])

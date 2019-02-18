@@ -52,20 +52,13 @@ TODOLIST
     fits ? something to extract?
 
 - group: modify the name of an existing group => automatically change in all samples
-- !!!group: select which one to plot (so that we don't have to delete them)
 
 
 - save/load session needs to return
 
 - database adaptation
 
-- issue with group graph when plotting after before mpp and not all groups have this data.
-
-
-- Vmpp not in V and not rounded correctly
-
-- separate all three graphs in pop up windows so that we can use the toolbar and zoom in
-
+- Vmpp is rounded somewhere... ??
 
 """
 #%%############# Global variable definition
@@ -96,6 +89,7 @@ titIV =0
 titmpp=0
 titStat=0
 samplesgroups=["Default group"]
+groupstoplot=["Default group"]
 
 listofanswer=[]
 listoflinestyle=[]
@@ -122,7 +116,8 @@ def center(win):
     y = win.winfo_screenheight() // 2 - win_height // 2
     win.geometry('{}x{}+{}+{}'.format(width, height, x, y))
     win.deiconify()
-    
+
+   
 #%%#############             
     
 class IVApp(Toplevel):
@@ -222,9 +217,29 @@ class IVApp(Toplevel):
         self.aftermppcheck = IntVar()
         aftermppcheck=Checkbutton(self.superframe,text="aftermpp",variable=self.aftermppcheck, 
                            onvalue=1,offvalue=0,height=1, width=6, command = lambda: self.UpdateGroupGraph(1),fg='black',background='white')
-        aftermppcheck.grid(row=rowpos+1, column=12, columnspan=6)
+        aftermppcheck.grid(row=rowpos+1, column=10, columnspan=6)
 #        tk.Label(self.superframe, text="RotLab",fg='black',background='white').grid(row=rowpos+1,column=8,columnspan=2)
 
+        self.grouptoplotbutton = tk.Menubutton(self.superframe, text="grouptoplot", 
+                                   indicatoron=True, borderwidth=1, relief="raised")
+        self.grouptoplotmenu = tk.Menu(self.grouptoplotbutton, tearoff=False)
+        self.grouptoplotbutton.configure(menu=self.grouptoplotmenu)
+        self.grouptoplotbutton.grid(row=rowpos+1, column=17, columnspan=10)
+        
+        self.updategrouptoplotdropbutton()
+        
+        self.minYgroupgraph = tk.DoubleVar()
+        entry=Entry(self.superframe, textvariable=self.minYgroupgraph,width=3)
+        entry.grid(row=rowpos+1,column=27,columnspan=1)
+        self.minYgroupgraph.set(0)
+        self.maxYgroupgraph = tk.DoubleVar()
+        entry=Entry(self.superframe, textvariable=self.maxYgroupgraph,width=3)
+        entry.grid(row=rowpos+1,column=28,columnspan=1)
+        self.maxYgroupgraph.set(1)
+        self.minmaxgroupgraphcheck = IntVar()
+        aftermppcheck=Checkbutton(self.superframe,text="Yscale",variable=self.minmaxgroupgraphcheck, 
+                           onvalue=1,offvalue=0,height=1, width=6, command = lambda: self.UpdateGroupGraph(1),fg='black',background='white')
+        aftermppcheck.grid(row=rowpos+1, column=29, columnspan=3)
         
         #### JV ####
 
@@ -598,29 +613,48 @@ class IVApp(Toplevel):
         global DATAdark
         global DATAFV
         global DATAMPP
-        global samplesgroups
+        global groupstoplot
         global DATAgroupforexport
+        
+#        print(samplesgroups)
         
         DATAgroupforexport=[]
         fontsizegroup=self.fontsizeGroupGraph.get()
         DATAx=copy.deepcopy(DATA)
         
+#        print(groupstoplot)
+        
+        samplesgroups=[]
+        for name, var in self.choicesgrouptoplot.items():
+            samplesgroups.append(var.get())
+        m=[]
+        for i in range(len(samplesgroups)):
+            if samplesgroups[i]==1:
+                m.append(groupstoplot[i])
+        samplesgroups=m
+        
+#        print(samplesgroups)
+        
+#        samplesgroups=copy.deepcopy(groupstoplot)
 #        try:
-        if len(samplesgroups)>1:    #if user defined group names different than "Default group"        
+        if len(samplesgroups)>0:    #if user defined group names different than "Default group"        
             grouplistdict=[]
             if self.RF.get()==0:    #select all data points
-                if self.aftermppcheck.get()==0:
-                    for item in range(1,len(samplesgroups),1):
+                if self.aftermppcheck.get()==0:#all points without separation
+                    for item in range(len(samplesgroups)):
+#                        print(samplesgroups[item])
                         groupdict={}
                         groupdict["Group"]=samplesgroups[item]
                         listofthegroup=[]
                         for item1 in range(len(DATAx)):
                             if DATAx[item1]["Group"]==groupdict["Group"] and DATAx[item1]["Illumination"]=='Light':
                                 listofthegroup.append(DATAx[item1])
+                       
                         if len(listofthegroup)!=0:
                             listofthegroupRev=[]
                             listofthegroupFor=[]
                             for item1 in range(len(listofthegroup)):
+#                                print(listofthegroup[item1]["ScanDirection"])
                                 if listofthegroup[item1]["ScanDirection"]=="Reverse":
                                     listofthegroupRev.append(listofthegroup[item1])
                                 else:
@@ -644,8 +678,8 @@ class IVApp(Toplevel):
                             groupdict["ForJmpp"]=[x['Jmpp'] for x in listofthegroupFor if 'Jmpp' in x]
                             
                             grouplistdict.append(groupdict)
-                else:
-                    for item in range(1,len(samplesgroups),1):
+                else:#for separation before/after mpp
+                    for item in range(len(samplesgroups)):
                         groupdict={}
                         groupdict["Group"]=samplesgroups[item]
                         listofthegroup=[]
@@ -678,7 +712,7 @@ class IVApp(Toplevel):
                             groupdict["RevJmpp"]=[x['Jmpp'] for x in listofthegroupRev if 'Jmpp' in x]
                             groupdict["ForJmpp"]=[x['Jmpp'] for x in listofthegroupFor if 'Jmpp' in x]
                             
-                            grouplistdict.append(groupdict)
+#                            grouplistdict.append(groupdict)
                         listofthegroup2=[]
                         for item1 in range(len(DATAx)):
                             if DATAx[item1]["Group"]==groupdict["Group"] and DATAx[item1]["Illumination"]=='Light' and DATAx[item1]["aftermpp"]==1:
@@ -708,13 +742,29 @@ class IVApp(Toplevel):
                             groupdict["ForVmppAMPP"]=[x['Vmpp'] for x in listofthegroupFor if 'Vmpp' in x]
                             groupdict["RevJmppAMPP"]=[x['Jmpp'] for x in listofthegroupRev if 'Jmpp' in x]
                             groupdict["ForJmppAMPP"]=[x['Jmpp'] for x in listofthegroupFor if 'Jmpp' in x]
-                            
-                            grouplistdict.append(groupdict)
+                        else:
+                            groupdict["RevVocAMPP"]=[]
+                            groupdict["ForVocAMPP"]=[]
+                            groupdict["RevJscAMPP"]=[]
+                            groupdict["ForJscAMPP"]=[]
+                            groupdict["RevFFAMPP"]=[]
+                            groupdict["ForFFAMPP"]=[]
+                            groupdict["RevEffAMPP"]=[]
+                            groupdict["ForEffAMPP"]=[]
+                            groupdict["RevRocAMPP"]=[]
+                            groupdict["ForRocAMPP"]=[]
+                            groupdict["RevRscAMPP"]=[]
+                            groupdict["ForRscAMPP"]=[]
+                            groupdict["RevVmppAMPP"]=[]
+                            groupdict["ForVmppAMPP"]=[]
+                            groupdict["RevJmppAMPP"]=[]
+                            groupdict["ForJmppAMPP"]=[]                            
+                        grouplistdict.append(groupdict)
                     
                     
             elif self.RF.get()==1:      #select only the best RevFor of each cell
                 if self.aftermppcheck.get()==0:
-                    for item in range(1,len(samplesgroups),1):
+                    for item in range(len(samplesgroups)):
                         groupdict={}
                         groupdict["Group"]=samplesgroups[item]
                         listofthegroup=[]
@@ -770,7 +820,7 @@ class IVApp(Toplevel):
                 else: #if aftermppchecked
 #                    print("aftermpp is checked")
 #                    print(samplesgroups)
-                    for item in range(1,len(samplesgroups),1):
+                    for item in range(len(samplesgroups)):
                         groupdict={}
                         groupdict["Group"]=samplesgroups[item]
                         listofthegroup=[]
@@ -823,7 +873,7 @@ class IVApp(Toplevel):
                             groupdict["RevJmpp"]=[x['Jmpp'] for x in listofthegroupRev if 'Jmpp' in x]
                             groupdict["ForJmpp"]=[x['Jmpp'] for x in listofthegroupFor if 'Jmpp' in x]
                             
-                            grouplistdict.append(groupdict)
+#                            grouplistdict.append(groupdict)
                         listofthegroup2=[]
                         for item1 in range(len(DATAx)):
                             if DATAx[item1]["Group"]==groupdict["Group"] and DATAx[item1]["Illumination"]=='Light' and DATAx[item1]["aftermpp"]==1:
@@ -873,22 +923,37 @@ class IVApp(Toplevel):
                             groupdict["ForVmppAMPP"]=[x['Vmpp'] for x in listofthegroupFor if 'Vmpp' in x]
                             groupdict["RevJmppAMPP"]=[x['Jmpp'] for x in listofthegroupRev if 'Jmpp' in x]
                             groupdict["ForJmppAMPP"]=[x['Jmpp'] for x in listofthegroupFor if 'Jmpp' in x]
-                            
-                            grouplistdict.append(groupdict)
+                        else:
+                            groupdict["RevVocAMPP"]=[]
+                            groupdict["ForVocAMPP"]=[]
+                            groupdict["RevJscAMPP"]=[]
+                            groupdict["ForJscAMPP"]=[]
+                            groupdict["RevFFAMPP"]=[]
+                            groupdict["ForFFAMPP"]=[]
+                            groupdict["RevEffAMPP"]=[]
+                            groupdict["ForEffAMPP"]=[]
+                            groupdict["RevRocAMPP"]=[]
+                            groupdict["ForRocAMPP"]=[]
+                            groupdict["RevRscAMPP"]=[]
+                            groupdict["ForRscAMPP"]=[]
+                            groupdict["RevVmppAMPP"]=[]
+                            groupdict["ForVmppAMPP"]=[]
+                            groupdict["RevJmppAMPP"]=[]
+                            groupdict["ForJmppAMPP"]=[]    
+                        grouplistdict.append(groupdict)
 #                        listofthegroup=listofthegroup1+listofthegroup2
-            print("aftermpp0") 
+#            print("aftermpp0") 
 #            print(listofthegroup)
 #            print(len(listofthegroup))
-            if len(listofthegroup)!=0 or len(listofthegroup2)!=0:  
-#                print("is listofthegroup non zero length")
+#            print(len(grouplistdict))
+            if 1:#grouplistdict!=[]:  
+#                print("is grouplistdict non zero length")
+#                print(len(grouplistdict))
                 self.GroupStatfig.clear()
-                names=samplesgroups[1:]
-                print("aftermpp1")
+                names=samplesgroups
+                #                print("aftermpp1")
                 if self.GroupChoice.get()=="Eff":
-#                    if self.aftermppcheck.get()==1:
-#                        print("aftermpp")
                     if self.aftermppcheck.get()==0:
-#                        print("all")
                         Effsubfig = self.GroupStatfig 
                         #names=samplesgroups
                         valsRev=[]
@@ -907,6 +972,7 @@ class IVApp(Toplevel):
                         Rev=[]
                         Forw=[]
                         namelist=[]
+#                        print(names)
                         for i in range(len(names)):
                              if valsRev[i][0]!=[]:
                                  Rev.append(valsRev[i][0])
@@ -919,7 +985,8 @@ class IVApp(Toplevel):
                              if valsRev[i][0]!=[] or valsFor[i][0]!=[]:
                                  valstot.append(valsRev[i][0]+valsFor[i][0])
                                  namelist.append(names[i])
-                              
+#                        print(namelist)  
+                        
                         if self.boxplot.get()==1:
                             Effsubfig.boxplot(valstot,0,'',labels=namelist)
                     
@@ -934,7 +1001,7 @@ class IVApp(Toplevel):
                                 Effsubfig.scatter(x,y,s=15,color='blue', alpha=0.5) 
                             
                     else:
-                        print("aftermpp")
+#                        print("aftermpp")
                         Effsubfig = self.GroupStatfig 
                         #names=samplesgroups
                         valsRev=[]
@@ -947,142 +1014,168 @@ class IVApp(Toplevel):
                         for item in names:
 #                            v=[i["RevEffAMPP"] for i in grouplistdict if i["Group"]==item and "RevEffAMPP" in i]
                             valsRevAMPP.append([i["RevEffAMPP"] for i in grouplistdict if i["Group"]==item and "RevEffAMPP" in i])
-                        print(len(valsRevAMPP))
+#                        print(len(valsRevAMPP))
                         valsForAMPP=[]
                         for item in names:
                             valsForAMPP.append([i["ForEffAMPP"] for i in grouplistdict if i["Group"]==item and "ForEffAMPP" in i])
-                        print(len(valsForAMPP))
-                        valstot=[]
+#                        print(len(valsForAMPP))
+                        
+                        
                         
                         for item in names:
                             DATAgroupforexport.append([item,"RevEff"]+[i["RevEff"] for i in grouplistdict if i["Group"]==item and "RevEff" in i][0])
                             DATAgroupforexport.append([item,"ForEff"]+[i["ForEff"] for i in grouplistdict if i["Group"]==item and "ForEff" in i][0])
-                            try:
-                                DATAgroupforexport.append([item,"RevEffAMPP"]+[i["RevEffAMPP"] for i in grouplistdict if i["Group"]==item and "RevEffAMPP" in i][0])
-                            except IndexError:
-                                print("indexError1")
-                                DATAgroupforexport.append([item,"RevEffAMPP"]+[])
-                            try:
-                                DATAgroupforexport.append([item,"ForEffAMPP"]+[i["ForEffAMPP"] for i in grouplistdict if i["Group"]==item and "ForEffAMPP" in i][0])
-                            except IndexError:
-                                print("indexError2")
-                                DATAgroupforexport.append([item,"ForEffAMPP"]+[])
+#                            try:
+                            DATAgroupforexport.append([item,"RevEffAMPP"]+[i["RevEffAMPP"] for i in grouplistdict if i["Group"]==item and "RevEffAMPP" in i][0])
+#                            except IndexError:
+#                                print("indexError1")
+#                                DATAgroupforexport.append([item,"RevEffAMPP"]+[])
+#                            try:
+                            DATAgroupforexport.append([item,"ForEffAMPP"]+[i["ForEffAMPP"] for i in grouplistdict if i["Group"]==item and "ForEffAMPP" in i][0])
+#                            except IndexError:
+#                                print("indexError2")
+#                                DATAgroupforexport.append([item,"ForEffAMPP"]+[])
 
                         DATAgroupforexport=map(list, six.moves.zip_longest(*DATAgroupforexport, fillvalue=' '))
-        
+                        
+                        valstot=[]
                         Rev=[]
                         Forw=[]
                         RevAMPP=[]
                         ForwAMPP=[]
                         namelist=[]
-                        if len(listofthegroup)!=0:
-                            for i in range(len(names)):
-                                found1=0
-                                found2=0
-                                try:
-                                    if valsRev[i]!=[]:
-                                         if valsRev[i][0]!=[]:
-                                             Rev.append(valsRev[i][0])
-                                             found1=1
-                                         else:
-                                             Rev.append([])
-                                    else:
-                                         Rev.append([])
-                                except:
-                                    print("indexError3")
-                                    Rev.append([])
-                                try:
-                                    if valsFor[i]!=[]:    
-                                         if valsFor[i][0]!=[]:
-                                             Forw.append(valsFor[i][0])
-                                             found2=1
-                                         else:
-                                             Forw.append([])
-                                    else:
-                                         Forw.append([])
-                                except:
-                                    print("indexError4")
-                                    Forw.append([])
-                                try:    
-                                    if found1 and found2 :
-                                         valstot.append(valsRev[i][0]+valsFor[i][0])
-                                         namelist.append(names[i])
-                                    elif found1 and not found2:
-                                         valstot.append(valsRev[i][0])
-                                         namelist.append(names[i])
-                                    elif not found1 and found2:
-                                         valstot.append(valsFor[i][0])
-                                         namelist.append(names[i])
-                                except:
-                                    print("indexError5")
+                        for i in range(len(names)):
+                            if valsRev[i][0]!=[]:
+                                 Rev.append(valsRev[i][0])
+                            else:
+                                 Rev.append([])
+                            if valsFor[i][0]!=[]:
+                                 Forw.append(valsFor[i][0])
+                            else:
+                                 Forw.append([])
+                            if valsRevAMPP[i][0]!=[]:
+                                 RevAMPP.append(valsRevAMPP[i][0])
+                            else:
+                                 RevAMPP.append([])
+                            if valsForAMPP[i][0]!=[]:
+                                 ForwAMPP.append(valsForAMPP[i][0])
+                            else:
+                                 ForwAMPP.append([])    
+                            if valsRev[i][0]!=[] or valsFor[i][0]!=[] or valsRevAMPP[i][0]!=[] or valsForAMPP[i][0]!=[]:
+                                 valstot.append(valsRev[i][0]+valsFor[i][0]+valsRevAMPP[i][0]+valsForAMPP[i][0])
+                                 namelist.append(names[i])
+#                        if len(listofthegroup)!=0:
+#                            for i in range(len(names)):
+#                                found1=0
+#                                found2=0
+#                                try:
+#                                    if valsRev[i]!=[]:
+#                                         if valsRev[i][0]!=[]:
+#                                             Rev.append(valsRev[i][0])
+#                                             found1=1
+#                                         else:
+#                                             Rev.append([])
+#                                    else:
+#                                         Rev.append([])
+#                                except:
+#                                    print("indexError3")
+#                                    Rev.append([])
+#                                try:
+#                                    if valsFor[i]!=[]:    
+#                                         if valsFor[i][0]!=[]:
+#                                             Forw.append(valsFor[i][0])
+#                                             found2=1
+#                                         else:
+#                                             Forw.append([])
+#                                    else:
+#                                         Forw.append([])
+#                                except:
+#                                    print("indexError4")
+#                                    Forw.append([])
+#                                try:    
+#                                    if found1 and found2 :
+#                                         valstot.append(valsRev[i][0]+valsFor[i][0])
+#                                         namelist.append(names[i])
+#                                    elif found1 and not found2:
+#                                         valstot.append(valsRev[i][0])
+#                                         namelist.append(names[i])
+#                                    elif not found1 and found2:
+#                                         valstot.append(valsFor[i][0])
+#                                         namelist.append(names[i])
+#                                except:
+#                                    print("indexError5")
                                     
                                      
-                        if len(listofthegroup2)!=0:   
-                            for i in range(len(names)):
-                                found1=0
-                                found2=0
-                                try:
-                                    if valsRevAMPP[i]!=[]:
-                                         if valsRevAMPP[i][0]!=[]:
-                                             RevAMPP.append(valsRevAMPP[i][0])
-                                             found1=0
-                                         else:
-                                             RevAMPP.append([]) 
-                                    else:
-                                         RevAMPP.append([])
-                                except:
-                                    print("indexError6")
-                                    RevAMPP.append([])
-                                try:    
-                                    if valsForAMPP[i][0]!=[]:    
-                                         if valsForAMPP[i][0]!=[]:
-                                             ForwAMPP.append(valsForAMPP[i][0])
-                                         else:
-                                             ForwAMPP.append([])
-                                    else:
-                                         ForwAMPP.append([]) 
-                                except:
-                                    print("indexError7")
-                                    ForwAMPP.append([]) 
-                                try:
-                                    if found1 and found2 :
-                                         valstot.append(valsRevAMPP[i][0]+valsForAMPP[i][0])
-                                         namelist.append(names[i])
-                                    elif found1 and not found2:
-                                         valstot.append(valsRevAMPP[i][0])
-                                         namelist.append(names[i])
-                                    elif not found1 and found2:
-                                         valstot.append(valsForAMPP[i][0])
-                                         namelist.append(names[i])
-                                except:
-                                    print("indexError8")
+#                        if len(listofthegroup2)!=0:   
+#                            for i in range(len(names)):
+#                                found1=0
+#                                found2=0
+#                                try:
+#                                    if valsRevAMPP[i]!=[]:
+#                                         if valsRevAMPP[i][0]!=[]:
+#                                             RevAMPP.append(valsRevAMPP[i][0])
+#                                             found1=0
+#                                         else:
+#                                             RevAMPP.append([]) 
+#                                    else:
+#                                         RevAMPP.append([])
+#                                except:
+#                                    print("indexError6")
+#                                    RevAMPP.append([])
+#                                try:    
+#                                    if valsForAMPP[i][0]!=[]:    
+#                                         if valsForAMPP[i][0]!=[]:
+#                                             ForwAMPP.append(valsForAMPP[i][0])
+#                                         else:
+#                                             ForwAMPP.append([])
+#                                    else:
+#                                         ForwAMPP.append([]) 
+#                                except:
+#                                    print("indexError7")
+#                                    ForwAMPP.append([]) 
+#                                try:
+#                                    if found1 and found2 :
+#                                         valstot.append(valsRevAMPP[i][0]+valsForAMPP[i][0])
+#                                         namelist.append(names[i])
+#                                    elif found1 and not found2:
+#                                         valstot.append(valsRevAMPP[i][0])
+#                                         namelist.append(names[i])
+#                                    elif not found1 and found2:
+#                                         valstot.append(valsForAMPP[i][0])
+#                                         namelist.append(names[i])
+#                                except:
+#                                    print("indexError8")
+                                    
                         if self.boxplot.get()==1:
                             Effsubfig.boxplot(valstot,0,'',labels=namelist)
                     
                         for i in range(len(namelist)):
-                            if len(listofthegroup)!=0:
-                                y=Rev[i]
-                                if len(y)>0:
-                                    x=np.random.normal(i+0.9,0.04,size=len(y))
-                                    Effsubfig.scatter(x,y,s=15,color='red', alpha=0.5)
-                                y=Forw[i]
-                                if len(y)>0:
-                                    x=np.random.normal(i+0.9,0.04,size=len(y))
-                                    Effsubfig.scatter(x,y,s=15,color='blue', alpha=0.5) 
-                            if len(listofthegroup2)!=0:   
+#                            if len(listofthegroup)!=0:
+                            y=Rev[i]
+                            if len(y)>0:
+                                x=np.random.normal(i+0.9,0.04,size=len(y))
+                                Effsubfig.scatter(x,y,s=15,color='red', alpha=0.5)
+                            y=Forw[i]
+                            if len(y)>0:
+                                x=np.random.normal(i+0.9,0.04,size=len(y))
+                                Effsubfig.scatter(x,y,s=15,color='blue', alpha=0.5) 
+#                            if len(listofthegroup2)!=0:   
                                 y=RevAMPP[i]
-                                if len(y)>0:
-                                    x=np.random.normal(i+1.1,0.04,size=len(y))
-                                    Effsubfig.scatter(x,y,s=15,color='orange', alpha=0.5)
-                                y=ForwAMPP[i]
-                                if len(y)>0:
-                                    x=np.random.normal(i+1.1,0.04,size=len(y))
-                                    Effsubfig.scatter(x,y,s=15,color='lightblue', alpha=0.5) 
+                            if len(y)>0:
+                                x=np.random.normal(i+1.1,0.04,size=len(y))
+                                Effsubfig.scatter(x,y,s=15,color='orange', alpha=0.5)
+                            y=ForwAMPP[i]
+                            if len(y)>0:
+                                x=np.random.normal(i+1.1,0.04,size=len(y))
+                                Effsubfig.scatter(x,y,s=15,color='lightblue', alpha=0.5) 
                                 
                     if self.boxplot.get()==0:
                         span=range(1,len(namelist)+1)
                         plt.xticks(span,namelist)
                         Effsubfig.set_xlim([0.5,span[-1]+0.5])
+                    
+                    if self.minmaxgroupgraphcheck.get()==1:
+                        Effsubfig.set_ylim([self.minYgroupgraph.get(),self.maxYgroupgraph.get()])
                         
                     Effsubfig.set_ylabel('Efficiency (%)')
                     for item in ([Effsubfig.title, Effsubfig.xaxis.label, Effsubfig.yaxis.label] +
@@ -1112,15 +1205,27 @@ class IVApp(Toplevel):
                         Rev=[]
                         Forw=[]
                         namelist=[]
+#                        for i in range(len(names)):
+#                            if valsRev[i][0]==[] and valsFor[i][0]==[]:
+#                                print(" ")
+#                            else:
+#                                Rev.append(valsRev[i][0])
+#                                Forw.append(valsFor[i][0])
+#                                valstot.append(valsRev[i][0]+valsFor[i][0])
+#                                namelist.append(names[i])
                         for i in range(len(names)):
-                            if valsRev[i][0]==[] and valsFor[i][0]==[]:
-                                print(" ")
-                            else:
-                                Rev.append(valsRev[i][0])
-                                Forw.append(valsFor[i][0])
-                                valstot.append(valsRev[i][0]+valsFor[i][0])
-                                namelist.append(names[i])
-                        
+                             if valsRev[i][0]!=[]:
+                                 Rev.append(valsRev[i][0])
+                             else:
+                                 Rev.append([])
+                             if valsFor[i][0]!=[]:
+                                 Forw.append(valsFor[i][0])
+                             else:
+                                 Forw.append([])
+                             if valsRev[i][0]!=[] or valsFor[i][0]!=[]:
+                                 valstot.append(valsRev[i][0]+valsFor[i][0])
+                                 namelist.append(names[i])
+                                 
                         if self.boxplot.get()==1:
                             Vocsubfig.boxplot(valstot,0,'',labels=namelist)
                         
@@ -1212,6 +1317,10 @@ class IVApp(Toplevel):
                         span=range(1,len(namelist)+1)
                         plt.xticks(span,namelist)
                         Vocsubfig.set_xlim([0.5,span[-1]+0.5])
+                        
+                    if self.minmaxgroupgraphcheck.get()==1:
+                        Vocsubfig.set_ylim([self.minYgroupgraph.get(),self.maxYgroupgraph.get()])
+
                     Vocsubfig.set_ylabel('Voc (mV)')
                     for item in ([Vocsubfig.title, Vocsubfig.xaxis.label, Vocsubfig.yaxis.label] +
                                  Vocsubfig.get_xticklabels() + Vocsubfig.get_yticklabels()):
@@ -1337,6 +1446,10 @@ class IVApp(Toplevel):
                         span=range(1,len(namelist)+1)
                         plt.xticks(span,namelist)
                         Jscsubfig.set_xlim([0.5,span[-1]+0.5])
+                        
+                    if self.minmaxgroupgraphcheck.get()==1:
+                        Jscsubfig.set_ylim([self.minYgroupgraph.get(),self.maxYgroupgraph.get()])
+
                     Jscsubfig.set_ylabel('Jsc (mA/cm'+'\xb2'+')')
                     for item in ([Jscsubfig.title, Jscsubfig.xaxis.label, Jscsubfig.yaxis.label] +
                                  Jscsubfig.get_xticklabels() + Jscsubfig.get_yticklabels()):
@@ -1460,6 +1573,10 @@ class IVApp(Toplevel):
                         span=range(1,len(namelist)+1)
                         plt.xticks(span,namelist)
                         FFsubfig.set_xlim([0.5,span[-1]+0.5])
+                        
+                    if self.minmaxgroupgraphcheck.get()==1:
+                        FFsubfig.set_ylim([self.minYgroupgraph.get(),self.maxYgroupgraph.get()])
+
                     FFsubfig.set_ylabel('FF (%)')
                     for item in ([FFsubfig.title, FFsubfig.xaxis.label, FFsubfig.yaxis.label] +
                                  FFsubfig.get_xticklabels() + FFsubfig.get_yticklabels()):
@@ -1583,6 +1700,10 @@ class IVApp(Toplevel):
                         span=range(1,len(namelist)+1)
                         plt.xticks(span,namelist)
                         Rocsubfig.set_xlim([0.5,span[-1]+0.5])
+                    
+                    if self.minmaxgroupgraphcheck.get()==1:
+                        Rocsubfig.set_ylim([self.minYgroupgraph.get(),self.maxYgroupgraph.get()])
+
                     Rocsubfig.set_ylabel('Roc')
                     for item in ([Rocsubfig.title, Rocsubfig.xaxis.label, Rocsubfig.yaxis.label] +
                                  Rocsubfig.get_xticklabels() + Rocsubfig.get_yticklabels()):
@@ -1706,6 +1827,10 @@ class IVApp(Toplevel):
                         span=range(1,len(namelist)+1)
                         plt.xticks(span,namelist)
                         Rscsubfig.set_xlim([0.5,span[-1]+0.5])
+                    
+                    if self.minmaxgroupgraphcheck.get()==1:
+                        Rscsubfig.set_ylim([self.minYgroupgraph.get(),self.maxYgroupgraph.get()])
+
                     Rscsubfig.set_ylabel('Rsc')
                     for item in ([Rscsubfig.title, Rscsubfig.xaxis.label, Rscsubfig.yaxis.label] +
                                  Rscsubfig.get_xticklabels() + Rscsubfig.get_yticklabels()):
@@ -1828,6 +1953,9 @@ class IVApp(Toplevel):
                         span=range(1,len(namelist)+1)
                         plt.xticks(span,namelist)
                         Rscsubfig.set_xlim([0.5,span[-1]+0.5])
+                    if self.minmaxgroupgraphcheck.get()==1:
+                        Rscsubfig.set_ylim([self.minYgroupgraph.get(),self.maxYgroupgraph.get()])
+
                     Rscsubfig.set_ylabel('Vmpp (mV)')
                     for item in ([Rscsubfig.title, Rscsubfig.xaxis.label, Rscsubfig.yaxis.label] +
                                  Rscsubfig.get_xticklabels() + Rscsubfig.get_yticklabels()):
@@ -1950,6 +2078,9 @@ class IVApp(Toplevel):
                         span=range(1,len(namelist)+1)
                         plt.xticks(span,namelist)
                         Rscsubfig.set_xlim([0.5,span[-1]+0.5])
+                    if self.minmaxgroupgraphcheck.get()==1:
+                        Rscsubfig.set_ylim([self.minYgroupgraph.get(),self.maxYgroupgraph.get()])
+
                     Rscsubfig.set_ylabel('Jmpp (mA/cm'+'\xb2'+')')
                     for item in ([Rscsubfig.title, Rscsubfig.xaxis.label, Rscsubfig.yaxis.label] +
                                  Rscsubfig.get_xticklabels() + Rscsubfig.get_yticklabels()):
@@ -2422,7 +2553,7 @@ class IVApp(Toplevel):
         Extract Voc, Jsc, FF, Pmax from a given JV curve
             * Assume given JV curve is in volts and mA/cm2
         '''
-        resample_step_size = 0.001 # Voltage step size to use while resampling JV curve to find Pmax
+        resample_step_size = 0.00001 # Voltage step size to use while resampling JV curve to find Pmax
     
         from scipy.interpolate import interp1d, UnivariateSpline
     
@@ -2438,21 +2569,29 @@ class IVApp(Toplevel):
             # Extract Voc by interpolating wrt J
             jv_interp_J = interp1d(jv[1], jv[0], bounds_error=False, fill_value=0.)
             Voc = jv_interp_J(0.)
+#            print(Voc)
             params['Voc'] = np.around(Voc, decimals=4)
         
             # Resample JV curve over standard interval and find Pmax
-            Vrange_new = np.arange(0., params['Voc'], resample_step_size)
+            Vrange_new = np.arange(0., Voc, resample_step_size)
+#            print(Vrange_new)
             jv_resampled = np.zeros((len(Vrange_new), 3))
             jv_resampled[:,0] = np.copy(Vrange_new)
             jv_resampled[:,1] = jv_interp_V(jv_resampled[:,0])
             jv_resampled[:,2] = np.abs(np.multiply(jv_resampled[:,0], jv_resampled[:,1]))
+#            print(jv_resampled)
+            pmax=np.max(np.abs(np.multiply(jv_resampled[:,0], jv_resampled[:,1])))
             params['Pmax'] = np.around(np.max(np.abs(np.multiply(jv_resampled[:,0], jv_resampled[:,1]))), decimals=4)
-            indPmax=list(jv_resampled[:,2]).index(np.max(jv_resampled[:,2]))
+            indPmax=list(jv_resampled[:,2]).index(pmax)
             params['Jmpp']=abs(list(jv_resampled[:,1])[indPmax])
-            params['Vmpp']=abs(list(jv_resampled[:,0])[indPmax])
+#            print(list(jv_resampled[:,1])[indPmax])
+#            print(indPmax)
+#            print(jv_interp_J(list(jv_resampled[:,1])[indPmax]))
+            params['Vmpp']=1000*abs(list(jv_resampled[:,0])[indPmax])
+#            print(params['Vmpp'])
         
             # Calculate fill factor
-            params['FF'] = abs(100*np.around(params['Pmax']/(params['Jsc']*params['Voc']), decimals=4))
+            params['FF'] = abs(100*np.around(pmax/(Jsc*Voc), decimals=4))
             
             # Calculate Rsc&Roc 
             x= [x0 for x0,y0 in sorted(zip(jv[0],jv[1]))]
@@ -2678,7 +2817,9 @@ class IVApp(Toplevel):
         groupednames=list(chain.from_iterable(groupednames))
         for item in range(len(DATAMPP)):
             DATAMPP[item]['SampleName']=groupednames[item]
-            
+        
+        self.updategrouptoplotdropbutton()
+        self.UpdateGroupGraph(1)
         
     def getdatalistsfromIVTFfiles(self, file_path):
         global DATA
@@ -3227,7 +3368,9 @@ class IVApp(Toplevel):
         groupednames=list(chain.from_iterable(groupednames))
         for item in range(len(DATAMPP)):
             DATAMPP[item]['SampleName']=groupednames[item]
-    
+        
+        self.updategrouptoplotdropbutton()
+        self.UpdateGroupGraph(1)
         
 #%%######################################################################
         
@@ -5916,12 +6059,12 @@ class IVApp(Toplevel):
         self.UpdateIVGraph()
         
     def groupfromTable(self):
-        global samplesgroups
+        global samplesgroups, groupstoplot
         
         self.window = tk.Toplevel()
         self.window.wm_title("Group samples")
         center(self.window)
-        self.window.geometry("580x120")
+        self.window.geometry("600x120")
          
         label=tk.Label(self.window,text="                ")
         label.grid(row=0,column=0, columnspan=8)
@@ -5967,6 +6110,14 @@ class IVApp(Toplevel):
         self.groupOrder = Button(self.window, text="reorder group",
                             command = self.reordergroup)
         self.groupOrder.grid(row=1, column=20, columnspan=3)
+        
+#        self.grouptoplotbutton = tk.Menubutton(self.window, text="grouptoplot", 
+#                                   indicatoron=True, borderwidth=1, relief="raised")
+#        self.grouptoplotmenu = tk.Menu(self.grouptoplotbutton, tearoff=False)
+#        self.grouptoplotbutton.configure(menu=self.grouptoplotmenu)
+#        self.grouptoplotbutton.grid(row=3, column=20, columnspan=3)
+    
+    
     
     class Drag_and_Drop_Listbox2(tk.Listbox):
         #A tk listbox with drag'n'drop reordering of entries.
@@ -6015,13 +6166,13 @@ class IVApp(Toplevel):
               self.curIndex = i
     
     def reordergroup(self):
-        global samplesgroups
+        global groupstoplot
         
         self.reorderwindow = tk.Tk()
         center(self.reorderwindow)
         self.listbox = self.Drag_and_Drop_Listbox2(self.reorderwindow)
-        for name in range(1,len(samplesgroups)):
-          self.listbox.insert(tk.END, samplesgroups[name])
+        for name in range(1,len(groupstoplot)):
+          self.listbox.insert(tk.END, groupstoplot[name])
           self.listbox.selection_set(0)
         self.listbox.pack(fill=tk.BOTH, expand=True)
         scrollbar = tk.Scrollbar(self.listbox, orient="vertical")
@@ -6036,20 +6187,31 @@ class IVApp(Toplevel):
         self.reorderwindow.mainloop()    
         
         #print(samplesgroups)
+    def updategrouptoplotdropbutton(self):
+        global groupstoplot
         
+        self.grouptoplotmenu = tk.Menu(self.grouptoplotbutton, tearoff=False)
+        self.grouptoplotbutton.configure(menu=self.grouptoplotmenu)
+        self.choicesgrouptoplot = {}
+        for choice in range(len(groupstoplot)):
+            self.choicesgrouptoplot[choice] = tk.IntVar(value=1)
+            self.grouptoplotmenu.add_checkbutton(label=groupstoplot[choice], variable=self.choicesgrouptoplot[choice], 
+                                 onvalue=1, offvalue=0, command = lambda: self.UpdateGroupGraph(1))
+
     def printlist2(self):
-        global samplesgroups
-        samplesgroups=list(self.listbox.get(0,tk.END))
-        samplesgroups=["Default group"]+ samplesgroups
+        global samplesgroups,groupstoplot
+        groupstoplot=list(self.listbox.get(0,tk.END))
+        groupstoplot=["Default group"]+ groupstoplot
         #self.UpdateIVLegMod()
         self.reorderwindow.destroy()
         self.window.destroy()
+        self.updategrouptoplotdropbutton()
         self.UpdateGroupGraph(1)
         #self.groupfromTable()
     
     def validategroup(self):
         global takenforplot
-        global samplesgroups
+        global samplesgroups,groupstoplot
         global DATA
         
         totake=self.treeview.selection()
@@ -6058,6 +6220,7 @@ class IVApp(Toplevel):
         if self.newgroup.get() != samplesgroups[0] and totake!=():
             if self.newgroup.get() not in samplesgroups:
                 samplesgroups.append(self.newgroup.get())
+                groupstoplot.append(self.newgroup.get())
             for item in range(len(takenforplot)):
                 for item1 in range(len(DATA)):
                     if takenforplot[item]==DATA[item1]["SampleName"]:
@@ -6070,20 +6233,23 @@ class IVApp(Toplevel):
                         DATA[item1]["Group"]=self.groupchoice.get()
                         break
         self.TableBuilder()
+        self.updategrouptoplotdropbutton()
         self.UpdateGroupGraph(1)
         self.window.destroy()
         
     def deletegroup(self):
-        global samplesgroups
+        global samplesgroups, groupstoplot
         global DATA
         
         if self.groupdellist.get()!="Default group":
             while self.groupdellist.get() in samplesgroups: samplesgroups.remove(self.groupdellist.get()) 
+            while self.groupdellist.get() in groupstoplot: groupstoplot.remove(self.groupdellist.get()) 
         
         for i in range(len(DATA)):
             if DATA[i]["Group"]==self.groupdellist.get():
                 DATA[i]["Group"]="Default group"
         self.TableBuilder()
+        self.updategrouptoplotdropbutton()
         self.UpdateGroupGraph(1)
         self.window.destroy()
         

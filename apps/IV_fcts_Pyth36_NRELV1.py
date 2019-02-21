@@ -4,7 +4,7 @@ import os,datetime
 import matplotlib.pyplot as plt
 #from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk as NavigationToolbar2TkAgg
+#from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk as NavigationToolbar2TkAgg
 
 import tkinter as tk
 from tkinter import *
@@ -59,6 +59,12 @@ TODOLIST
 - database adaptation
 
 - Vmpp is rounded somewhere... ??
+
+- export all graphs with transparent background
+
+- export StatCells StatGroupgraph StatJVgraph and StatTimegraph as one 4-figures graph
+
+- StatGroupgraph: legend with #of cells is off-centered. 
 
 """
 #%%############# Global variable definition

@@ -60,11 +60,6 @@ TODOLIST
 
 - Vmpp is rounded somewhere... ??
 
-- export all graphs with transparent background
-
-- export StatCells StatGroupgraph StatJVgraph and StatTimegraph as one 4-figures graph
-
-- StatGroupgraph: legend with #of cells is off-centered. 
 
 """
 #%%############# Global variable definition
@@ -3453,7 +3448,7 @@ class IVApp(Toplevel):
             if self.Big4.get()==0:
                 f = filedialog.asksaveasfilename(defaultextension=".png", filetypes = (("graph file", "*.png"),("All Files", "*.*")))
                 extent = self.GroupStatfig.get_window_extent().transformed(self.fig.dpi_scale_trans.inverted())
-                self.fig.savefig(f, dpi=300, bbox_inches=extent.expanded(1.5, 2))#, transparent=True)
+                self.fig.savefig(f, dpi=300, bbox_inches=extent.expanded(1.5, 2), transparent=True)
                 
                 DATAgroupforexport1=[]            
                 for item in DATAgroupforexport:
@@ -3472,7 +3467,7 @@ class IVApp(Toplevel):
                 self.GroupChoice.set("Eff")
                 self.UpdateGroupGraph(1)
                 extent = self.GroupStatfig.get_window_extent().transformed(self.fig.dpi_scale_trans.inverted())
-                self.fig.savefig(f[:-4]+"_"+self.GroupChoice.get()+f[-4:], dpi=300, bbox_inches=extent.expanded(1.5, 1.5))#, transparent=True)
+                self.fig.savefig(f[:-4]+"_"+self.GroupChoice.get()+f[-4:], dpi=300, bbox_inches=extent.expanded(1.5, 1.5), transparent=True)
                 
                 DATAgroupforexport1=[]            
                 for item in DATAgroupforexport:
@@ -3489,7 +3484,7 @@ class IVApp(Toplevel):
                 self.UpdateGroupGraph(1)
                 
                 extent = self.GroupStatfig.get_window_extent().transformed(self.fig.dpi_scale_trans.inverted())
-                self.fig.savefig(f[:-4]+"_"+self.GroupChoice.get()+f[-4:], dpi=300, bbox_inches=extent.expanded(1.5, 1.5))#, transparent=True)
+                self.fig.savefig(f[:-4]+"_"+self.GroupChoice.get()+f[-4:], dpi=300, bbox_inches=extent.expanded(1.5, 1.5), transparent=True)
                 
                 DATAgroupforexport1=[]            
                 for item in DATAgroupforexport:
@@ -3506,7 +3501,7 @@ class IVApp(Toplevel):
                 self.UpdateGroupGraph(1)
                 
                 extent = self.GroupStatfig.get_window_extent().transformed(self.fig.dpi_scale_trans.inverted())
-                self.fig.savefig(f[:-4]+"_"+self.GroupChoice.get()+f[-4:], dpi=300, bbox_inches=extent.expanded(1.5, 1.5))#, transparent=True)
+                self.fig.savefig(f[:-4]+"_"+self.GroupChoice.get()+f[-4:], dpi=300, bbox_inches=extent.expanded(1.5, 1.5), transparent=True)
                 
                 DATAgroupforexport1=[]            
                 for item in DATAgroupforexport:
@@ -3523,7 +3518,7 @@ class IVApp(Toplevel):
                 self.UpdateGroupGraph(1)
                 
                 extent = self.GroupStatfig.get_window_extent().transformed(self.fig.dpi_scale_trans.inverted())
-                self.fig.savefig(f[:-4]+"_"+self.GroupChoice.get()+f[-4:], dpi=300, bbox_inches=extent.expanded(1.5, 1.5))#, transparent=True)
+                self.fig.savefig(f[:-4]+"_"+self.GroupChoice.get()+f[-4:], dpi=300, bbox_inches=extent.expanded(1.5, 1.5), transparent=True)
                 
                 DATAgroupforexport1=[]            
                 for item in DATAgroupforexport:
@@ -3536,6 +3531,18 @@ class IVApp(Toplevel):
                 file = open(str(f[:-4]+"_"+self.GroupChoice.get()+"dat.txt"),'w')
                 file.writelines("%s" % item for item in DATAgroupforexport1)
                 file.close()
+                
+#                images = list(map(ImageTk.open, [f[:-4]+"_Jsc"+f[-4:],f[:-4]+"_FF"+f[-4:],f[:-4]+"_Voc"+f[-4:],f[:-4]+"_Eff"+f[-4:]]))
+#                widths, heights = zip(*(i.size for i in images))
+#                total_width = max(widths[0]+widths[2],widths[1]+widths[3])
+#                max_height = max(heights[0]+heights[1],heights[2]+heights[3])
+#                new_im = ImageTk.new('RGB', (total_width, max_height), (255, 255, 255))
+#                new_im.paste(im=images[0],box=(0,0))
+#                new_im.paste(im=images[1],box=(0,max(heights[0],heights[2])))
+#                new_im.paste(im=images[2],box=(max(widths[0],widths[1]),0))
+#                new_im.paste(im=images[3],box=(max(widths[0],widths[1]),max(heights[0],heights[2])))
+#                new_im.save(f[:-4]+"_big4"+f[-4:])
+                
         except:
             print("there is an exception")  
             
@@ -4535,8 +4542,8 @@ class IVApp(Toplevel):
                 for item in range(len(samplesgroups)):
                     if samplesgroups[item] in namelist:
                         annotation+=samplesgroups[item]+"=>"+str(grouplistdict[item]["numbCell"])+"; "
-                FFsubfig.annotate(annotation, xy=(1.3,-0.3), xycoords='axes fraction', fontsize=4,
-                            horizontalalignment='right', verticalalignment='bottom')
+                FFsubfig.annotate(annotation, xy=(0,-0.3), xycoords='axes fraction', fontsize=4,
+                            horizontalalignment='left', verticalalignment='bottom')
                 
                 fig.subplots_adjust(wspace=.25)
                 fig.savefig(batchname+'_StatGroupgraph.png',dpi=300,bbox_inches="tight")
@@ -5023,6 +5030,19 @@ class IVApp(Toplevel):
                     
         plt.close("all")
         plt.clf()
+        
+        if self.statGraphs.get():
+            images = list(map(ImageTk.open, [batchname+'_StatCells.png',batchname+'_StatTimegraph.png',batchname+'_StatJVgraph.png',batchname+'_StatGroupgraph.png']))
+            widths, heights = zip(*(i.size for i in images))
+            total_width = max(widths[0]+widths[2],widths[1]+widths[3])
+            max_height = max(heights[0]+heights[1],heights[2]+heights[3])
+            new_im = ImageTk.new('RGB', (total_width, max_height), (255, 255, 255))
+            new_im.paste(im=images[0],box=(0,0))
+            new_im.paste(im=images[1],box=(0,max(heights[0],heights[2])))
+            new_im.paste(im=images[2],box=(max(widths[0],widths[1]),0))
+            new_im.paste(im=images[3],box=(max(widths[0],widths[1]),max(heights[0],heights[2])))
+            new_im.save(batchname+'_controls.png')
+        
         self.window.destroy()
         self.destroy()
         self.__init__()

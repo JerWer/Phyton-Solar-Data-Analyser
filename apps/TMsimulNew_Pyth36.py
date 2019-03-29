@@ -19,6 +19,8 @@ still to be added:
 - when simulation is done, opens a toplevel window with the plot, with toolbar to rescale and save differently
 
 
+- optimization: if have several layers with same material, it does not distinguise them => eg MgF2 front and middle in 4TT, or ITO front and recombination in 2TT...
+
 """
 #%%
 import os

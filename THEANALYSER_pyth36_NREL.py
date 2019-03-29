@@ -24,6 +24,8 @@ import XRD as xrd
 
 """todolist
 
+- spectro files of STF139
+- PL data
 
 
 

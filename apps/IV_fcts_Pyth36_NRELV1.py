@@ -60,6 +60,13 @@ TODOLIST
 
 - Vmpp is rounded somewhere... ??
 
+- remove the reverseforward color info from the top of graph FF and Eff
+
+
+- histogram graph for the big4 parameters VS number of devices. with overlayed gaussian or other fit curve
+
+- hysteresis index plot, by substrate, by groups, by cell. with all meas or with the best RF
+
 
 """
 #%%############# Global variable definition

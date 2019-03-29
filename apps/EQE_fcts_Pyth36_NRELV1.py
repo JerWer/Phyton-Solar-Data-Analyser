@@ -32,7 +32,7 @@ TODOLIST
 when there are several tabs, numbers are added to the tab names => don't use that as batch and samplename
 
 
-- issue if only EQE, get some NAN/INF (batch7)
+- issue if only EQE, get some NAN/INF (batch7) => if only EQE then don't show the iqe and sr...
 
 """
 #%%

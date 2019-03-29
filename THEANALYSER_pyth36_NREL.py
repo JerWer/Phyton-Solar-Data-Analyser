@@ -12,7 +12,7 @@ import HallEffect_Pyth36 as Hall
 import qsspc_Pyth36 as QSSPC
 import ellipso_Pyth36 as Ellipso
 import CMM_Pyth36_v1 as CMM
-import Spectro_Pyth36 as spectrofcts
+import Spectro_Pyth36_NREL as spectrofcts
 import TMsimulNew_Pyth36 as TMMfcts
 import EQE_fcts_Pyth36_NRELV1 as EQEfcts
 import IV_fcts_Pyth36_NRELV1 as IVfcts
@@ -26,8 +26,6 @@ import XRD as xrd
 
 - spectro files of STF139
 - PL data
-
-
 
 """
 
@@ -68,7 +66,7 @@ class TheAnalyser(Frame):
         
         EQEbutton = Button(root, text='EQE', command = self.callEQE)
         EQEbutton.grid(row=1,column=5,columnspan=2)
-        Spectrobutton = Button(root, text='Spectro',fg='white', command = self.callSpectro)
+        Spectrobutton = Button(root, text='Spectro', command = self.callSpectro)
         Spectrobutton.grid(row=1,column=8,columnspan=2)
         Ellipsobutton = Button(root, text='Ellipso',fg='white', command = self.callEllipso)
         Ellipsobutton.grid(row=2,column=8,columnspan=2)

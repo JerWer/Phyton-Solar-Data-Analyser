@@ -2621,7 +2621,7 @@ class IVApp(Toplevel):
         
         
         for i in range(len(file_path)):
-            filetoread = open(file_path[i],"r")
+            filetoread = open(file_path[i],"r", encoding='ISO-8859-1')
             filerawdata = filetoread.readlines()
             print(i)
             filetype = 0
@@ -2836,7 +2836,7 @@ class IVApp(Toplevel):
         global DATAFV
         
         for i in range(len(file_path)):
-            filetoread = open(file_path[i],"r")
+            filetoread = open(file_path[i],"r", encoding='ISO-8859-1')
             filerawdata = filetoread.readlines()
             print(i)
             filetype = 0
@@ -3403,7 +3403,7 @@ class IVApp(Toplevel):
                 line=line[:-1]+"\n"
                 DATAJVforexport1.append(line)
                 
-            file = open(str(f[:-4]+"_dat.txt"),'w')
+            file = open(str(f[:-4]+"_dat.txt"),'w', encoding='ISO-8859-1')
             file.writelines("%s" % item for item in DATAJVforexport1)
             file.close()   
             
@@ -3414,7 +3414,7 @@ class IVApp(Toplevel):
                     line=line+str(item1)+"\t"
                 line=line[:-1]+"\n"
                 DATAJVforexport1.append(line)
-            file = open(str(f[:-4]+"_tab.txt"),'w')
+            file = open(str(f[:-4]+"_tab.txt"),'w', encoding='ISO-8859-1')
             file.writelines("%s" % item for item in DATAJVforexport1)
             file.close()
 
@@ -3442,7 +3442,7 @@ class IVApp(Toplevel):
                 line=line[:-1]+"\n"
                 DATAmppforexport1.append(line)
                 
-            file = open(str(f[:-4]+"_dat.txt"),'w')
+            file = open(str(f[:-4]+"_dat.txt"),'w', encoding='ISO-8859-1')
             file.writelines("%s" % item for item in DATAmppforexport1)
             file.close()
         
@@ -3465,7 +3465,7 @@ class IVApp(Toplevel):
                     line=line[:-1]+"\n"
                     DATAgroupforexport1.append(line)
                 
-                file = open(str(f[:-4]+"_"+self.GroupChoice.get()+"dat.txt"),'w')
+                file = open(str(f[:-4]+"_"+self.GroupChoice.get()+"dat.txt"),'w', encoding='ISO-8859-1')
                 file.writelines("%s" % item for item in DATAgroupforexport1)
                 file.close()
             elif self.Big4.get()==1:
@@ -3484,7 +3484,7 @@ class IVApp(Toplevel):
                     line=line[:-1]+"\n"
                     DATAgroupforexport1.append(line)
                 
-                file = open(str(f[:-4]+"_"+self.GroupChoice.get()+"dat.txt"),'w')
+                file = open(str(f[:-4]+"_"+self.GroupChoice.get()+"dat.txt"),'w', encoding='ISO-8859-1')
                 file.writelines("%s" % item for item in DATAgroupforexport1)
                 file.close()
                 self.GroupChoice.set("Voc")
@@ -3501,7 +3501,7 @@ class IVApp(Toplevel):
                     line=line[:-1]+"\n"
                     DATAgroupforexport1.append(line)
                 
-                file = open(str(f[:-4]+"_"+self.GroupChoice.get()+"dat.txt"),'w')
+                file = open(str(f[:-4]+"_"+self.GroupChoice.get()+"dat.txt"),'w', encoding='ISO-8859-1')
                 file.writelines("%s" % item for item in DATAgroupforexport1)
                 file.close()
                 self.GroupChoice.set("Jsc")
@@ -3518,7 +3518,7 @@ class IVApp(Toplevel):
                     line=line[:-1]+"\n"
                     DATAgroupforexport1.append(line)
                 
-                file = open(str(f[:-4]+"_"+self.GroupChoice.get()+"dat.txt"),'w')
+                file = open(str(f[:-4]+"_"+self.GroupChoice.get()+"dat.txt"),'w', encoding='ISO-8859-1')
                 file.writelines("%s" % item for item in DATAgroupforexport1)
                 file.close()
                 self.GroupChoice.set("FF")
@@ -3535,7 +3535,7 @@ class IVApp(Toplevel):
                     line=line[:-1]+"\n"
                     DATAgroupforexport1.append(line)
                 
-                file = open(str(f[:-4]+"_"+self.GroupChoice.get()+"dat.txt"),'w')
+                file = open(str(f[:-4]+"_"+self.GroupChoice.get()+"dat.txt"),'w', encoding='ISO-8859-1')
                 file.writelines("%s" % item for item in DATAgroupforexport1)
                 file.close()
                 
@@ -3627,7 +3627,7 @@ class IVApp(Toplevel):
                         ligne=ligne[:-1]+'\n'    
                         contenttxtfile.append(ligne)
                     #export it to txt files
-                    file = open(str(substratpartdat[0]) + '_lowIllum.txt','w')
+                    file = open(str(substratpartdat[0]) + '_lowIllum.txt','w', encoding='ISO-8859-1')
                     file.writelines("%s" % item for item in contenttxtfile)
                     file.close()
             except:
@@ -3691,7 +3691,7 @@ class IVApp(Toplevel):
                         for item in range(len(substratpartdat[1][item0]["MppData"][0])):
                             contenttxtfile.append(str(substratpartdat[1][item0]["MppData"][0][item])+"\t"+str(substratpartdat[1][item0]["MppData"][1][item])+"\t"+str(substratpartdat[1][item0]["MppData"][2][item])+"\t"+str(substratpartdat[1][item0]["MppData"][3][item])+"\t"+str(substratpartdat[1][item0]["MppData"][2][item])+"\t"+str(substratpartdat[1][item0]["MppData"][4][item])+"\n")
                         #export to txt files
-                        file = open(str(substratpartdat[1][item0]["SampleName"]) + '_Pmpp.txt','w')
+                        file = open(str(substratpartdat[1][item0]["SampleName"]) + '_Pmpp.txt','w', encoding='ISO-8859-1')
                         file.writelines("%s" % item for item in contenttxtfile)
                         file.close()
                     #export figures
@@ -3715,7 +3715,7 @@ class IVApp(Toplevel):
                         for item in range(len(substratpartdat[1][item0]["FVData"][0])):
                             contenttxtfile.append(str(substratpartdat[1][item0]["FVData"][3][item])+"\t"+str(substratpartdat[1][item0]["FVData"][0][item])+"\t"+str(substratpartdat[1][item0]["FVData"][1][item])+"\t"+str(substratpartdat[1][item0]["FVData"][2][item])+"\n")
                         #export to txt files
-                        file = open(str(substratpartdat[1][item0]["SampleName"]) + '_FV.txt','w')
+                        file = open(str(substratpartdat[1][item0]["SampleName"]) + '_FV.txt','w', encoding='ISO-8859-1')
                         file.writelines("%s" % item for item in contenttxtfile)
                         file.close()
                     #export figures
@@ -3757,7 +3757,7 @@ class IVApp(Toplevel):
                     ligne=ligne[:-1]+'\n'    
                     contenttxtfile.append(ligne)
                 #export it to txt files
-                file = open(str(substratpartdat[0]) + '.txt','w')
+                file = open(str(substratpartdat[0]) + '.txt','w', encoding='ISO-8859-1')
                 file.writelines("%s" % item for item in contenttxtfile)
                 file.close()
             #graphs by substrate with JV table, separate graph and table production, then reassemble to export...
@@ -5965,7 +5965,7 @@ class IVApp(Toplevel):
             oldcellarea=DATA[item0]["CellSurface"]
             file_path=DATA[item0]["filepath"]
             
-            filetoread = open(file_path,"r")
+            filetoread = open(file_path,"r", encoding='ISO-8859-1')
             filerawdata = filetoread.readlines()
             
             for item in range(len(filerawdata)):
@@ -5999,7 +5999,7 @@ class IVApp(Toplevel):
             for item in range(pos,len(filerawdata),1):
                 filerawdata[item]=filerawdata[item].split("\t")[0]+"\t"+filerawdata[item].split("\t")[1]+"\t"+filerawdata[item].split("\t")[2]+"\t"+str(float(filerawdata[item].split("\t")[3][:-1])*oldcellarea/newarea)+"\n"
 
-            file = open(file_path,'w')
+            file = open(file_path,'w', encoding='ISO-8859-1')
             file.writelines("%s" % item for item in filerawdata)
             file.close()
             DATA[item0]["CellSurface"]=newarea

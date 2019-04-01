@@ -250,7 +250,7 @@ class SpectroApp(Toplevel):
         if os.path.splitext(file_path[0])[1] ==".csv":
             DATA = []
             for item in range(len(file_path)):
-                with open(file_path[item]) as csvfile:
+                with open(file_path[item], encoding='ISO-8859-1') as csvfile:
                     readCSV = list(csv.reader(csvfile, delimiter=','))
                     
                     samplenames=readCSV[0]
@@ -431,7 +431,7 @@ class SpectroApp(Toplevel):
                 strr = strr[:-1]+'\n'
                 content1.append(strr)
                     
-            file = open(DATADICTtot[i]['Name'] + '.txt','w')
+            file = open(DATADICTtot[i]['Name'] + '.txt','w', encoding='ISO-8859-1')
             file.writelines("%s" % item for item in content1)
             file.close()
     
@@ -657,7 +657,7 @@ class SpectroApp(Toplevel):
                     
                     taucdata=[["Wavelength","Energy","Reflectance","Transmittance","Absorptance","LogAlpha","AbsCoeff","Tauc"]]+taucdata
             
-                    file = open(f,'w')
+                    file = open(f,'w', encoding='ISO-8859-1')
                     file.writelines("%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" % tuple(item) for item in taucdata)
                     file.close()
                 else:

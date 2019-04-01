@@ -73,7 +73,7 @@ def elta(index,imaginary_angle,dd,ll):
 
 def importindex(filename):
     index=[[],[]]
-    with open(filename, 'rt') as csvfile:
+    with open(filename, 'rt', encoding='ISO-8859-1') as csvfile:
         spamreader = csv.reader(csvfile, delimiter=';', quotechar="'")
         iterdata=iter(spamreader)
         next(iterdata)
@@ -114,7 +114,7 @@ def nicescatdata(abscisse,ordonnee,graph1,*nextgraphs):
     plt.tight_layout()
 
 def writefile(name,xx,yy):
-    with open(name, 'w') as myfile:
+    with open(name, 'w', encoding='ISO-8859-1') as myfile:
         text=''
         for n,x in enumerate(xx):
             text=text+str(x)+'\t'+str(yy[n])+'\n'
@@ -130,7 +130,7 @@ def scatdatas(graph1,*nextgraphs):
 def importindex2(filename):
     index=[[],[],[],[]]
     if filename.split('.')[1]=="csv":
-        with open(filename, 'rt') as csvfile:
+        with open(filename, 'rt', encoding='ISO-8859-1') as csvfile:
             spamreader = csv.reader(csvfile, delimiter=',', quotechar="'")
             iterdata=iter(spamreader)
             next(iterdata)
@@ -141,7 +141,7 @@ def importindex2(filename):
                 index[3].append(float(row[2]))#k
         return index
     elif item.split('.')[1]=="txt":
-        filetoread = open(filename,"r")
+        filetoread = open(filename,"r", encoding='ISO-8859-1')
         filerawdata = filetoread.readlines()
         for row in filerawdata:
             if row[0]!="#" and row!="\n":
@@ -151,7 +151,7 @@ def importindex2(filename):
                 index[3].append(float(row.split("\t")[2]))#k
         return index
     elif item.split('.')[1]=="nk":
-        filetoread = open(filename,"r")
+        filetoread = open(filename,"r", encoding='ISO-8859-1')
         filerawdata = filetoread.readlines()
         for row in filerawdata:
             if row[0]!="#" and row!="\n":
@@ -166,7 +166,7 @@ def importindex2(filename):
 
 def importAM(filename):
     index=[[],[]]
-    with open(filename, 'rt') as csvfile:
+    with open(filename, 'rt', encoding='ISO-8859-1') as csvfile:
         spamreader = csv.reader(csvfile, delimiter=';', quotechar="'")
         for row in spamreader:
             index[0].append(float(row[0]))
@@ -175,7 +175,7 @@ def importAM(filename):
 
 def importAM2(filename):
     index=[[],[]]
-    with open(filename, 'rt') as csvfile:
+    with open(filename, 'rt', encoding='ISO-8859-1') as csvfile:
         spamreader = csv.reader(csvfile, delimiter=',', quotechar="'")
         iterdata=iter(spamreader)
         next(iterdata)
@@ -974,7 +974,7 @@ class TMSimApp(Toplevel):
         filepath =filedialog.askopenfilename(title="Please select the stack file", initialdir=stackDir)
         if filepath!='':
             try:
-                filetoread=open(filepath,"r")
+                filetoread=open(filepath,"r", encoding='ISO-8859-1')
                 filedata=filetoread.readlines()
                 
                 MatThickActList=[]
@@ -1012,7 +1012,7 @@ class TMSimApp(Toplevel):
         
             f = filedialog.asksaveasfilename(defaultextension=".txt", filetypes = (("text file", "*.txt"),("All Files", "*.*")))
             
-            file = open(f,'w')
+            file = open(f,'w', encoding='ISO-8859-1')
             file.writelines("%s\t%d\t%d\t%d\n" % tuple(item) for item in MatThickActList)
             file.close()
             
@@ -1179,7 +1179,7 @@ class TMSimApp(Toplevel):
                 lineinterm+=str(item[len(item)-1])+"\n"
                 datatoexportINVtxt.append(lineinterm)
             
-            file = open(f[:-4]+"_rawdata.txt",'w')
+            file = open(f[:-4]+"_rawdata.txt",'w', encoding='ISO-8859-1')
             file.writelines(headoffile1)
             file.writelines(headoffile2)
             file.writelines(item for item in datatoexportINVtxt)
@@ -1331,7 +1331,7 @@ class TMSimApp(Toplevel):
             lineinterm+=str(item[len(item)-1])+"\n"
             datatoexportINVtxt.append(lineinterm)
         
-        file = open(self.f[:-4]+"_1Drawdata.txt",'w')
+        file = open(self.f[:-4]+"_1Drawdata.txt",'w', encoding='ISO-8859-1')
         file.writelines(head)
         file.writelines(item for item in datatoexportINVtxt)
         file.close()
@@ -1382,7 +1382,7 @@ class TMSimApp(Toplevel):
         for item in self.matlistfor2Dvar:
             head+=item+"\t"
         head+="Air\n"
-        file = open(self.f[:-4]+"_2Drawdata.txt",'w')
+        file = open(self.f[:-4]+"_2Drawdata.txt",'w', encoding='ISO-8859-1')
         file.writelines(head)
         file.writelines(item for item in datatoexporttxt)
         file.close()

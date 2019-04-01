@@ -555,7 +555,7 @@ class EQEApp(Toplevel):
                 batchnumb=samplename.split('_')[0]
                 samplenumb=samplename.split('_')[1]
                 
-                file = open(file_path[k])
+                file = open(file_path[k], encoding='ISO-8859-1')
                 filedat = file.readlines()
                 file.close()
                 datetime=modification_date(file_path[k])
@@ -696,7 +696,7 @@ class EQEApp(Toplevel):
                 batchnumb=samplename.split('_')[0]
                 samplenumb=batchnumb
                 
-                file = open(file_path[k])
+                file = open(file_path[k], encoding='ISO-8859-1')
                 filedat = file.readlines()
                 file.close()
                 datetime=modification_date(file_path[k])
@@ -1071,7 +1071,7 @@ class EQEApp(Toplevel):
             namerow=namerow[:-1]+'\n'   
             content1.insert(2,namerow)    
                 
-            file = open(DATA[i]['Name'] + '.txt','w')
+            file = open(DATA[i]['Name'] + '.txt','w', encoding='ISO-8859-1')
             file.writelines("%s" % item for item in content1)
             file.close()
         
@@ -1094,7 +1094,7 @@ class EQEApp(Toplevel):
                 namerow=namerow[:-1]+'\n'   
                 content1.insert(2,namerow)    
                     
-                file = open(DATA[i]['Name'] + '_integJsc.txt','w')
+                file = open(DATA[i]['Name'] + '_integJsc.txt','w', encoding='ISO-8859-1')
                 file.writelines("%s" % item for item in content1)
                 file.close()
             
@@ -1610,7 +1610,7 @@ class EQEApp(Toplevel):
                 line=line[:-1]+"\n"
                 DATAforexport1.append(line)
                 
-            file = open(str(f[:-4]+"_dat.txt"),'w')
+            file = open(str(f[:-4]+"_dat.txt"),'w', encoding='ISO-8859-1')
             file.writelines("%s" % item for item in DATAforexport1)
             file.close() 
         except:

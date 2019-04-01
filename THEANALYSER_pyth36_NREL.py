@@ -7,25 +7,24 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),'apps'))
 
 
-import PL_Pyth36_V1 as PL
-import HallEffect_Pyth36 as Hall
-import qsspc_Pyth36 as QSSPC
-import ellipso_Pyth36 as Ellipso
-import CMM_Pyth36_v1 as CMM
+#import PL_Pyth36_V1 as PL
+#import HallEffect_Pyth36 as Hall
+#import qsspc_Pyth36 as QSSPC
+#import ellipso_Pyth36 as Ellipso
+#import CMM_Pyth36_v1 as CMM
 import Spectro_Pyth36_NREL as spectrofcts
 import TMsimulNew_Pyth36 as TMMfcts
 import EQE_fcts_Pyth36_NRELV1 as EQEfcts
 import IV_fcts_Pyth36_NRELV1 as IVfcts
-import JVfollowup_Pyth36_v0 as JVfollowup
-import Database_v0 as DB
-import XRDautoA as xrdauto
-import XRD as xrd
+#import JVfollowup_Pyth36_v0 as JVfollowup
+#import Database_v0 as DB
+#import XRDautoA as xrdauto
+#import XRD as xrd
 
 
 """todolist
 
-- spectro files of STF139
-- PL data
+- PL data, check Eli and Caleb's codes
 
 """
 
@@ -68,28 +67,28 @@ class TheAnalyser(Frame):
         EQEbutton.grid(row=1,column=5,columnspan=2)
         Spectrobutton = Button(root, text='Spectro', command = self.callSpectro)
         Spectrobutton.grid(row=1,column=8,columnspan=2)
-        Ellipsobutton = Button(root, text='Ellipso',fg='white', command = self.callEllipso)
-        Ellipsobutton.grid(row=2,column=8,columnspan=2)
-        QSSPCbutton = Button(root, text='QSSPC',fg='white', command = self.callQSSPC)
-        QSSPCbutton.grid(row=3,column=8,columnspan=2)
-        PLbutton = Button(root, text='PL',fg='white', command = self.callPL)
-        PLbutton.grid(row=4,column=8,columnspan=2)
-        Hallbutton = Button(root, text='HallEffect',fg='white', command = self.callHall)
-        Hallbutton.grid(row=4,column=10,columnspan=3)
+#        Ellipsobutton = Button(root, text='Ellipso',fg='white', command = self.callEllipso)
+#        Ellipsobutton.grid(row=2,column=8,columnspan=2)
+#        QSSPCbutton = Button(root, text='QSSPC',fg='white', command = self.callQSSPC)
+#        QSSPCbutton.grid(row=3,column=8,columnspan=2)
+#        PLbutton = Button(root, text='PL',fg='white', command = self.callPL)
+#        PLbutton.grid(row=4,column=8,columnspan=2)
+#        Hallbutton = Button(root, text='HallEffect',fg='white', command = self.callHall)
+#        Hallbutton.grid(row=4,column=10,columnspan=3)
         IVbutton = Button(root, text='IV', command = self.callIV)
         IVbutton.grid(row=2,column=5,columnspan=2)
-        CMMbutton = Button(root, text='CMM',fg='white', command = self.callCMM)
-        CMMbutton.grid(row=6,column=4,columnspan=3)
+#        CMMbutton = Button(root, text='CMM',fg='white', command = self.callCMM)
+#        CMMbutton.grid(row=6,column=4,columnspan=3)
         TMSbutton = Button(root, text='TMM', command = self.callTMM)
         TMSbutton.grid(row=5,column=4,columnspan=3)
-        DBbutton = Button(root, text='DATABASE',fg='white', command = self.callDB)
-        DBbutton.grid(row=6,column=12,columnspan=4)
-        refcellbutton = Button(root, text='CellEvolCheck',fg='white', command = self.callRefCell)
-        refcellbutton.grid(row=6,column=8,columnspan=4)
-        XRDbutton = Button(root, text='XRDauto',fg='white', command = self.callXRDauto)
-        XRDbutton.grid(row=3,column=10,columnspan=3)
-        XRDbutton = Button(root, text='XRD',fg='white', command = self.callXRD)
-        XRDbutton.grid(row=3,column=12,columnspan=2)
+#        DBbutton = Button(root, text='DATABASE',fg='white', command = self.callDB)
+#        DBbutton.grid(row=6,column=12,columnspan=4)
+#        refcellbutton = Button(root, text='CellEvolCheck',fg='white', command = self.callRefCell)
+#        refcellbutton.grid(row=6,column=8,columnspan=4)
+#        XRDbutton = Button(root, text='XRDauto',fg='white', command = self.callXRDauto)
+#        XRDbutton.grid(row=3,column=10,columnspan=3)
+#        XRDbutton = Button(root, text='XRD',fg='white', command = self.callXRD)
+#        XRDbutton.grid(row=3,column=12,columnspan=2)
         
             
     def callEQE(self):
@@ -108,32 +107,32 @@ class TheAnalyser(Frame):
         app = TMMfcts.TMSimApp()
         app.mainloop()
         
-    def callEllipso(self):
-        Ellipso.EllipsoSummary()
-        
-    def callQSSPC(self):
-        QSSPC.QSSPCSummary()
-    
-    def callPL(self):
-        PL.PLSummary()
-        
-    def callHall(self):
-        Hall.HallSummary()
-    
-    def callCMM(self):
-        CMM.CMM()
-        
-    def callRefCell(self):
-        JVfollowup.JVfollowup()
-                
-    def callDB(self):
-        DB.DBapp()
-    
-    def callXRDauto(self):
-        xrdauto.XRDautoanalysis()
-    
-    def callXRD(self):
-        xrd.XRDApp()
+#    def callEllipso(self):
+#        Ellipso.EllipsoSummary()
+#        
+#    def callQSSPC(self):
+#        QSSPC.QSSPCSummary()
+#    
+#    def callPL(self):
+#        PL.PLSummary()
+#        
+#    def callHall(self):
+#        Hall.HallSummary()
+#    
+#    def callCMM(self):
+#        CMM.CMM()
+#        
+#    def callRefCell(self):
+#        JVfollowup.JVfollowup()
+#                
+#    def callDB(self):
+#        DB.DBapp()
+#    
+#    def callXRDauto(self):
+#        xrdauto.XRDautoanalysis()
+#    
+#    def callXRD(self):
+#        xrd.XRDApp()
         
 root = Tk()
 background_image=ImageTk.PhotoImage(file=os.path.join(os.path.dirname(os.path.abspath(__file__)),'images','background.png'))

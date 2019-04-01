@@ -8,6 +8,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),'apps
 
 
 #import PL_Pyth36_V1 as PL
+import PLatUCB as PL
 #import HallEffect_Pyth36 as Hall
 #import qsspc_Pyth36 as QSSPC
 #import ellipso_Pyth36 as Ellipso
@@ -71,8 +72,8 @@ class TheAnalyser(Frame):
 #        Ellipsobutton.grid(row=2,column=8,columnspan=2)
 #        QSSPCbutton = Button(root, text='QSSPC',fg='white', command = self.callQSSPC)
 #        QSSPCbutton.grid(row=3,column=8,columnspan=2)
-#        PLbutton = Button(root, text='PL',fg='white', command = self.callPL)
-#        PLbutton.grid(row=4,column=8,columnspan=2)
+        PLbutton = Button(root, text='PL',command = self.callPL)
+        PLbutton.grid(row=4,column=8,columnspan=2)
 #        Hallbutton = Button(root, text='HallEffect',fg='white', command = self.callHall)
 #        Hallbutton.grid(row=4,column=10,columnspan=3)
         IVbutton = Button(root, text='IV', command = self.callIV)
@@ -113,8 +114,8 @@ class TheAnalyser(Frame):
 #    def callQSSPC(self):
 #        QSSPC.QSSPCSummary()
 #    
-#    def callPL(self):
-#        PL.PLSummary()
+    def callPL(self):
+        PL.PLSummary()
 #        
 #    def callHall(self):
 #        Hall.HallSummary()

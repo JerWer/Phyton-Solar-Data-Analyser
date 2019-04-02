@@ -38,6 +38,8 @@ TODOLIST
 
 - show peak fitting
 
+- delete entry from list of samples
+
 """
 #%%
 LARGE_FONT= ("Verdana", 12)
@@ -73,7 +75,7 @@ os.chdir(xrdRefPattDir)
 for item in range(len(refsamplenameslist)):
     RefPattDATA[refsamplenameslist[item]]=[[],[],[]]
     if reflist[item].split('.')[1]=='txt':
-        filetoread = open(reflist[item],"r")
+        filetoread = open(reflist[item],"r", encoding='ISO-8859-1')
         filerawdata = filetoread.readlines()
         for row in filerawdata:
             RefPattDATA[refsamplenameslist[item]][0].append(float(row.split("\t")[0]))
@@ -574,7 +576,7 @@ class XRDApp(Toplevel):
         self.updateXRDgraph(0)
         
 #%%
-    def importRefDATA(self):
+    def importRefDATA(self):#not yet updated to nrel
         global DATA, RefPattDATA, refsamplenameslist
 
         #ask for the files
@@ -582,7 +584,7 @@ class XRDApp(Toplevel):
         
         #read the files and fill the RefPattDATA dictionary 
         for filename in file_path:
-            filetoread = open(filename,"r")
+            filetoread = open(filename,"r", encoding='ISO-8859-1')
             filerawdata = filetoread.readlines()
             samplename=os.path.splitext(os.path.basename(filename))[0]
             refsamplenameslist.append(samplename)
@@ -624,26 +626,51 @@ class XRDApp(Toplevel):
         #read the files and fill the DATA dictionary 
         for filename in file_path:
             tempdat=[]
-            filetoread = open(filename,"r")
-            filerawdata = filetoread.readlines()
+            filetoread = open(filename,"r", encoding='ISO-8859-1')
+            filerawdata = list(filetoread.readlines())
             samplename=os.path.splitext(os.path.basename(filename))[0]
-                
+#            print(samplename)
             x=[]
             y=[]
                 
-            for item in filerawdata:
-                x.append(float(item.split(' ')[0]))
-                y.append(float(item.split(' ')[1]))
-                
-            tempdat.append(x)#original x data
-            tempdat.append(y)#original y data
-            tempdat.append(x)#corrected x, set as the original on first importation
-            tempdat.append(y)#corrected y, set as the original on first importation 
-            tempdat.append([])#peak data, list of dictionaries
-            tempdat.append([])#
+#            for item in filerawdata:
+#                x.append(float(item.split(' ')[0]))
+#                y.append(float(item.split(' ')[1]))
             
-            DATA[samplename]=tempdat
-            Patternsamplenameslist.append(samplename)
+#            for item in filerawdata:
+#                print(item)
+#                print(item.split(',')[0])
+#                x.append(float(item.split(',')[0]))
+#                y.append(float(item.split(',')[1]))  
+#                
+#            tempdat.append(x)#original x data
+#            tempdat.append(y)#original y data
+#            tempdat.append(x)#corrected x, set as the original on first importation
+#            tempdat.append(y)#corrected y, set as the original on first importation 
+#            tempdat.append([])#peak data, list of dictionaries
+#            tempdat.append([])#
+#            
+#            DATA[samplename]=tempdat
+#            Patternsamplenameslist.append(samplename)
+            i=0
+            for j in range(len(filerawdata)):
+                if ',' in filerawdata[j]:
+                    x.append(float(filerawdata[j].split(',')[0]))
+                    y.append(float(filerawdata[j].split(',')[1]))  
+                else:
+                    tempdat.append(x)#original x data
+                    tempdat.append(y)#original y data
+                    tempdat.append(x)#corrected x, set as the original on first importation
+                    tempdat.append(y)#corrected y, set as the original on first importation 
+                    tempdat.append([])#peak data, list of dictionaries
+                    tempdat.append([])#
+                    
+                    DATA[samplename+str(i)]=tempdat
+                    Patternsamplenameslist.append(samplename+str(i))
+                    i+=1
+                    x=[]
+                    y=[]
+                    tempdat=[]
         
         #update the listbox
         self.frame3221.destroy()
@@ -679,7 +706,7 @@ class XRDApp(Toplevel):
                 for item in DATA[key][4]:
                     testdata.append(key +'\t'+ item["PeakName"]+'\t'+str("%.2f"%item["Position"])+'\t'+str("%.2f"%item["Intensity"])+'\t'+str("%.2f"%item["FWHM"])+'\n')
             
-        file = open(f[:-4]+"PeakDat.txt",'w')
+        file = open(f[:-4]+"PeakDat.txt",'w', encoding='ISO-8859-1')
         file.writelines("%s" % item for item in testdata)
         file.close()    
         

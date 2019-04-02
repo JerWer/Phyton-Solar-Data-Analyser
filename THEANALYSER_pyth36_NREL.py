@@ -20,7 +20,7 @@ import IV_fcts_Pyth36_NRELV1 as IVfcts
 #import JVfollowup_Pyth36_v0 as JVfollowup
 #import Database_v0 as DB
 #import XRDautoA as xrdauto
-#import XRD as xrd
+import XRD_NREL as xrd
 
 
 """todolist
@@ -88,8 +88,8 @@ class TheAnalyser(Frame):
 #        refcellbutton.grid(row=6,column=8,columnspan=4)
 #        XRDbutton = Button(root, text='XRDauto',fg='white', command = self.callXRDauto)
 #        XRDbutton.grid(row=3,column=10,columnspan=3)
-#        XRDbutton = Button(root, text='XRD',fg='white', command = self.callXRD)
-#        XRDbutton.grid(row=3,column=12,columnspan=2)
+        XRDbutton = Button(root, text='XRD',fg='white', command = self.callXRD)
+        XRDbutton.grid(row=3,column=12,columnspan=2)
         
             
     def callEQE(self):
@@ -132,8 +132,8 @@ class TheAnalyser(Frame):
 #    def callXRDauto(self):
 #        xrdauto.XRDautoanalysis()
 #    
-#    def callXRD(self):
-#        xrd.XRDApp()
+    def callXRD(self):
+        xrd.XRDApp()
         
 root = Tk()
 background_image=ImageTk.PhotoImage(file=os.path.join(os.path.dirname(os.path.abspath(__file__)),'images','background.png'))

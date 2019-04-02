@@ -74,7 +74,7 @@ def PLSummary():
                             DATA[samplename][position][laserintensity][0].append(float(row[0]))
                             DATA[samplename][position][laserintensity][1].append(float(row[1]))
                             txtfile.append(str('%.3f' % float(row[0]))+'\t'+row[1]+"\n")
-                file = open(samplename+'-'+position+'-'+laserintensity+'.txt','w')
+                file = open(samplename+'-'+position+'-'+laserintensity+'.txt','w', encoding='ISO-8859-1')
                 file.writelines("%s" % item for item in txtfile)
                 file.close()        
         #sort, plot and export

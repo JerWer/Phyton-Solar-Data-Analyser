@@ -40,6 +40,8 @@ TODOLIST
 
 - delete entry from list of samples
 
+-check peak intensity. something is wrong
+
 """
 #%%
 LARGE_FONT= ("Verdana", 12)
@@ -184,6 +186,9 @@ class XRDApp(Toplevel):
                            onvalue=1,offvalue=0,height=1, width=10, command = lambda: self.updateXRDgraph(0),fg='black',background='grey').pack(side=tk.LEFT,expand=1)
         frame223=Frame(frame22,borderwidth=0,  bg="grey")
         frame223.pack(fill=tk.BOTH,expand=1)
+        self.AutoPeakDetecAdjust = IntVar()
+        Checkbutton(frame223,text="Auto",variable=self.AutoPeakDetecAdjust, 
+                           onvalue=1,offvalue=0,height=1, width=3, fg='black',background='grey').pack(side=tk.LEFT,expand=1)
         self.thresholdPeakDet = tk.DoubleVar()
         Entry(frame223, textvariable=self.thresholdPeakDet,width=5).pack(side=tk.LEFT,expand=1)
         self.thresholdPeakDet.set(0.05)
@@ -195,6 +200,7 @@ class XRDApp(Toplevel):
         self.CheckPeakDetec = IntVar()
         Checkbutton(frame223,text="Show",variable=self.CheckPeakDetec, 
                            onvalue=1,offvalue=0,height=1, width=3, command = lambda: self.updateXRDgraph(0),fg='black',background='grey').pack(side=tk.LEFT,expand=1)
+        
                
 #        frame23=Frame(frame2,borderwidth=0,  bg="lightgrey")
 #        frame23.pack(fill=tk.BOTH,expand=1)
@@ -466,6 +472,7 @@ class XRDApp(Toplevel):
         
     def shifttoRef(self):
         global DATA
+#        still to be implemented
 #        automatic detection of peaks and comparison to the selected RefPattern
 #        then shifts the data to match the ref peak
         
@@ -513,8 +520,20 @@ class XRDApp(Toplevel):
                 x=np.array(DATA[item][2])
                 y=np.array(DATA[item][3])
                 #get peak position
-                indexes=peakutils.indexes(y, thres=self.thresholdPeakDet.get(), min_dist=self.MinDistPeakDet.get())
-                
+                if self.AutoPeakDetecAdjust.get():
+                    threshold=0.01
+                    MinDist=50
+                    while(1):
+                        indexes = peakutils.indexes(y, thres=threshold, min_dist=MinDist)
+                        if len(indexes)<15:
+                            self.thresholdPeakDet.set(threshold)
+                            self.MinDistPeakDet.set(MinDist)
+                            break
+                        else:
+                            threshold+=0.01
+                else:
+                    indexes=peakutils.indexes(y, thres=self.thresholdPeakDet.get(), min_dist=self.MinDistPeakDet.get())
+                print("")
                 for item1 in range(len(indexes)):
                     tempdat={}
                     nbofpoints=80#on each side of max position
@@ -525,10 +544,12 @@ class XRDApp(Toplevel):
                             y0=y[indexes[item1]-nbofpoints:indexes[item1]+nbofpoints]
                     
                             #baseline height
-                            bhleft=np.mean(y0[:20])
-                            bhright=np.mean(y0[-20:])
+                            bhleft=np.mean(y0[:15])
+                            bhright=np.mean(y0[-15:])
                             baselineheightatmaxpeak=(bhleft+bhright)/2
-                            
+#                            print(baselineheightatmaxpeak)
+                            print("")
+                            print(abs(bhleft-bhright))
                             if abs(bhleft-bhright)<50:#arbitrary choice of criteria...
                                 #find FWHM
                                 d=y0-((max(y0)-bhright)/2)
@@ -545,7 +566,8 @@ class XRDApp(Toplevel):
                                 FWHM=abs(xrightfwhm-xleftfwhm)
                                 Peakheight=max(y0)-baselineheightatmaxpeak
                                 center=x[indexes[item1]]
-                                
+                                print(nbofpoints)
+                                print(baselineheightatmaxpeak)
                                 tempdat["Position"]=center
                                 tempdat["FWHM"]=FWHM
                                 tempdat["Intensity"]=Peakheight

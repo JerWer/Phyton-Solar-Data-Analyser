@@ -19,13 +19,13 @@ import EQE_fcts_Pyth36_NRELV1 as EQEfcts
 import IV_fcts_Pyth36_NRELV1 as IVfcts
 #import JVfollowup_Pyth36_v0 as JVfollowup
 #import Database_v0 as DB
-#import XRDautoA as xrdauto
+import XRDautoA_NREL as xrdauto
 import XRD_NREL as xrd
 
 
 """todolist
 
-- PL data, check Eli and Caleb's codes
+- PLQE data, check Caleb's matlab codes
 
 """
 
@@ -86,9 +86,9 @@ class TheAnalyser(Frame):
 #        DBbutton.grid(row=6,column=12,columnspan=4)
 #        refcellbutton = Button(root, text='CellEvolCheck',fg='white', command = self.callRefCell)
 #        refcellbutton.grid(row=6,column=8,columnspan=4)
-#        XRDbutton = Button(root, text='XRDauto',fg='white', command = self.callXRDauto)
-#        XRDbutton.grid(row=3,column=10,columnspan=3)
-        XRDbutton = Button(root, text='XRD',fg='white', command = self.callXRD)
+        XRDbutton = Button(root, text='XRDauto', command = self.callXRDauto)
+        XRDbutton.grid(row=3,column=10,columnspan=3)
+        XRDbutton = Button(root, text='XRD', command = self.callXRD)
         XRDbutton.grid(row=3,column=12,columnspan=2)
         
             
@@ -129,8 +129,8 @@ class TheAnalyser(Frame):
 #    def callDB(self):
 #        DB.DBapp()
 #    
-#    def callXRDauto(self):
-#        xrdauto.XRDautoanalysis()
+    def callXRDauto(self):
+        xrdauto.XRDautoanalysis()
 #    
     def callXRD(self):
         xrd.XRDApp()

@@ -34,13 +34,16 @@ from tkinter import font as tkFont
 """
 TODOLIST
 
-- shift to ref auto
+- (shift to ref auto)
 
 - show peak fitting
 
+- export as ref file function
+
+- background removal import function: import a file with background and substract it from the selected samples. 
+
 - delete entry from list of samples
 
--check peak intensity. something is wrong
 
 """
 #%%
@@ -151,15 +154,16 @@ class XRDApp(Toplevel):
         self.shiftYBut = Button(frame211, text="Y Shift",command = self.shiftY).pack(side=tk.LEFT,expand=1)
         self.shiftYval.set(0)
         self.CheckBkgRemoval = Button(frame211, text="BkgRemoval",command = self.backgroundremoval).pack(side=tk.LEFT,expand=1)
+        self.CheckBkgRemovalImport = Button(frame211, text="BkgRemImport",command = self.backgroundremovalImport).pack(side=tk.LEFT,expand=1)
                 
         frame212=Frame(frame21,borderwidth=0,  bg="lightgrey")
         frame212.pack(fill=tk.BOTH,expand=1)
-        refpattern=StringVar()
-        refpatternlist=['Original','Si','ITO']#to be replace by actual files in a specific folder
-        cbbox = ttk.Combobox(frame212, textvariable=refpattern, values=refpatternlist)            
-        cbbox.pack(side=tk.LEFT,expand=0)
-        refpattern.set(refpatternlist[0])
-        self.refbut = Button(frame212, text="ShiftToRef",command = self.shifttoRef).pack(side=tk.LEFT,expand=1)
+#        refpattern=StringVar()
+#        refpatternlist=['Original','Si','ITO']#to be replace by actual files in a specific folder
+#        cbbox = ttk.Combobox(frame212, textvariable=refpattern, values=refpatternlist)            
+#        cbbox.pack(side=tk.LEFT,expand=0)
+#        refpattern.set(refpatternlist[0])
+#        self.refbut = Button(frame212, text="ShiftToRef",command = self.shifttoRef).pack(side=tk.LEFT,expand=1)
                 
         frame213=Frame(frame21,borderwidth=0,  bg="lightgrey")
         frame213.pack(fill=tk.BOTH,expand=1)        
@@ -446,7 +450,13 @@ class XRDApp(Toplevel):
                 DATA[item][3]=list(y-base)
         
         self.updateXRDgraph(0)
-     
+    
+    def backgroundremovalImport(self):
+        global DATA
+        
+        
+        self.updateXRDgraph(0)
+    
     def shiftX(self):
         global DATA
         
@@ -460,11 +470,11 @@ class XRDApp(Toplevel):
         
     def shiftY(self):
         global DATA
-        print("here")
+#        print("here")
         samplestakenforplot = [self.listboxsamples.get(idx) for idx in self.listboxsamples.curselection()]
         if samplestakenforplot!=[]:
             for item in samplestakenforplot:
-                print(self.shiftYval.get())
+#                print(self.shiftYval.get())
                 y = DATA[item][3]
                 DATA[item][3] = [item1+self.shiftYval.get() for item1 in y]
     
@@ -514,6 +524,7 @@ class XRDApp(Toplevel):
 #            peaknamelist=[]
 #            intensitylist=[]
 #            fwhmlist=[]
+#            print("")
             for item in samplestakenforplot:
                 #reinitialize list of dict
                 DATA[item][4]=[]
@@ -533,60 +544,69 @@ class XRDApp(Toplevel):
                             threshold+=0.01
                 else:
                     indexes=peakutils.indexes(y, thres=self.thresholdPeakDet.get(), min_dist=self.MinDistPeakDet.get())
-                print("")
+#                print("")
+#                print(len(indexes))
+#                print(len(y))
                 for item1 in range(len(indexes)):
                     tempdat={}
                     nbofpoints=80#on each side of max position
                     appendcheck=0
-                    while(1):
-                        try:
-                            x0=x[indexes[item1]-nbofpoints:indexes[item1]+nbofpoints]
-                            y0=y[indexes[item1]-nbofpoints:indexes[item1]+nbofpoints]
-                    
-                            #baseline height
-                            bhleft=np.mean(y0[:15])
-                            bhright=np.mean(y0[-15:])
-                            baselineheightatmaxpeak=(bhleft+bhright)/2
-#                            print(baselineheightatmaxpeak)
-                            print("")
-                            print(abs(bhleft-bhright))
-                            if abs(bhleft-bhright)<50:#arbitrary choice of criteria...
-                                #find FWHM
-                                d=y0-((max(y0)-bhright)/2)
-                                ind=np.where(d>bhright)[0]
-                                
-                                hl=(x0[ind[0]-1]*y0[ind[0]]-y0[ind[0]-1]*x0[ind[0]])/(x0[ind[0]-1]-x0[ind[0]])
-                                ml=(y0[ind[0]-1]-hl)/x0[ind[0]-1]
-                                yfwhm=((max(y0)-baselineheightatmaxpeak)/2)+baselineheightatmaxpeak
-                                xleftfwhm=(yfwhm - hl)/ml
-                                hr=(x0[ind[-1]]*y0[ind[-1]+1]-y0[ind[-1]]*x0[ind[-1]+1])/(x0[ind[-1]]-x0[ind[-1]+1])
-                                mr=(y0[ind[-1]]-hr)/x0[ind[-1]]
-                                xrightfwhm=(yfwhm - hr)/mr
-                                
-                                FWHM=abs(xrightfwhm-xleftfwhm)
-                                Peakheight=max(y0)-baselineheightatmaxpeak
-                                center=x[indexes[item1]]
-                                print(nbofpoints)
-                                print(baselineheightatmaxpeak)
-                                tempdat["Position"]=center
-                                tempdat["FWHM"]=FWHM
-                                tempdat["Intensity"]=Peakheight
-                                tempdat["PeakName"]=''
-                                
-                                appendcheck=1
-                                break
-                            else:
+#                    print(indexes[item1])
+                    if indexes[item1]>nbofpoints:
+                        while(1):
+                            try:
+                                x0=x[indexes[item1]-nbofpoints:indexes[item1]+nbofpoints]
+                                y0=y[indexes[item1]-nbofpoints:indexes[item1]+nbofpoints]
+#                                print(len(y0))
+                                base=peakutils.baseline(y0,1)
+                                #baseline height
+                                bhleft=np.mean(y0[:15])
+                                bhright=np.mean(y0[-15:])
+#                                baselineheightatmaxpeak=(bhleft+bhright)/2
+                                baselineheightatmaxpeak=base[indexes[item1]]
+    #                            print(baselineheightatmaxpeak)
+    #                            print("")
+    #                            print(abs(bhleft-bhright))
+                                if abs(bhleft-bhright)<50:#arbitrary choice of criteria...
+                                    #find FWHM
+                                    d=y0-((max(y0)-bhright)/2)
+                                    ind=np.where(d>bhright)[0]
+                                    
+                                    hl=(x0[ind[0]-1]*y0[ind[0]]-y0[ind[0]-1]*x0[ind[0]])/(x0[ind[0]-1]-x0[ind[0]])
+                                    ml=(y0[ind[0]-1]-hl)/x0[ind[0]-1]
+                                    yfwhm=((max(y0)-baselineheightatmaxpeak)/2)+baselineheightatmaxpeak
+                                    xleftfwhm=(yfwhm - hl)/ml
+                                    hr=(x0[ind[-1]]*y0[ind[-1]+1]-y0[ind[-1]]*x0[ind[-1]+1])/(x0[ind[-1]]-x0[ind[-1]+1])
+                                    mr=(y0[ind[-1]]-hr)/x0[ind[-1]]
+                                    xrightfwhm=(yfwhm - hr)/mr
+                                    
+                                    FWHM=abs(xrightfwhm-xleftfwhm)
+    #                                Peakheight=max(y0)-baselineheightatmaxpeak
+                                    Peakheight=max(y0)-baselineheightatmaxpeak
+                                    center=x[indexes[item1]]
+    #                                print(nbofpoints)
+    #                                print(baselineheightatmaxpeak)
+                                    tempdat["Position"]=center
+                                    tempdat["FWHM"]=FWHM
+                                    tempdat["Intensity"]=Peakheight
+                                    tempdat["PeakName"]=''
+                                    
+                                    appendcheck=1
+                                    break
+                                else:
+                                    if nbofpoints>=15:
+                                        nbofpoints-=10
+                                    else:
+                                        print("indexerror unsolvable")
+                                        print(y[indexes[item1]])
+                                        break
+                            except IndexError:
                                 if nbofpoints>=15:
                                     nbofpoints-=10
                                 else:
                                     print("indexerror unsolvable")
                                     break
-                        except IndexError:
-                            if nbofpoints>=15:
-                                nbofpoints-=10
-                            else:
-                                print("indexerror unsolvable")
-                                break
+                        
                     if appendcheck:
                         DATA[item][4].append(tempdat)
         

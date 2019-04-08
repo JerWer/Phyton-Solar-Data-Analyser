@@ -153,11 +153,15 @@ class XRDApp(Toplevel):
         Entry(frame211, textvariable=self.shiftYval,width=3).pack(side=tk.LEFT,fill=tk.X,expand=1)
         self.shiftYBut = Button(frame211, text="Y Shift",command = self.shiftY).pack(side=tk.LEFT,expand=1)
         self.shiftYval.set(0)
-        self.CheckBkgRemoval = Button(frame211, text="BkgRemoval",command = self.backgroundremoval).pack(side=tk.LEFT,expand=1)
-        self.CheckBkgRemovalImport = Button(frame211, text="BkgRemImport",command = self.backgroundremovalImport).pack(side=tk.LEFT,expand=1)
-                
+                        
         frame212=Frame(frame21,borderwidth=0,  bg="lightgrey")
         frame212.pack(fill=tk.BOTH,expand=1)
+        self.backgroundorder = tk.IntVar()
+        Entry(frame212, textvariable=self.backgroundorder,width=1).pack(side=tk.LEFT,fill=tk.X,expand=1)
+        self.backgroundorder.set(7)
+        self.CheckBkgRemoval = Button(frame212, text="BkgRemoval",command = self.backgroundremoval).pack(side=tk.LEFT,expand=1)
+        self.CheckBkgRemovalImport = Button(frame212, text="BkgRemImport",command = self.backgroundremovalImport).pack(side=tk.LEFT,expand=1)
+
 #        refpattern=StringVar()
 #        refpatternlist=['Original','Si','ITO']#to be replace by actual files in a specific folder
 #        cbbox = ttk.Combobox(frame212, textvariable=refpattern, values=refpatternlist)            
@@ -446,7 +450,7 @@ class XRDApp(Toplevel):
             for item in samplestakenforplot:
                 y = DATA[item][3]
                 y=np.array(y)
-                base = peakutils.baseline(y, 3)
+                base = peakutils.baseline(y, self.backgroundorder.get())
                 DATA[item][3]=list(y-base)
         
         self.updateXRDgraph(0)
@@ -558,16 +562,16 @@ class XRDApp(Toplevel):
                                 x0=x[indexes[item1]-nbofpoints:indexes[item1]+nbofpoints]
                                 y0=y[indexes[item1]-nbofpoints:indexes[item1]+nbofpoints]
 #                                print(len(y0))
-                                base=peakutils.baseline(y0,1)
+                                base=list(peakutils.baseline(y0,1))
                                 #baseline height
                                 bhleft=np.mean(y0[:15])
                                 bhright=np.mean(y0[-15:])
 #                                baselineheightatmaxpeak=(bhleft+bhright)/2
-                                baselineheightatmaxpeak=base[indexes[item1]]
+                                baselineheightatmaxpeak=base[nbofpoints]
     #                            print(baselineheightatmaxpeak)
     #                            print("")
     #                            print(abs(bhleft-bhright))
-                                if abs(bhleft-bhright)<50:#arbitrary choice of criteria...
+                                if abs(bhleft-bhright)<100:#arbitrary choice of criteria...
                                     #find FWHM
                                     d=y0-((max(y0)-bhright)/2)
                                     ind=np.where(d>bhright)[0]

@@ -33,13 +33,14 @@ def listofpeakinfo(x,y,indexes,samplename):#x and y are np.arrays
             try:
                 x0=x[indexes[item]-nbofpoints:indexes[item]+nbofpoints]
                 y0=y[indexes[item]-nbofpoints:indexes[item]+nbofpoints]
-        
+                base=list(peakutils.baseline(y0,1))
                 #baseline height
                 bhleft=np.mean(y0[:20])
                 bhright=np.mean(y0[-20:])
-                baselineheightatmaxpeak=(bhleft+bhright)/2
+#                baselineheightatmaxpeak=(bhleft+bhright)/2
+                baselineheightatmaxpeak=base[nbofpoints]
                 
-                if abs(bhleft-bhright)<50:#arbitrary choice of criteria...
+                if abs(bhleft-bhright)<100:#arbitrary choice of criteria...
                     #find FWHM
                     d=y0-((max(y0)-bhright)/2)
                     ind=np.where(d>bhright)[0]
@@ -59,11 +60,12 @@ def listofpeakinfo(x,y,indexes,samplename):#x and y are np.arrays
                     
                     plt.plot(x0, y0, 'red')
 #                    plt.plot([x0[0],x0[-1]],[bhleft,bhright],'blue')
+                    plt.plot(x0,base,'blue')
 #                    plt.plot(x0,y0,ms=0)
                     plt.plot([xleftfwhm,xrightfwhm],[yfwhm,yfwhm],'green')
                     plt.text(center,max(y0)+200,str('%.1f' % float(center)),rotation=90,verticalalignment='bottom',horizontalalignment='center',multialignment='center')
-                    nbpoints=50
-                    plt.plot(x[indexes[item]-nbpoints:indexes[item]+nbpoints],peakutils.baseline(y[indexes[item]-nbpoints:indexes[item]+nbpoints],1),'blue')
+#                    nbpoints=50
+#                    plt.plot(x[indexes[item]-nbpoints:indexes[item]+nbpoints],peakutils.baseline(y[indexes[item]-nbpoints:indexes[item]+nbpoints],1),'blue')
                     
                     peakdata.append([center,FWHM,Peakheight])
                     break
@@ -83,7 +85,7 @@ def listofpeakinfo(x,y,indexes,samplename):#x and y are np.arrays
     plt.legend()
     plt.ylabel("Intensity (a.u.)")
     plt.xlabel("2\u0398 (degree)")
-    plt.savefig(samplename+'.pdf')
+#    plt.savefig(samplename+'.pdf')
     plt.show()
 #    plt.close()
     return peakdata
@@ -118,24 +120,26 @@ for filename in file_path:
         else:
             x=np.array(x)
             y=np.array(y)
-            threshold=0.01
-            MinDist=50
-            while(1):
-                indexes = peakutils.indexes(y, thres=threshold, min_dist=MinDist)
-        #        print(len(indexes))
-                if len(indexes)<15:
-                    break
-                else:
-                    threshold+=0.01
-            
-            dat=listofpeakinfo(x,y,indexes,samplename)
-            
-            DATA.append([str(samplename)+str(i),x,y])#[samplename,X,Y,[[center,FWHM,Peakheight],[]...],maxpeakheight]
+#            threshold=0.01
+#            MinDist=50
+#            while(1):
+#                indexes = peakutils.indexes(y, thres=threshold, min_dist=MinDist)
+#        #        print(len(indexes))
+#                if len(indexes)<15:
+#                    break
+#                else:
+#                    threshold+=0.01
+#            
+#            dat=listofpeakinfo(x,y,indexes,samplename)
+#            
+#            DATA.append([str(samplename)+str(i),x,y])#[samplename,X,Y,[[center,FWHM,Peakheight],[]...],maxpeakheight]
 
             
             plt.figure(figsize=(10,6))
             plt.plot(x,y,'black',label=samplename)  
-            plt.scatter(x,peakutils.baseline(y),c='red',s=12) 
+            plt.scatter(x,peakutils.baseline(y,7),c='red',s=5) 
+#            plt.scatter(x,peakutils.baseline(y,7),c='blue',s=5)
+#            plt.scatter(x,peakutils.baseline(y,8),c='green',s=5)
               
             i+=1
             x=[]

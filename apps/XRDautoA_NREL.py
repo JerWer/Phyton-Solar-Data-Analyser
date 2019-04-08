@@ -42,13 +42,22 @@ def listofpeakinfo(x,y,indexes,samplename):#x and y are np.arrays
             try:
                 x0=x[indexes[item]-nbofpoints:indexes[item]+nbofpoints]
                 y0=y[indexes[item]-nbofpoints:indexes[item]+nbofpoints]
+#                print(y0[80])
+#                print(y[indexes[item]])
+                base=list(peakutils.baseline(y0,1))
         
                 #baseline height
-                bhleft=np.mean(y0[:20])
-                bhright=np.mean(y0[-20:])
-                baselineheightatmaxpeak=(bhleft+bhright)/2
+                bhleft=np.mean(y0[:10])
+                bhright=np.mean(y0[-10:])
+#                baselineheightatmaxpeak=(bhleft+bhright)/2
+    #            print("")
+    #                print(baselineheightatmaxpeak)
+                baselineheightatmaxpeak=base[nbofpoints]
+    #            print(len(base))
+    #            print(indexes[item])
+    #            print(base[80])
                 
-                if abs(bhleft-bhright)<50:#arbitrary choice of criteria...
+                if abs(bhleft-bhright)<100:#arbitrary choice of criteria...
                     #find FWHM
                     d=y0-((max(y0)-bhright)/2)
                     ind=np.where(d>bhright)[0]
@@ -64,11 +73,11 @@ def listofpeakinfo(x,y,indexes,samplename):#x and y are np.arrays
                     FWHM=abs(xrightfwhm-xleftfwhm)
                     Peakheight=max(y0)-baselineheightatmaxpeak
                     center=x[indexes[item]]
-                    
-                    
+                                        
                     plt.plot(x0, y0, 'red')
-                    plt.plot([x0[0],x0[-1]],[bhleft,bhright],'blue')
-#                    plt.plot(x0,y0,ms=0)
+    #                    plt.plot([x0[0],x0[-1]],[bhleft,bhright],'blue')
+                    plt.plot(x0,base,'blue')
+    #                    plt.plot(x0,y0,ms=0)
                     plt.plot([xleftfwhm,xrightfwhm],[yfwhm,yfwhm],'green')
                     plt.text(center,max(y0)+200,str('%.1f' % float(center)),rotation=90,verticalalignment='bottom',horizontalalignment='center',multialignment='center')
                    
@@ -85,7 +94,7 @@ def listofpeakinfo(x,y,indexes,samplename):#x and y are np.arrays
                 if nbofpoints>=15:
                     nbofpoints-=10
                 else:
-                    print("indexerror unsolvable")
+                    print("indexerror unsolvable2")
                     break
     plt.scatter(x[indexes],y[indexes],c='red',s=12)
     plt.legend()

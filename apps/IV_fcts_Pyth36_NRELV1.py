@@ -54,7 +54,7 @@ TODOLIST
 - group: modify the name of an existing group => automatically change in all samples
 
 
-- save/load session needs to return
+- !!!!! save/load session needs to return  !!!!
 
 - database adaptation
 
@@ -67,6 +67,8 @@ TODOLIST
 
 - hysteresis index plot, by substrate, by groups, by cell. with all meas or with the best RF
 
+
+- time graph if load data from different batches
 
 """
 #%%############# Global variable definition

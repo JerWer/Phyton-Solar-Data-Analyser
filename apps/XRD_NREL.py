@@ -158,7 +158,7 @@ class XRDApp(Toplevel):
         frame212.pack(fill=tk.BOTH,expand=1)
         self.backgroundorder = tk.IntVar()
         Entry(frame212, textvariable=self.backgroundorder,width=1).pack(side=tk.LEFT,fill=tk.X,expand=1)
-        self.backgroundorder.set(7)
+        self.backgroundorder.set(12)
         self.CheckBkgRemoval = Button(frame212, text="BkgRemoval",command = self.backgroundremoval).pack(side=tk.LEFT,expand=1)
         self.CheckBkgRemovalImport = Button(frame212, text="BkgRemImport",command = self.backgroundremovalImport).pack(side=tk.LEFT,expand=1)
 
@@ -698,25 +698,59 @@ class XRDApp(Toplevel):
 #            
 #            DATA[samplename]=tempdat
 #            Patternsamplenameslist.append(samplename)
-            i=0
-            for j in range(len(filerawdata)):
-                if ',' in filerawdata[j]:
-                    x.append(float(filerawdata[j].split(',')[0]))
-                    y.append(float(filerawdata[j].split(',')[1]))  
-                else:
-                    tempdat.append(x)#original x data
-                    tempdat.append(y)#original y data
-                    tempdat.append(x)#corrected x, set as the original on first importation
-                    tempdat.append(y)#corrected y, set as the original on first importation 
-                    tempdat.append([])#peak data, list of dictionaries
-                    tempdat.append([])#
-                    
-                    DATA[samplename+str(i)]=tempdat
-                    Patternsamplenameslist.append(samplename+str(i))
-                    i+=1
-                    x=[]
-                    y=[]
-                    tempdat=[]
+            if '3DExplore ascii' in filerawdata[0]:
+                for j in range(14,len(filerawdata)):
+                    x.append(float(filerawdata[j].split('\t')[0]))
+                    y.append(float(filerawdata[j].split('\t')[1]))  
+                tempdat.append(x)#original x data
+                tempdat.append(y)#original y data
+                tempdat.append(x)#corrected x, set as the original on first importation
+                tempdat.append(y)#corrected y, set as the original on first importation 
+                tempdat.append([])#peak data, list of dictionaries
+                tempdat.append([])#
+                
+                DATA[samplename]=tempdat
+                Patternsamplenameslist.append(samplename)
+                
+#                i=0
+#                for j in range(len(filerawdata)):
+#                    if ',' in filerawdata[j]:
+#                        x.append(float(filerawdata[j].split(',')[0]))
+#                        y.append(float(filerawdata[j].split(',')[1]))  
+#                    else:
+#                        tempdat.append(x)#original x data
+#                        tempdat.append(y)#original y data
+#                        tempdat.append(x)#corrected x, set as the original on first importation
+#                        tempdat.append(y)#corrected y, set as the original on first importation 
+#                        tempdat.append([])#peak data, list of dictionaries
+#                        tempdat.append([])#
+#                        
+#                        DATA[samplename+str(i)]=tempdat
+#                        Patternsamplenameslist.append(samplename+str(i))
+#                        i+=1
+#                        x=[]
+#                        y=[]
+#                        tempdat=[]
+            else:
+                i=0
+                for j in range(len(filerawdata)):
+                    if ',' in filerawdata[j]:
+                        x.append(float(filerawdata[j].split(',')[0]))
+                        y.append(float(filerawdata[j].split(',')[1]))  
+                    else:
+                        tempdat.append(x)#original x data
+                        tempdat.append(y)#original y data
+                        tempdat.append(x)#corrected x, set as the original on first importation
+                        tempdat.append(y)#corrected y, set as the original on first importation 
+                        tempdat.append([])#peak data, list of dictionaries
+                        tempdat.append([])#
+                        
+                        DATA[samplename+str(i)]=tempdat
+                        Patternsamplenameslist.append(samplename+str(i))
+                        i+=1
+                        x=[]
+                        y=[]
+                        tempdat=[]
         
         #update the listbox
         self.frame3221.destroy()

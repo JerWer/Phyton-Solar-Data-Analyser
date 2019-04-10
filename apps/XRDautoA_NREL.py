@@ -160,31 +160,51 @@ def XRDautoanalysis():
     
         x=[]
         y=[]
+        if '3DExplore ascii' in filerawdata[0]:
+            for j in range(14,len(filerawdata)):
+                x.append(float(filerawdata[j].split('\t')[0]))
+                y.append(float(filerawdata[j].split('\t')[1]))  
+            x=np.array(x)
+            y=np.array(y)
+            threshold=0.01
+            MinDist=50
+            while(1):
+                indexes = peakutils.indexes(y, thres=threshold, min_dist=MinDist)
+        #        print(len(indexes))
+                if len(indexes)<15:
+                    break
+                else:
+                    threshold+=0.01
             
-        i=0
-        for j in range(len(filerawdata)):
-            if ',' in filerawdata[j]:
-                x.append(float(filerawdata[j].split(',')[0]))
-                y.append(float(filerawdata[j].split(',')[1]))  
-            else:
-                x=np.array(x)
-                y=np.array(y)
-                threshold=0.01
-                MinDist=50
-                while(1):
-                    indexes = peakutils.indexes(y, thres=threshold, min_dist=MinDist)
-            #        print(len(indexes))
-                    if len(indexes)<15:
-                        break
-                    else:
-                        threshold+=0.01
-                
-                dat=listofpeakinfo(x,y,indexes,samplename)
-                
-                DATA.append([str(samplename)+str(i),x,y,dat,max([item[2] for item in dat])])#[samplename,X,Y,[[center,FWHM,Peakheight],[]...],maxpeakheight]
-                i+=1
-                x=[]
-                y=[]
+            dat=listofpeakinfo(x,y,indexes,samplename)
+            
+            DATA.append([str(samplename),x,y,dat,max([item[2] for item in dat])])#[samplename,X,Y,[[center,FWHM,Peakheight],[]...],maxpeakheight]
+
+        else:    
+            i=0
+            for j in range(len(filerawdata)):
+                if ',' in filerawdata[j]:
+                    x.append(float(filerawdata[j].split(',')[0]))
+                    y.append(float(filerawdata[j].split(',')[1]))  
+                else:
+                    x=np.array(x)
+                    y=np.array(y)
+                    threshold=0.01
+                    MinDist=50
+                    while(1):
+                        indexes = peakutils.indexes(y, thres=threshold, min_dist=MinDist)
+                #        print(len(indexes))
+                        if len(indexes)<15:
+                            break
+                        else:
+                            threshold+=0.01
+                    
+                    dat=listofpeakinfo(x,y,indexes,samplename)
+                    
+                    DATA.append([str(samplename)+str(i),x,y,dat,max([item[2] for item in dat])])#[samplename,X,Y,[[center,FWHM,Peakheight],[]...],maxpeakheight]
+                    i+=1
+                    x=[]
+                    y=[]
                 
 #        for item in filerawdata:
 #            x.append(float(item.split(' ')[0]))

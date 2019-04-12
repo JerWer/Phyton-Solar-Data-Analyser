@@ -198,10 +198,10 @@ class EQEApp(Toplevel):
 #        Autoscale=Checkbutton(frame21314,text='autoscale',variable=self.CheckAutoscale, 
 #                           onvalue=1,offvalue=0,height=1, width=10, command = self.UpdateEQEGraph, bg="white")
 #        Autoscale.pack(side=tk.LEFT,fill=tk.X,expand=1)
-#        self.CheckIntegJsc = IntVar()
-#        legendintegJsc=Checkbutton(frame21314,text='IntegrJsc',variable=self.CheckIntegJsc, 
-#                           onvalue=1,offvalue=0,height=1, width=10, command = self.UpdateEQEGraph, bg="white")
-#        legendintegJsc.pack(side=tk.LEFT,fill=tk.X,expand=1)
+        self.CheckIntegJsc = IntVar()
+        legendintegJsc=Checkbutton(frame21314,text='IntegrJsc',variable=self.CheckIntegJsc, 
+                           onvalue=1,offvalue=0,height=1, width=10, command = self.UpdateEQEGraph, bg="white")
+        legendintegJsc.pack(side=tk.LEFT,fill=tk.X,expand=1)
         self.CheckTangent = IntVar()
         legend=Checkbutton(frame21314,text='showSecretEg',variable=self.CheckTangent, 
                            onvalue=1,offvalue=0,height=1, width=10, command = self.UpdateEQEGraph, bg="white")

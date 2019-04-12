@@ -97,53 +97,93 @@ file_path =filedialog.askopenfilenames(title="Please select the XRD files")
 
 current_path=os.path.dirname(os.path.dirname(file_path[0]))
 #    print(current_path)
-folderName = filedialog.askdirectory(title = "choose a folder to export the auto-analysis results", initialdir=current_path)
-os.chdir(folderName)
+#folderName = filedialog.askdirectory(title = "choose a folder to export the auto-analysis results", initialdir=current_path)
+os.chdir(current_path)
 
 DATA=[]
-#analyze and create data list
-#export graphs on-the-fly
+##analyze and create data list
+##export graphs on-the-fly
+#
+#for filename in file_path:
+#    filetoread = open(filename,"r", encoding='ISO-8859-1')
+#    filerawdata = filetoread.readlines()
+#    samplename=os.path.splitext(os.path.basename(filename))[0]
+#
+#    x=[]
+#    y=[]
+#        
+#    i=0
+#    for j in range(len(filerawdata)):
+#        if ',' in filerawdata[j]:
+#            x.append(float(filerawdata[j].split(',')[0]))
+#            y.append(float(filerawdata[j].split(',')[1]))  
+#        else:
+#            x=np.array(x)
+#            y=np.array(y)
+##            threshold=0.01
+##            MinDist=50
+##            while(1):
+##                indexes = peakutils.indexes(y, thres=threshold, min_dist=MinDist)
+##        #        print(len(indexes))
+##                if len(indexes)<15:
+##                    break
+##                else:
+##                    threshold+=0.01
+##            
+##            dat=listofpeakinfo(x,y,indexes,samplename)
+##            
+##            DATA.append([str(samplename)+str(i),x,y])#[samplename,X,Y,[[center,FWHM,Peakheight],[]...],maxpeakheight]
+#
+#            
+#            plt.figure(figsize=(10,6))
+#            plt.plot(x,y,'black',label=samplename)  
+#            plt.scatter(x,peakutils.baseline(y,7),c='red',s=5) 
+##            plt.scatter(x,peakutils.baseline(y,7),c='blue',s=5)
+##            plt.scatter(x,peakutils.baseline(y,8),c='green',s=5)
+#              
+#            i+=1
+#            x=[]
+#            y=[]            
+#            
+lambdaXRD=1.54
+
+def q_to_tth(Q):
+    "convert q to tth, lam is wavelength in angstrom"
+    return 360/np.pi * np.arcsin(Q * lambdaXRD / (4 * np.pi))
+
+def tth_to_q(tth):
+    "convert tth to q, lam is wavelength in angstrom"
+    return 4 * np.pi * np.sin(tth * np.pi/(2 * 180)) / lambdaXRD    
 
 for filename in file_path:
     filetoread = open(filename,"r", encoding='ISO-8859-1')
-    filerawdata = filetoread.readlines()
+    filerawdata = list(filetoread.readlines())
     samplename=os.path.splitext(os.path.basename(filename))[0]
 
-    x=[]
-    y=[]
-        
-    i=0
+    filedat=[]
     for j in range(len(filerawdata)):
-        if ',' in filerawdata[j]:
-            x.append(float(filerawdata[j].split(',')[0]))
-            y.append(float(filerawdata[j].split(',')[1]))  
-        else:
-            x=np.array(x)
-            y=np.array(y)
-#            threshold=0.01
-#            MinDist=50
-#            while(1):
-#                indexes = peakutils.indexes(y, thres=threshold, min_dist=MinDist)
-#        #        print(len(indexes))
-#                if len(indexes)<15:
-#                    break
-#                else:
-#                    threshold+=0.01
-#            
-#            dat=listofpeakinfo(x,y,indexes,samplename)
-#            
-#            DATA.append([str(samplename)+str(i),x,y])#[samplename,X,Y,[[center,FWHM,Peakheight],[]...],maxpeakheight]
+        filedat.append(str(q_to_tth(float(filerawdata[j].split(',')[0])))+'\t'+filerawdata[j].split(',')[1])
+        
+    file = open(samplename+".txt",'w', encoding='ISO-8859-1')
+    file.writelines("%s" % item for item in filedat)
+    file.close() 
 
-            
-            plt.figure(figsize=(10,6))
-            plt.plot(x,y,'black',label=samplename)  
-            plt.scatter(x,peakutils.baseline(y,7),c='red',s=5) 
-#            plt.scatter(x,peakutils.baseline(y,7),c='blue',s=5)
-#            plt.scatter(x,peakutils.baseline(y,8),c='green',s=5)
-              
-            i+=1
-            x=[]
-            y=[]            
-            
-            
-            
+
+
+
+"""
+need to make autoanalysis of peaks
+get position and intensities
+normalize to 1000
+export list of peaks for ref
+
+"""
+
+
+
+
+
+
+
+
+      

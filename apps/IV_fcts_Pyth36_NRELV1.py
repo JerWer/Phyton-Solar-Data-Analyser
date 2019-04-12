@@ -65,10 +65,13 @@ TODOLIST
 
 - histogram graph for the big4 parameters VS number of devices. with overlayed gaussian or other fit curve
 
-- hysteresis index plot, by substrate, by groups, by cell. with all meas or with the best RF
-
+- hysteresis index plot, by substrate, by groups, by cell. with all meas or with the best RF, before/after mpp
+add this as a parameter to plot in groupgraph, same as jsc or voc
 
 - time graph if load data from different batches
+
+
+- controls: remove dark data from time graph
 
 """
 #%%############# Global variable definition

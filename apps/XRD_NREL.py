@@ -44,6 +44,8 @@ TODOLIST
 
 - delete entry from list of samples
 
+- legend, change color of plots... similar to IVapp
+
 
 """
 #%%
@@ -100,6 +102,24 @@ listofanswer={}
 samplestakenforplot=[]
 peaknamesforplot=[]
 
+lambdaXRD=1.54
+
+def q_to_tth(Q):
+    "convert q to tth, lam is wavelength in angstrom"
+    return 360/np.pi * np.arcsin(Q * lambdaXRD / (4 * np.pi))
+
+def tth_to_q(tth):
+    "convert tth to q, lam is wavelength in angstrom"
+    return 4 * np.pi * np.sin(tth * np.pi/(2 * 180)) / lambdaXRD
+
+def q_to_tth_list(Q):
+    "convert q to tth, lam is wavelength in angstrom"
+    return [360/np.pi * np.arcsin(Qitem * lambdaXRD / (4 * np.pi)) for Qitem in Q]
+
+def tth_to_q_list(tth):
+    "convert tth to q, lam is wavelength in angstrom"
+    return [4 * np.pi * np.sin(tthitem * np.pi/(2 * 180)) / lambdaXRD for tthitem in tth]
+
 #%%###############################################################################             
     
 class XRDApp(Toplevel):
@@ -134,6 +154,7 @@ class XRDApp(Toplevel):
         canvas = FigureCanvasTkAgg(self.fig1, frame1)
         canvas.get_tk_widget().pack(fill=tk.BOTH,expand=1)
         self.XRDgraph = plt.subplot2grid((1, 1), (0, 0), colspan=3)
+#        self.XRDgraphtwin=self.XRDgraph.twiny()
         self.toolbar = NavigationToolbar2TkAgg(canvas, frame1)
         self.toolbar.update()
         canvas._tkcanvas.pack(fill=tk.BOTH,expand=1) 
@@ -153,6 +174,13 @@ class XRDApp(Toplevel):
         Entry(frame211, textvariable=self.shiftYval,width=3).pack(side=tk.LEFT,fill=tk.X,expand=1)
         self.shiftYBut = Button(frame211, text="Y Shift",command = self.shiftY).pack(side=tk.LEFT,expand=1)
         self.shiftYval.set(0)
+        self.ylabel = IntVar()
+        Checkbutton(frame211,text="noylab",variable=self.ylabel, command = lambda: self.updateXRDgraph(0),
+                           onvalue=1,offvalue=0,height=1, width=3, fg='black',background='lightgrey').pack(side=tk.LEFT,expand=1)
+        self.changetoQ = IntVar()
+        Checkbutton(frame211,text="q?",variable=self.changetoQ, command = lambda: self.updateXRDgraph(0),
+                           onvalue=1,offvalue=0,height=1, width=3, fg='black',background='lightgrey').pack(side=tk.LEFT,expand=1)
+
                         
         frame212=Frame(frame21,borderwidth=0,  bg="lightgrey")
         frame212.pack(fill=tk.BOTH,expand=1)
@@ -306,17 +334,26 @@ class XRDApp(Toplevel):
         global DATA, RefPattDATA, colorstylelist, samplestakenforplot
           
         self.XRDgraph.clear()
+#        self.XRDgraphtwin.clear()
+
         
         coloridx=0
         #plot patterns from DATA
         samplestakenforplot = [self.listboxsamples.get(idx) for idx in self.listboxsamples.curselection()]
         if samplestakenforplot!=[]:
-            minX=min(DATA[samplestakenforplot[0]][2])
-            maxX=max(DATA[samplestakenforplot[0]][2])
+            if self.changetoQ.get():
+                minX=min(tth_to_q_list(DATA[samplestakenforplot[0]][2]))
+                maxX=max(tth_to_q_list(DATA[samplestakenforplot[0]][2]))
+            else:
+                minX=min(DATA[samplestakenforplot[0]][2])
+                maxX=max(DATA[samplestakenforplot[0]][2])
             minY=min(DATA[samplestakenforplot[0]][3])
             maxY=max(DATA[samplestakenforplot[0]][3])
             for item in samplestakenforplot:
-                x = DATA[item][2]
+                if self.changetoQ.get():
+                    x = tth_to_q_list(DATA[item][2])
+                else:
+                    x = DATA[item][2]
                 y = DATA[item][3]
                 if min(x)<minX:
                     minX=min(x)
@@ -329,17 +366,46 @@ class XRDApp(Toplevel):
                 
                 self.XRDgraph.plot(x,y, color=colorstylelist[coloridx], label=item)
                 coloridx+=1
-         
+                
+#            if self.changetoQ.get():
+#                # Find min and max two theta, make a list of tth values for the tick labels
+#                tth_min = int(math.ceil(q_to_tth(minX))); tth_max = int(math.ceil(q_to_tth(maxX)))
+#                # If tth_min is odd, increment to use evens
+#                if tth_min % 2 == 1:
+#                    tth_min += 1
+#                tth_list = list(np.arange(tth_min,tth_max,2))
+#                
+#                # find the q-values associated with these tth values; these are the tick positions in q
+#                q_list = tth_to_q_list(tth_list)
+#                
+#                # New axis sharing y-axis with ax. Ticks at the top
+#                self.XRDgraphtwin.spines["top"].set_position(("axes", 1))
+#                # Same x limits at xlim
+#                self.XRDgraphtwin.set_xlim(self.XRDgraph.get_xlim())
+#                # Place the ticks at the right q-positions
+#                self.XRDgraphtwin.set_xticks(q_list)
+#                # Label the ticks with the tth values
+#                self.XRDgraphtwin.set_xticklabels(tth_list, fontsize=14)
+#                self.XRDgraphtwin.tick_params(direction='in', pad=1)
+#                # Label the axis
+#                self.XRDgraphtwin.set_xlabel('$^o2\\theta$ , Cu K-$\\alpha$', position=(0.08,0.97))
+            
             #add text for Peak Names
             if self.CheckPeakNames.get():
                 for item in range(len(peaknamesforplot)):
-                    plt.text(peaknamesforplot[item][0],peaknamesforplot[item][1],peaknamesforplot[item][2],rotation=90,verticalalignment='bottom',horizontalalignment='left',multialignment='center')
+                    if self.changetoQ.get():
+                        plt.text(peaknamesforplot[item][3],peaknamesforplot[item][1],peaknamesforplot[item][2],rotation=90,verticalalignment='bottom',horizontalalignment='left',multialignment='center')                  
+                    else:
+                        plt.text(peaknamesforplot[item][0],peaknamesforplot[item][1],peaknamesforplot[item][2],rotation=90,verticalalignment='bottom',horizontalalignment='left',multialignment='center')
 
             
         #plot from RefPattDATA
         reftakenforplot = [self.listboxref.get(idx) for idx in self.listboxref.curselection()]
         for item in reftakenforplot:
-            x = RefPattDATA[item][0]
+            if self.changetoQ.get():
+                x = tth_to_q_list(RefPattDATA[item][0])
+            else:
+                x = RefPattDATA[item][0]
             y = RefPattDATA[item][1]
             
             lines = []
@@ -366,9 +432,26 @@ class XRDApp(Toplevel):
         if samplestakenforplot!=[] or  reftakenforplot!=[]:
             self.XRDgraph.legend()
         self.XRDgraph.set_ylabel("Intensity (a.u.)")
-        self.XRDgraph.set_xlabel("2\u0398 (degree)")
+        if self.changetoQ.get():
+            self.XRDgraph.set_xlabel('q (A$^{-1}$)')
+        else:
+            self.XRDgraph.set_xlabel("2\u0398 (degree)")
         if samplestakenforplot!=[]:
-            self.XRDgraph.axis([minX,maxX,minY,1.1*maxY])
+            self.XRDgraph.axis([minX,maxX,minY,1.1*maxY])  
+            if self.ylabel.get():
+                self.XRDgraph.set_yticklabels([])
+                self.XRDgraph.set_yticks([])
+                
+#            self.XRDgraph.tick_params(direction='in', pad=1)
+#            if self.changetoQ.get()==0:
+#                self.XRDgraphtwin.axis([minX,maxX,minY,1.1*maxY])
+#                self.XRDgraphtwin.tick_params(direction='in', pad=1)
+#                self.XRDgraphtwin.set_xticklabels([])
+#            else:
+#                self.XRDgraphtwin.axis([q_to_tth(minX),q_to_tth(maxX),minY,1.1*maxY])
+#                self.XRDgraphtwin.tick_params(direction='in', pad=1)
+#                self.XRDgraphtwin.set_xlabel('$^o2\\theta$ , Cu K-$\\alpha$', position=(0.08,0.97))
+#        
         plt.gcf().canvas.draw()
         self.CreateTable()
 
@@ -435,7 +518,7 @@ class XRDApp(Toplevel):
         for item in samplestakenforplot:
             for item1 in range(len(DATA[item][4])):
                 DATA[item][4][item1]["PeakName"]=listofanswer[str(DATA[item][4][item1]["Position"])].get()
-                peaknamesforplot.append([DATA[item][4][item1]["Position"],DATA[item][4][item1]["Intensity"],DATA[item][4][item1]["PeakName"]])
+                peaknamesforplot.append([DATA[item][4][item1]["Position"],DATA[item][4][item1]["Intensity"],DATA[item][4][item1]["PeakName"],tth_to_q(DATA[item][4][item1]["Position"])])
         
         self.window.destroy()
         self.updateXRDgraph(0)
@@ -591,6 +674,7 @@ class XRDApp(Toplevel):
     #                                print(nbofpoints)
     #                                print(baselineheightatmaxpeak)
                                     tempdat["Position"]=center
+                                    tempdat["PositionQ"]=tth_to_q(center)
                                     tempdat["FWHM"]=FWHM
                                     tempdat["Intensity"]=Peakheight
                                     tempdat["PeakName"]=''
@@ -616,7 +700,7 @@ class XRDApp(Toplevel):
         
         for item in samplestakenforplot:
             for item1 in range(len(DATA[item][4])):
-                peaknamesforplot.append([DATA[item][4][item1]["Position"],DATA[item][4][item1]["Intensity"],DATA[item][4][item1]["PeakName"]])
+                peaknamesforplot.append([DATA[item][4][item1]["Position"],DATA[item][4][item1]["Intensity"],DATA[item][4][item1]["PeakName"],DATA[item][4][item1]["PositionQ"]])
  
         self.CreateTable()
         self.updateXRDgraph(0)
@@ -700,11 +784,11 @@ class XRDApp(Toplevel):
 #            Patternsamplenameslist.append(samplename)
             if '3DExplore ascii' in filerawdata[0]:
                 for j in range(14,len(filerawdata)):
-                    x.append(float(filerawdata[j].split('\t')[0]))
+                    x.append(float(filerawdata[j].split('\t')[0]))#assume 2theta
                     y.append(float(filerawdata[j].split('\t')[1]))  
-                tempdat.append(x)#original x data
+                tempdat.append(x)#original x data 2theta
                 tempdat.append(y)#original y data
-                tempdat.append(x)#corrected x, set as the original on first importation
+                tempdat.append(x)#corrected x, set as the original on first importation 2theta
                 tempdat.append(y)#corrected y, set as the original on first importation 
                 tempdat.append([])#peak data, list of dictionaries
                 tempdat.append([])#
@@ -816,9 +900,9 @@ class XRDApp(Toplevel):
         if samplestakenforplot!=[]:
             for key in samplestakenforplot:
                 for item in DATA[key][4]:
-                    testdata.append([key,item["PeakName"],"%.2f"%item["Position"],"%.2f"%item["Intensity"],"%.2f"%item["FWHM"]])
+                    testdata.append([key,item["PeakName"],"%.2f"%item["Position"],"%.2f"%item["PositionQ"],"%.2f"%item["Intensity"],"%.2f"%item["FWHM"]])
             
-        self.tableheaders=('name','PeakName','Position','Intensity','FWHM')
+        self.tableheaders=('name','PeakName','Position 2\u0398','Position q','Intensity','FWHM')
                     
         # Set the treeview
         self.tree = Treeview(self.frame41, columns=self.tableheaders, show="headings")

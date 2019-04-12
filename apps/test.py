@@ -68,6 +68,7 @@ def listofpeakinfo(x,y,indexes,samplename):#x and y are np.arrays
 #                    plt.plot(x[indexes[item]-nbpoints:indexes[item]+nbpoints],peakutils.baseline(y[indexes[item]-nbpoints:indexes[item]+nbpoints],1),'blue')
                     
                     peakdata.append([center,FWHM,Peakheight])
+#                    peakdata.append([center,Peakheight])
                     break
                 else:
                     if nbofpoints>=15:
@@ -160,15 +161,48 @@ for filename in file_path:
     filerawdata = list(filetoread.readlines())
     samplename=os.path.splitext(os.path.basename(filename))[0]
 
-    filedat=[]
+#    filedat=[]
+#    for j in range(len(filerawdata)):
+#        filedat.append(str(q_to_tth(float(filerawdata[j].split(',')[0])))+'\t'+filerawdata[j].split(',')[1])
+#        
+#    file = open(samplename+".txt",'w', encoding='ISO-8859-1')
+#    file.writelines("%s" % item for item in filedat)
+#    file.close() 
+    
+    x=[]
+    y=[]
     for j in range(len(filerawdata)):
-        filedat.append(str(q_to_tth(float(filerawdata[j].split(',')[0])))+'\t'+filerawdata[j].split(',')[1])
+        x.append(q_to_tth(float(filerawdata[j].split(',')[0])))
+        y.append(float(filerawdata[j].split(',')[1]))  
+    x=np.array(x)
+    y=np.array(y)
+    threshold=0.01
+    MinDist=50
+    while(1):
+        indexes = peakutils.indexes(y, thres=threshold, min_dist=MinDist)
+#        print(len(indexes))
+        if len(indexes)<15:
+            break
+        else:
+            threshold+=0.01
+    
+#    dat=listofpeakinfo(x,y,indexes,samplename)
+    dat2=[x[indexes],y[indexes]]
+#    print(len(dat2[0]))
+            
+#    dat2=list(map(list, zip(*dat)))
+    
+    y=[1000*(m-min(dat2[1]))/(max(dat2[1])-min(dat2[1])) for m in dat2[1]]#rescale between 0 and 1000
+
+#    print(len(y))
+    filedat=[]
+    for j in range(len(dat2[0])):
+        filedat.append(str(dat2[0][j])+'\t'+str(y[j])+'\n')
         
-    file = open(samplename+".txt",'w', encoding='ISO-8859-1')
+    file = open('RohitJACS_'+samplename+".txt",'w', encoding='ISO-8859-1')
     file.writelines("%s" % item for item in filedat)
-    file.close() 
-
-
+    file.close()     
+    
 
 
 """

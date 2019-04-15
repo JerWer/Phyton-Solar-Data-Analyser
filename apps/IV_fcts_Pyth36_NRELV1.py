@@ -54,8 +54,6 @@ TODOLIST
 - group: modify the name of an existing group => automatically change in all samples
 
 
-- !!!!! save/load session needs to return  !!!!
-
 - database adaptation
 
 - Vmpp is rounded somewhere... ??
@@ -70,8 +68,6 @@ add this as a parameter to plot in groupgraph, same as jsc or voc
 
 - time graph if load data from different batches
 
-
-- controls: remove dark data from time graph
 
 """
 #%%############# Global variable definition
@@ -409,10 +405,10 @@ class IVApp(Toplevel):
         
         self.import_button = Button(self.frame0, text = "Import Data", command = self.importdata)
         self.import_button.grid(row = 0, column = 0,columnspan=1)
-#        self.loadsession_button = Button(self.frame0, text = "Load session", command = self.LoadSession)
-#        self.loadsession_button.grid(row = 0, column = 4, columnspan=1)
-#        self.savesession_button = Button(self.frame0, text = "Save session", command = self.SaveSession)
-#        self.savesession_button.grid(row = 0, column = 5, columnspan=1)
+        self.loadsession_button = Button(self.frame0, text = "Load session", command = self.LoadSession)
+        self.loadsession_button.grid(row = 0, column = 4, columnspan=1)
+        self.savesession_button = Button(self.frame0, text = "Save session", command = self.SaveSession)
+        self.savesession_button.grid(row = 0, column = 5, columnspan=1)
         self.ExportAll = Button(self.frame0, text="DB & AutoAnalysis", command = self.AskforRefcells)
         self.ExportAll.grid(row=0, column=6, columnspan=1,rowspan=1)
         self.Darktolight = Button(self.frame0, text="DtoL.",command = self.darktolightchange,fg='black')
@@ -3868,6 +3864,7 @@ class IVApp(Toplevel):
                                         ax.plot(best[pos]["IVData"][0],best[pos]["IVData"][1],"k", label=best[pos]["SampleName"])
                                         ax.set_title('Best:'+ best[item]["SampleName"]+"-"+best[pos]["SampleName"]+"\n"+text, fontsize = 10, color="r")
                                         break
+                                
                             elif best[item]["ScanDirection"]=="Forward":
                                 for item0 in range(item+1,len(best),1):
                                     if best[item0]["ScanDirection"]=="Reverse" and best[item]["Cellletter"]==best[item0]["Cellletter"]:
@@ -3876,6 +3873,10 @@ class IVApp(Toplevel):
                                         ax.plot(best[pos]["IVData"][0],best[pos]["IVData"][1],"r", label=best[pos]["SampleName"])
                                         ax.set_title('Best:'+ best[item]["SampleName"]+"-"+best[pos]["SampleName"]+"\n"+text, fontsize = 10, color="k")
                                         break
+                            for item0 in range(len(DATAx)):
+                                if DATAx[item0]["DepID"]==best[item]["DepID"] and DATAx[item0]["Cellletter"]==best[item]["Cellletter"] and DATAx[item0]["Illumination"]=="Dark":
+                                    ax.plot(DATAx[item0]["IVData"][0],DATAx[item0]["IVData"][1],color='gray',linestyle='dashed', label=DATAx[item0]["SampleName"])
+                                    break
                             
                             ax.set_xlabel('Voltage (mV)')
                             ax.set_ylabel('Current density (mA/cm'+'\xb2'+')')
@@ -4571,19 +4572,20 @@ class IVApp(Toplevel):
             if DATAx[0]["Setup"]=="TFIV" or DATAx[0]["Setup"]=='SSIgorC215':
                 try: 
                     if DATAx[0]["Setup"]=="TFIV":
-                        time=[float(i["MeasDayTime"].split()[1].split(':')[0])+ float(i["MeasDayTime"].split()[1].split(':')[1])/60 + float(i["MeasDayTime"].split()[1].split(':')[2])/3600 for i in DATAx]
+                        time=[float(i["MeasDayTime"].split()[1].split(':')[0])+ float(i["MeasDayTime"].split()[1].split(':')[1])/60 + float(i["MeasDayTime"].split()[1].split(':')[2])/3600 for i in DATAx if i["Illumination"]=="Light"]
                     elif DATAx[0]["Setup"]=='SSIgorC215':
                         time=[]
                         for i in DATAx:
-                            if i["MeasDayTime"].split(' ')[-1]=='PM' and float(i["MeasDayTime"].split(' ')[-2].split(':')[0])!=12: 
-                                time.append(float(i["MeasDayTime"].split(' ')[-2].split(':')[0])+12+ float(i["MeasDayTime"].split(' ')[-2].split(':')[1])/60 + float(i["MeasDayTime"].split(' ')[-2].split(':')[2])/3600)
-                            else:
-                                time.append(float(i["MeasDayTime"].split(' ')[-2].split(':')[0])+ float(i["MeasDayTime"].split(' ')[-2].split(':')[1])/60 + float(i["MeasDayTime"].split(' ')[-2].split(':')[2])/3600)
+                            if i["Illumination"]=="Light":
+                                if i["MeasDayTime"].split(' ')[-1]=='PM' and float(i["MeasDayTime"].split(' ')[-2].split(':')[0])!=12: 
+                                    time.append(float(i["MeasDayTime"].split(' ')[-2].split(':')[0])+12+ float(i["MeasDayTime"].split(' ')[-2].split(':')[1])/60 + float(i["MeasDayTime"].split(' ')[-2].split(':')[2])/3600)
+                                else:
+                                    time.append(float(i["MeasDayTime"].split(' ')[-2].split(':')[0])+ float(i["MeasDayTime"].split(' ')[-2].split(':')[1])/60 + float(i["MeasDayTime"].split(' ')[-2].split(':')[2])/3600)
                                            
-                    Voct=[i["Voc"] for i in DATAx]
-                    Jsct=[i["Jsc"] for i in DATAx]
-                    FFt=[i["FF"] for i in DATAx]
-                    Efft=[i["Eff"] for i in DATAx]
+                    Voct=[i["Voc"] for i in DATAx if i["Illumination"]=="Light"]
+                    Jsct=[i["Jsc"] for i in DATAx if i["Illumination"]=="Light"]
+                    FFt=[i["FF"] for i in DATAx if i["Illumination"]=="Light"]
+                    Efft=[i["Eff"] for i in DATAx if i["Illumination"]=="Light"]
                     
                     fig = plt.figure()
                     Vocsubfig = fig.add_subplot(221) 
@@ -5044,16 +5046,28 @@ class IVApp(Toplevel):
         plt.clf()
         
         if self.statGraphs.get():
-            images = list(map(ImageTk.open, [batchname+'_StatCells.png',batchname+'_StatTimegraph.png',batchname+'_StatJVgraph.png',batchname+'_StatGroupgraph.png']))
-            widths, heights = zip(*(i.size for i in images))
-            total_width = max(widths[0]+widths[2],widths[1]+widths[3])
-            max_height = max(heights[0]+heights[1],heights[2]+heights[3])
-            new_im = ImageTk.new('RGB', (total_width, max_height), (255, 255, 255))
-            new_im.paste(im=images[0],box=(0,0))
-            new_im.paste(im=images[1],box=(0,max(heights[0],heights[2])))
-            new_im.paste(im=images[2],box=(max(widths[0],widths[1]),0))
-            new_im.paste(im=images[3],box=(max(widths[0],widths[1]),max(heights[0],heights[2])))
-            new_im.save(batchname+'_controls.png')
+            try:
+                images = list(map(ImageTk.open, [batchname+'_StatCells.png',batchname+'_StatTimegraph.png',batchname+'_StatJVgraph.png',batchname+'_StatGroupgraph.png']))
+                widths, heights = zip(*(i.size for i in images))
+                total_width = max(widths[0]+widths[2],widths[1]+widths[3])
+                max_height = max(heights[0]+heights[1],heights[2]+heights[3])
+                new_im = ImageTk.new('RGB', (total_width, max_height), (255, 255, 255))
+                new_im.paste(im=images[0],box=(0,0))
+                new_im.paste(im=images[1],box=(0,max(heights[0],heights[2])))
+                new_im.paste(im=images[2],box=(max(widths[0],widths[1]),0))
+                new_im.paste(im=images[3],box=(max(widths[0],widths[1]),max(heights[0],heights[2])))
+                new_im.save(batchname+'_controls.png')
+            except:
+                images = list(map(ImageTk.open, [batchname+'_StatCells.png',batchname+'_StatTimegraph.png',batchname+'_StatJVgraph.png']))
+                widths, heights = zip(*(i.size for i in images))
+                total_width = max(widths[0]+widths[2],2*widths[1])
+                max_height = max(heights[0]+heights[1],2*heights[2])
+                new_im = ImageTk.new('RGB', (total_width, max_height), (255, 255, 255))
+                new_im.paste(im=images[0],box=(0,0))
+                new_im.paste(im=images[1],box=(0,max(heights[0],heights[2])))
+                new_im.paste(im=images[2],box=(max(widths[0],widths[1]),0))
+                new_im.save(batchname+'_controls.png')
+                
         
         self.window.destroy()
         self.destroy()
@@ -5379,8 +5393,10 @@ class IVApp(Toplevel):
     def SaveSession(self):
         global DATA, DATAMPP, DATAdark, DATAFV, IVlegendMod, MPPlegendMod
         global testdata, DATAJVforexport, DATAJVtabforexport, DATAmppforexport, DATAgroupforexport
-        global takenforplot, IVlinestyle, MPPlinestyle, samplesgroups
+        global takenforplot, takenforplotmpp, IVlinestyle, MPPlinestyle, samplesgroups
         global listofanswer, listoflinestyle, listofcolorstyle
+        global numbLightfiles, numbDarkfiles, groupstoplot
+        global titIV, titmpp, titStat
         
         directory = filedialog.askdirectory()
         if not os.path.exists(directory):
@@ -5403,6 +5419,7 @@ class IVApp(Toplevel):
         pickle.dump(DATAgroupforexport,open('DATAgroupforexport.pkl','wb'), protocol=pickle.HIGHEST_PROTOCOL)
 
         pickle.dump(takenforplot,open('takenforplot.pkl','wb'), protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(takenforplotmpp,open('takenforplotmpp.pkl','wb'), protocol=pickle.HIGHEST_PROTOCOL)
         pickle.dump(IVlinestyle,open('IVlinestyle.pkl','wb'), protocol=pickle.HIGHEST_PROTOCOL)
         pickle.dump(MPPlinestyle,open('MPPlinestyle.pkl','wb'), protocol=pickle.HIGHEST_PROTOCOL)
         pickle.dump(samplesgroups,open('samplesgroups.pkl','wb'), protocol=pickle.HIGHEST_PROTOCOL) 
@@ -5410,6 +5427,9 @@ class IVApp(Toplevel):
         pickle.dump(listofanswer,open('listofanswer.pkl','wb'), protocol=pickle.HIGHEST_PROTOCOL)
         pickle.dump(listoflinestyle,open('listoflinestyle.pkl','wb'), protocol=pickle.HIGHEST_PROTOCOL)
         pickle.dump(listofcolorstyle,open('listofcolorstyle.pkl','wb'), protocol=pickle.HIGHEST_PROTOCOL) 
+        pickle.dump(numbLightfiles,open('numbLightfiles.pkl','wb'), protocol=pickle.HIGHEST_PROTOCOL) 
+        pickle.dump(numbDarkfiles,open('numbDarkfiles.pkl','wb'), protocol=pickle.HIGHEST_PROTOCOL) 
+        pickle.dump(groupstoplot,open('groupstoplot.pkl','wb'), protocol=pickle.HIGHEST_PROTOCOL) 
         
         print("dumped")
         """
@@ -5424,9 +5444,11 @@ class IVApp(Toplevel):
     def LoadSession(self):
         global DATA, DATAMPP, DATAdark, DATAFV, IVlegendMod, MPPlegendMod
         global testdata, DATAJVforexport, DATAJVtabforexport, DATAmppforexport, DATAgroupforexport
-        global takenforplot, IVlinestyle, MPPlinestyle, samplesgroups
+        global takenforplot, takenforplotmpp, IVlinestyle, MPPlinestyle, samplesgroups
         global listofanswer, listoflinestyle, listofcolorstyle
-        
+
+        global numbLightfiles, numbDarkfiles, groupstoplot
+        global titIV, titmpp, titStat
 
         try:
             path = filedialog.askdirectory()
@@ -5446,12 +5468,17 @@ class IVApp(Toplevel):
         DATAmppforexport = pickle.load(open('DATAmppforexport.pkl','rb'))
         DATAgroupforexport = pickle.load(open('DATAgroupforexport.pkl','rb'))
         takenforplot = pickle.load(open('takenforplot.pkl','rb'))
+        takenforplotmpp = pickle.load(open('takenforplotmpp.pkl','rb'))
         IVlinestyle = pickle.load(open('IVlinestyle.pkl','rb'))
         MPPlinestyle = pickle.load(open('MPPlinestyle.pkl','rb'))
         samplesgroups = pickle.load(open('samplesgroups.pkl','rb'))
         listofanswer = pickle.load(open('listofanswer.pkl','rb'))
         listoflinestyle = pickle.load(open('listoflinestyle.pkl','rb'))
         listofcolorstyle = pickle.load(open('listofcolorstyle.pkl','rb'))
+        groupstoplot = pickle.load(open('groupstoplot.pkl','rb'))
+        numbDarkfiles = pickle.load(open('numbDarkfiles.pkl','rb'))
+        numbLightfiles = pickle.load(open('numbLightfiles.pkl','rb'))
+        
         
         """
         try:
@@ -5461,10 +5488,7 @@ class IVApp(Toplevel):
             print("there is an exception")
         """
         print("loaded")
-        if DATA!=[]:
-            self.UpdateIVGraph()
-            self.UpdateGroupGraph(1)
-            self.updateTable()
+        
             
         if DATAMPP!=[]:
             #print("il y a des mpp")
@@ -5478,7 +5502,15 @@ class IVApp(Toplevel):
                 self.mppmenu.add_checkbutton(label=self.mppnames[choice], variable=self.choicesmpp[choice], 
                                      onvalue=1, offvalue=0, command = self.UpdateMppGraph)
             self.UpdateMppGraph
-
+            
+        if DATA!=[]:
+            titIV =0
+            titmpp=0
+            titStat=0
+            self.updateTable()
+            self.UpdateIVGraph()
+            self.updategrouptoplotdropbutton()
+            self.UpdateGroupGraph(1)
 #%%######################################################################
     
     def GiveIVatitle(self):

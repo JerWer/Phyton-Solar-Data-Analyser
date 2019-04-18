@@ -69,6 +69,8 @@ add this as a parameter to plot in groupgraph, same as jsc or voc
 - time graph if load data from different batches
 
 
+- when use the load session, mgg graph is not usable but no error
+
 """
 #%%############# Global variable definition
 testdata = []

@@ -40,8 +40,6 @@ TODOLIST
 
 - export as ref file function
 
-- background removal import function: import a file with background and substract it from the selected samples. 
-
 - delete entry from list of samples
 
 - legend, change color of plots... similar to IVapp
@@ -188,7 +186,7 @@ class XRDApp(Toplevel):
         Entry(frame212, textvariable=self.backgroundorder,width=1).pack(side=tk.LEFT,fill=tk.X,expand=1)
         self.backgroundorder.set(12)
         self.CheckBkgRemoval = Button(frame212, text="BkgRemoval",command = self.backgroundremoval).pack(side=tk.LEFT,expand=1)
-        self.CheckBkgRemovalImport = Button(frame212, text="BkgRemImport",command = self.backgroundremovalImport).pack(side=tk.LEFT,expand=1)
+        self.CheckBkgRemovalImport = Button(frame212, text="BkgRefImport",command = self.backgroundremovalImport).pack(side=tk.LEFT,expand=1)
 
 #        refpattern=StringVar()
 #        refpatternlist=['Original','Si','ITO']#to be replace by actual files in a specific folder
@@ -527,22 +525,43 @@ class XRDApp(Toplevel):
 #%%    
     def backgroundremoval(self):
         global DATA
-        
-        samplestakenforplot = [self.listboxsamples.get(idx) for idx in self.listboxsamples.curselection()]
-        if samplestakenforplot!=[]:
-            for item in samplestakenforplot:
-                y = DATA[item][3]
-                y=np.array(y)
-                base = peakutils.baseline(y, self.backgroundorder.get())
-                DATA[item][3]=list(y-base)
-        
-        self.updateXRDgraph(0)
+
+        if self.listboxsamples.curselection()!=():
+            samplestakenforplot = [self.listboxsamples.get(idx) for idx in self.listboxsamples.curselection()]
+            if samplestakenforplot!=[]:
+                for item in samplestakenforplot:
+                    y = DATA[item][3]
+                    y=np.array(y)
+                    base = peakutils.baseline(y, self.backgroundorder.get())
+                    DATA[item][3]=list(y-base)
+            
+            self.updateXRDgraph(0)
     
     def backgroundremovalImport(self):
         global DATA
         
-        
-        self.updateXRDgraph(0)
+        if self.listboxsamples.curselection()!=():
+            filename =filedialog.askopenfilename(title="Please select the XRD file for background")
+            
+            filetoread = open(filename,"r", encoding='ISO-8859-1')
+            filerawdata = list(filetoread.readlines())
+#            samplename=os.path.splitext(os.path.basename(filename))[0]
+    #            print(samplename)
+            xbkg=[]
+            ybkg=[]
+            for j in range(len(filerawdata)):
+                if ',' in filerawdata[j]:
+                    xbkg.append(float(filerawdata[j].split(',')[0]))
+                    ybkg.append(float(filerawdata[j].split(',')[1]))  
+            f = interp1d(xbkg, ybkg, kind='cubic')
+            samplestakenforplot = [self.listboxsamples.get(idx) for idx in self.listboxsamples.curselection()]
+            if samplestakenforplot!=[]:
+                for item in samplestakenforplot:
+                    y = DATA[item][3]
+                    x = DATA[item][2]                   
+                    DATA[item][3]=[y[item1]-f(x[item1]) for item1 in range(len(x))]
+            
+            self.updateXRDgraph(0)
     
     def shiftX(self):
         global DATA

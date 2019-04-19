@@ -58,18 +58,16 @@ TODOLIST
 
 - Vmpp is rounded somewhere... ??
 
-- remove the reverseforward color info from the top of graph FF and Eff
-
 
 - histogram graph for the big4 parameters VS number of devices. with overlayed gaussian or other fit curve
 
 - hysteresis index plot, by substrate, by groups, by cell. with all meas or with the best RF, before/after mpp
 add this as a parameter to plot in groupgraph, same as jsc or voc
 
-- time graph if load data from different batches
+- time graph if load data from different batches: for degradation data, add button to export only this graph, so can make a session where I can add regularly new data and export directly the updated evolution graph. 
+different colors for different cells, but recognise same cell from different day of meas
 
-
-- when use the load session, mgg graph is not usable but no error
+- exception with the default group empty => just remove the default group, annoying to fix...
 
 """
 #%%############# Global variable definition
@@ -976,8 +974,12 @@ class IVApp(Toplevel):
                         valstot=[]
                         
                         for item in names:
-                            DATAgroupforexport.append([item,"RevEff"]+[i["RevEff"] for i in grouplistdict if i["Group"]==item and "RevEff" in i][0])
-                            DATAgroupforexport.append([item,"ForEff"]+[i["ForEff"] for i in grouplistdict if i["Group"]==item and "ForEff" in i][0])
+                            d=[item,"RevEff"]+[i["RevEff"] for i in grouplistdict if i["Group"]==item and "RevEff" in i]
+                            if d!=[]:
+                                DATAgroupforexport.append(d[0])
+                            d=[item,"ForEff"]+[i["ForEff"] for i in grouplistdict if i["Group"]==item and "ForEff" in i]
+                            if d!=[]:
+                                DATAgroupforexport.append(d[0])
                         DATAgroupforexport=map(list, six.moves.zip_longest(*DATAgroupforexport, fillvalue=' '))
         
                         Rev=[]
@@ -985,17 +987,23 @@ class IVApp(Toplevel):
                         namelist=[]
 #                        print(names)
                         for i in range(len(names)):
-                             if valsRev[i][0]!=[]:
-                                 Rev.append(valsRev[i][0])
-                             else:
-                                 Rev.append([])
-                             if valsFor[i][0]!=[]:
-                                 Forw.append(valsFor[i][0])
-                             else:
-                                 Forw.append([])
-                             if valsRev[i][0]!=[] or valsFor[i][0]!=[]:
-                                 valstot.append(valsRev[i][0]+valsFor[i][0])
-                                 namelist.append(names[i])
+                             if valsRev!=[]:
+                                 if valsRev[i]!=[]:
+                                     if valsRev[i][0]!=[]:
+                                         Rev.append(valsRev[i][0])
+                                     else:
+                                         Rev.append([])
+                             if valsFor!=[]:
+                                 if valsFor[i]!=[]:
+                                     if valsFor[i][0]!=[]:
+                                         Forw.append(valsFor[i][0])
+                                     else:
+                                         Forw.append([])
+                             if valsRev!=[] or valsFor!=[]: 
+                                 if valsRev[i]!=[] or valsFor[i]!=[]: 
+                                     if valsRev[i][0]!=[] or valsFor[i][0]!=[]:
+                                         valstot.append(valsRev[i][0]+valsFor[i][0])
+                                         namelist.append(names[i])
 #                        print(namelist)  
                         
                         if self.boxplot.get()==1:
@@ -2099,9 +2107,9 @@ class IVApp(Toplevel):
                     for tick in Rscsubfig.get_xticklabels():
                         tick.set_rotation(self.rotationGroupGraph.get())
                 
-                    
-                self.GroupStatfig.annotate('Red/Orange=reverse; Blue/Lightblue=forward', xy=(0.7,1.05), xycoords='axes fraction', fontsize=7,
-                            horizontalalignment='right', verticalalignment='bottom')
+                if self.GroupChoice.get()!="Voc" and self.GroupChoice.get()!="FF":    
+                    self.GroupStatfig.annotate('Red/Orange=reverse; Blue/Lightblue=forward', xy=(0.7,1.05), xycoords='axes fraction', fontsize=7,
+                                horizontalalignment='right', verticalalignment='bottom')
     
                 plt.gcf().canvas.draw()
 #        except:
@@ -5493,7 +5501,7 @@ class IVApp(Toplevel):
         
             
         if DATAMPP!=[]:
-            #print("il y a des mpp")
+            print("il y a des mpp")
             self.mppnames = ()
             self.mppnames=self.SampleMppNames(DATAMPP)
             self.mppmenu = tk.Menu(self.mppmenubutton, tearoff=False)
@@ -5502,8 +5510,8 @@ class IVApp(Toplevel):
             for choice in range(len(self.mppnames)):
                 self.choicesmpp[choice] = tk.IntVar(value=0)
                 self.mppmenu.add_checkbutton(label=self.mppnames[choice], variable=self.choicesmpp[choice], 
-                                     onvalue=1, offvalue=0, command = self.UpdateMppGraph)
-            self.UpdateMppGraph
+                                     onvalue=1, offvalue=0, command = self.UpdateMppGraph0)
+            self.UpdateMppGraph0()
             
         if DATA!=[]:
             titIV =0

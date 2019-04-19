@@ -16,9 +16,7 @@ from PIL import Image as ImageTk
 """
 
 
-- time: put all time curves of same serie on same graph
-    extract peak position, area and intensity, export as txt file
-- if multiple time series uploaded, then reread the txt files and generates a common plot for position and intensity of all conditions
+
 
 - export txt files with data of graphs
 
@@ -109,6 +107,7 @@ def PLSummary():
                     plt.plot(DATA[key][key2][key3][0],DATA[key][key2][key3][1],label=key2+'_'+key3)
             plt.xlabel('Wavelength (nm)')
             plt.ylabel('PL intensity (-)')
+            plt.title(key)
             plt.legend(loc='lower right', bbox_to_anchor=(1.2, 0.5))
             plt.savefig(key+'.png',dpi=300)
             plt.close()
@@ -186,6 +185,7 @@ def PLSummary():
                 plt.text(minX,maxY,tottime, fontsize=8)      
                 plt.xlabel('Wavelength (nm)')
                 plt.ylabel('PL intensity (-)')
+                plt.title(key+key3+'_time')
                 plt.legend(loc='lower right')
                 plt.savefig(key+key3+'_time.png',dpi=300)
                 plt.close()
@@ -202,6 +202,7 @@ def PLSummary():
                 plt.plot(x,positions)
                 plt.xlabel('Time (s)')
                 plt.ylabel('Wavelength (nm)')
+                plt.title(key+key3+'_timePositions')
                 plt.savefig(key+key3+'_timePositions.png',dpi=300)
                 plt.close()
                 

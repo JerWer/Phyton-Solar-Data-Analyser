@@ -45,6 +45,7 @@ TODOLIST
 - legend, change color of plots... similar to IVapp
 
 
+
 """
 #%%
 LARGE_FONT= ("Verdana", 12)
@@ -127,7 +128,7 @@ class XRDApp(Toplevel):
         Toplevel.__init__(self, *args, **kwargs)
         Toplevel.wm_title(self, "XRDApp")
         Toplevel.config(self,background="white")
-        self.wm_geometry("650x650")
+        self.wm_geometry("700x650")
         center(self)
         self.initUI()
 
@@ -174,7 +175,7 @@ class XRDApp(Toplevel):
         self.shiftYval.set(0)
         self.ylabel = IntVar()
         Checkbutton(frame211,text="noylab",variable=self.ylabel, command = lambda: self.updateXRDgraph(0),
-                           onvalue=1,offvalue=0,height=1, width=3, fg='black',background='lightgrey').pack(side=tk.LEFT,expand=1)
+                           onvalue=1,offvalue=0,height=1, width=4, fg='black',background='lightgrey').pack(side=tk.LEFT,expand=1)
         self.changetoQ = IntVar()
         Checkbutton(frame211,text="q?",variable=self.changetoQ, command = lambda: self.updateXRDgraph(0),
                            onvalue=1,offvalue=0,height=1, width=3, fg='black',background='lightgrey').pack(side=tk.LEFT,expand=1)
@@ -690,12 +691,18 @@ class XRDApp(Toplevel):
     #                                Peakheight=max(y0)-baselineheightatmaxpeak
                                     Peakheight=max(y0)-baselineheightatmaxpeak
                                     center=x[indexes[item1]]
+                                    f = interp1d(x0, y0-base, kind='cubic')
+                                    x2 = lambda x: f(x)
+                                    peakarea = integrate.quad(x2,x0[0],x0[-1])[0]
+
     #                                print(nbofpoints)
     #                                print(baselineheightatmaxpeak)
                                     tempdat["Position"]=center
                                     tempdat["PositionQ"]=tth_to_q(center)
                                     tempdat["FWHM"]=FWHM
                                     tempdat["Intensity"]=Peakheight
+                                    tempdat["PeakArea"]=peakarea
+                                    tempdat["IntBreadth"]=peakarea/Peakheight
                                     tempdat["PeakName"]=''
                                     
                                     appendcheck=1
@@ -881,13 +888,13 @@ class XRDApp(Toplevel):
         self.fig1.savefig(f, dpi=300) 
 
         
-        testdata=['name\tPeakName\tPosition\tIntensity\tFWHM\n']
+        testdata=['name\tPeakName\tPosition\tPositionQ\tIntensity\tFWHM\tPeakArea\tIntegralBreadth\n']
         
         samplestakenforplot = [self.listboxsamples.get(idx) for idx in self.listboxsamples.curselection()]
         if samplestakenforplot!=[]:
             for key in samplestakenforplot:
                 for item in DATA[key][4]:
-                    testdata.append(key +'\t'+ item["PeakName"]+'\t'+str("%.2f"%item["Position"])+'\t'+str("%.2f"%item["Intensity"])+'\t'+str("%.2f"%item["FWHM"])+'\n')
+                    testdata.append(key +'\t'+ item["PeakName"]+'\t'+str("%.2f"%item["Position"])+'\t'+str("%.2f"%item["PositionQ"])+'\t'+str("%.2f"%item["Intensity"])+'\t'+str("%.2f"%item["FWHM"])+'\t'+str("%.2f"%item["PeakArea"])+'\t'+str("%.2f"%item["IntBreadth"])+'\n')
             
         file = open(f[:-4]+"PeakDat.txt",'w', encoding='ISO-8859-1')
         file.writelines("%s" % item for item in testdata)
@@ -919,9 +926,9 @@ class XRDApp(Toplevel):
         if samplestakenforplot!=[]:
             for key in samplestakenforplot:
                 for item in DATA[key][4]:
-                    testdata.append([key,item["PeakName"],"%.2f"%item["Position"],"%.2f"%item["PositionQ"],"%.2f"%item["Intensity"],"%.2f"%item["FWHM"]])
+                    testdata.append([key,item["PeakName"],"%.2f"%item["Position"],"%.2f"%item["PositionQ"],"%.2f"%item["Intensity"],"%.2f"%item["FWHM"],"%.2f"%item["PeakArea"],"%.2f"%item["IntBreadth"]])
             
-        self.tableheaders=('name','PeakName','Position 2\u0398','Position q','Intensity','FWHM')
+        self.tableheaders=('name','PeakName','Position 2\u0398','Position q','Intensity','FWHM','PeakArea','IntBreadth')
                     
         # Set the treeview
         self.tree = Treeview(self.frame41, columns=self.tableheaders, show="headings")

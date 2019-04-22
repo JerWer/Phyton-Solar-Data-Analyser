@@ -63,10 +63,6 @@ TODOLIST
 
 - time graph if load data from different batches: for degradation data, add button to export only this graph, so can make a session where I can add regularly new data and export directly the updated evolution graph. 
 different colors for different cells, but recognise same cell from different day of meas
-full dots for rev, empty dots for forward
-modifiable legends color and name, same as iv
-
-
 
 - exception with the default group empty => just remove the default group, annoying to fix...
 
@@ -164,69 +160,28 @@ class IVApp(Toplevel):
         self.superframe.bind("<Configure>", self.onFrameConfigure)
         
         ############ the figures #################
-        self.fig = plt.figure(figsize=(18, 23))
+        self.fig = plt.figure(figsize=(18, 15))
         self.fig.patch.set_facecolor('white')
         canvas = FigureCanvasTkAgg(self.fig, self.superframe)
         canvas.get_tk_widget().grid(row=0,column=0,rowspan=80,columnspan=100)
-        self.IVsubfig = self.fig.add_subplot(531)        
-        self.mppsubfig = self.fig.add_subplot(533) 
-        self.GroupStatfig = self.fig.add_subplot(537)  
-        self.TimeEvolfig = self.fig.add_subplot(5,3,13) 
+        self.IVsubfig = self.fig.add_subplot(331)        
+        self.mppsubfig = self.fig.add_subplot(333) 
+        self.GroupStatfig = self.fig.add_subplot(337)  
          
         label = tk.Label(self.superframe, text="IV & MPPT DATA Analyzer", bg="black",fg="white")
         label.grid(row = 0, column = 0, rowspan = 2, columnspan = 100, sticky = "wens")
               
         self.Frame2 = Frame(self.superframe, bg="white")
-        self.Frame2.grid(row = 23, column = 0, rowspan = 10, columnspan = 100, sticky = "wens") 
+        self.Frame2.grid(row = 34, column = 0, rowspan = 15, columnspan = 100, sticky = "wens") 
 
-        for r in range(10):
+        for r in range(15):
             self.Frame2.rowconfigure(r, weight=1)    
         for c in range(100):
             self.Frame2.columnconfigure(c, weight=1)
                
-        #### TimeEvol ####
-        columnpos = 25
-        rowpos = 52
-        
-        self.saveTimegraph = Button(self.superframe, text="Save graph",
-                            command = self.GraphTimesave_as)
-        self.saveTimegraph.grid(row=rowpos+4, column=columnpos-15, columnspan=6)
-        
-        self.updateTimegraph = Button(self.superframe, text="Update graph",
-                            command = self.UpdateTimeGraph)
-        self.updateTimegraph.grid(row=rowpos+5, column=columnpos-15, columnspan=6)
-        
-        self.changeTimelegend = Button(self.superframe, text="change legend",
-                            command = self.ChangeLegendTimegraph)
-        self.changeTimelegend.grid(row=rowpos+5, column=columnpos-7, columnspan=3)
-        
-        self.timeminx = tk.DoubleVar()
-        entry=Entry(self.superframe, textvariable=self.timeminx,width=5)
-        entry.grid(row=rowpos+4,column=columnpos,columnspan=1)
-        tk.Label(self.superframe, text="Min X",fg='black',background='white').grid(row=rowpos+5,column=columnpos,columnspan=1)
-        self.timeminx.set(0)
-        self.timemaxx = tk.DoubleVar()
-        Entry(self.superframe, textvariable=self.timemaxx,width=5).grid(row=rowpos+4,column=columnpos+1,columnspan=1)
-        tk.Label(self.superframe, text="Max X",fg='black',background='white').grid(row=rowpos+5,column=columnpos+1,columnspan=1)
-        self.timemaxx.set(1) 
-        self.timeminy = tk.DoubleVar()
-        Entry(self.superframe, textvariable=self.timeminy,width=5).grid(row=rowpos+4,column=columnpos+2,columnspan=1)
-        tk.Label(self.superframe, text="Min Y",fg='black',background='white').grid(row=rowpos+5,column=columnpos+2,columnspan=1)
-        self.timeminy.set(0)
-        self.timemaxy = tk.DoubleVar()
-        Entry(self.superframe, textvariable=self.timemaxy,width=5).grid(row=rowpos+4,column=columnpos+3,columnspan=1)
-        tk.Label(self.superframe, text="Max Y",fg='black',background='white').grid(row=rowpos+5,column=columnpos+3,columnspan=1)
-        self.timemaxy.set(1)
-        
-        TimeChoiceList = ["Voc","Jsc","FF", "Eff", "Roc", "Rsc","Vmpp","Jmpp","HI"]
-        self.TimeChoice=StringVar()
-        self.TimeChoice.set("Eff") # default choice
-        self.dropMenuTime = OptionMenu(self.superframe, self.TimeChoice, *TimeChoiceList, command=self.UpdateTimeGraph)
-        self.dropMenuTime.grid(row=rowpos+4, column=columnpos-9, columnspan=5)
-        
         #### Group ####
         columnpos = 8
-        rowpos = 51
+        rowpos = 49
         
         self.saveGroupgraph = Button(self.superframe, text="Save graph",
                             command = self.GraphGroupsave_as)
@@ -255,42 +210,42 @@ class IVApp(Toplevel):
         
         self.fontsizeGroupGraph = tk.DoubleVar()
         entry=Entry(self.superframe, textvariable=self.fontsizeGroupGraph,width=3)
-        entry.grid(row=rowpos,column=columnpos+19,columnspan=1)
-        tk.Label(self.superframe, text="Fontsize",fg='black',background='white').grid(row=rowpos,column=columnpos+20,columnspan=2)
+        entry.grid(row=rowpos,column=columnpos+22,columnspan=1)
+        tk.Label(self.superframe, text="Fontsize",fg='black',background='white').grid(row=rowpos,column=columnpos+23,columnspan=4)
         self.fontsizeGroupGraph.set(8)
         
         self.rotationGroupGraph = tk.DoubleVar()
         entry=Entry(self.superframe, textvariable=self.rotationGroupGraph,width=3)
-        entry.grid(row=rowpos+1,column=10,columnspan=1)
+        entry.grid(row=rowpos+2,column=8,columnspan=1)
         tk.Label(self.superframe, text="RotLab",fg='black',background='white').grid(row=rowpos+1,column=8,columnspan=2)
         self.rotationGroupGraph.set(0)
         
         self.aftermppcheck = IntVar()
         aftermppcheck=Checkbutton(self.superframe,text="aftermpp",variable=self.aftermppcheck, 
                            onvalue=1,offvalue=0,height=1, width=6, command = lambda: self.UpdateGroupGraph(1),fg='black',background='white')
-        aftermppcheck.grid(row=rowpos+1, column=13, columnspan=6)
+        aftermppcheck.grid(row=rowpos+1, column=10, columnspan=6)
 #        tk.Label(self.superframe, text="RotLab",fg='black',background='white').grid(row=rowpos+1,column=8,columnspan=2)
 
         self.grouptoplotbutton = tk.Menubutton(self.superframe, text="grouptoplot", 
                                    indicatoron=True, borderwidth=1, relief="raised")
         self.grouptoplotmenu = tk.Menu(self.grouptoplotbutton, tearoff=False)
         self.grouptoplotbutton.configure(menu=self.grouptoplotmenu)
-        self.grouptoplotbutton.grid(row=rowpos+1, column=16, columnspan=10)
+        self.grouptoplotbutton.grid(row=rowpos+1, column=17, columnspan=10)
         
         self.updategrouptoplotdropbutton()
         
         self.minYgroupgraph = tk.DoubleVar()
         entry=Entry(self.superframe, textvariable=self.minYgroupgraph,width=3)
-        entry.grid(row=rowpos+1,column=25,columnspan=1)
+        entry.grid(row=rowpos+1,column=27,columnspan=1)
         self.minYgroupgraph.set(0)
         self.maxYgroupgraph = tk.DoubleVar()
         entry=Entry(self.superframe, textvariable=self.maxYgroupgraph,width=3)
-        entry.grid(row=rowpos+1,column=26,columnspan=1)
+        entry.grid(row=rowpos+1,column=28,columnspan=1)
         self.maxYgroupgraph.set(1)
         self.minmaxgroupgraphcheck = IntVar()
         aftermppcheck=Checkbutton(self.superframe,text="Yscale",variable=self.minmaxgroupgraphcheck, 
                            onvalue=1,offvalue=0,height=1, width=6, command = lambda: self.UpdateGroupGraph(1),fg='black',background='white')
-        aftermppcheck.grid(row=rowpos+1, column=27, columnspan=3)
+        aftermppcheck.grid(row=rowpos+1, column=29, columnspan=3)
         
         #### JV ####
 
@@ -439,7 +394,7 @@ class IVApp(Toplevel):
         global DATA
         
         self.frame0 = Frame(self.superframe,bg='white')
-        self.frame0.grid(row=28,column=37,rowspan=25,columnspan=65) #,sticky='wens'
+        self.frame0.grid(row=48,column=37,rowspan=25,columnspan=65) #,sticky='wens'
         for r in range(25):
             self.frame0.rowconfigure(r, weight=1)    
         for c in range(65):
@@ -2218,10 +2173,7 @@ class IVApp(Toplevel):
                 plt.gcf().canvas.draw()
 #        except:
 #            pass
-    def UpdateTimeGraph(self):
-        global DATA
-        
-        
+    
     def UpdateIVGraph(self):
         global DATA
         global IVlegendMod
@@ -3591,25 +3543,7 @@ class IVApp(Toplevel):
         
         except:
             print("there is an exception")    
-    def GraphTimesave_as(self):
-        print("savingtimegraph")
-        f = filedialog.asksaveasfilename(defaultextension=".png", filetypes = (("graph file", "*.png"),("All Files", "*.*")))
-        extent = self.TimeEvolfig.get_window_extent().transformed(self.fig.dpi_scale_trans.inverted())
-        self.fig.savefig(f, dpi=300, bbox_inches=extent.expanded(1.5, 2), transparent=True)
-        
-#        DATAgroupforexport1=[]            
-#        for item in DATAgroupforexport:
-#            line=""
-#            for item1 in item:
-#                line=line+str(item1)+"\t"
-#            line=line[:-1]+"\n"
-#            DATAgroupforexport1.append(line)
-#        
-#        file = open(str(f[:-4]+"_"+self.GroupChoice.get()+"dat.txt"),'w', encoding='ISO-8859-1')
-#        file.writelines("%s" % item for item in DATAgroupforexport1)
-#        file.close()
-        
-        
+    
     def GraphGroupsave_as(self):
         global DATAgroupforexport
         try:
@@ -5838,9 +5772,7 @@ class IVApp(Toplevel):
         self.UpdateIVLegMod()
         self.reorderwindow.destroy()
             
-    def ChangeLegendTimegraph(self):
-        print("changingtimelegend")   
-        
+            
     def ChangeLegendIVgraph(self):
         
         if self.CheckIVLegend.get()==1:

@@ -2,8 +2,13 @@
 
 import os, datetime
 
+#import matplotlib
+#matplotlib.use("TkAgg")
+import matplotlib as mpl
 import matplotlib.pyplot as plt
+import matplotlib.backends.tkagg as tkagg
 #from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
+#from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvasTkAgg
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk as NavigationToolbar2TkAgg
 from matplotlib import collections as matcoll
@@ -145,6 +150,7 @@ class XRDApp(Toplevel):
         
         label = tk.Label(self.canvas0, text="XRD DATA Analyzer", font=LARGE_FONT, bg="black",fg="white")
         label.pack(fill=tk.X,expand=0)
+
         
         frame1=Frame(self.canvas0,borderwidth=0,  bg="white")
         frame1.pack(fill=tk.BOTH,expand=1)

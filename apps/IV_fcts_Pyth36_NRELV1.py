@@ -34,6 +34,8 @@ import darktolight as DtoL
 import os.path
 import shutil
 import sqlite3
+from dateutil import parser
+
 
 """
 TODOLIST
@@ -70,11 +72,14 @@ different colors for different cells, but recognise same cell from different day
 full dots for rev, empty dots for forward
 modifiable legends color and name, same as iv
 normalize by single or by all, 
+add time plot to autoanalysis if span over 5hrs
 
 
 - exception with the default group empty => just remove the default group, annoying to fix...
 
 - exception while save session: can't pickle _tkinter.tkapp objects, when pickle.dump(listofanswer, open('listofanswer.pkl','wb'))
+
+- add HI group plot to autoanalysis
 
 """
 #%%############# Global variable definition
@@ -2245,6 +2250,24 @@ class IVApp(Toplevel):
     def UpdateTimeGraph(self):
         global DATA, takenforplotTime
         print(takenforplotTime)
+        #"MeasDayTime2"
+        
+        #sort by cell and by scandirection
+        
+        #order by time, and substract the oldest measurement from the other, then transform all in hours
+        
+        #normalization of y axis
+        
+#        from dateutil import parser
+#        date = parser.parse("Wed, Apr 24, 2019   10:49:04 AM")
+#        date2=parser.parse("Wed, Apr 25, 2019   10:50:06 AM")
+#        print(date)
+#        print(date2)
+#        
+#        hours=divmod((date2-date).total_seconds(), 3600)
+#        minutes=divmod(hours[1],60)
+#        seconds=divmod(minutes[1],1)
+#        print(hours[0]+minutes[1]/60+seconds[1]/3600)
         
     def UpdateIVGraph(self):
         global DATA
@@ -2802,6 +2825,7 @@ class IVApp(Toplevel):
                 
                 for item in range(len(filerawdata)):
                     if "Date/Time:" in filerawdata[item]:
+                        partdict["MeasDayTime2"]=parser.parse(filerawdata[item][11:-1])
                         partdict["MeasDayTime"]=filerawdata[item][11:-1]
 #                        print(partdict["MeasDayTime"].split(' ')[-2])
                         break

@@ -58,6 +58,8 @@ TODOLIST
 
 - Vmpp is rounded somewhere... ??
 
+- bring back DtoL and changeArea
+
 
 - histogram graph for the big4 parameters VS number of devices. with overlayed gaussian or other fit curve
 similar to groupgraph, can select count only reverse, or only forward; only best measurement of each cell. or average of each cell?
@@ -67,7 +69,7 @@ similar to groupgraph, can select count only reverse, or only forward; only best
 different colors for different cells, but recognise same cell from different day of meas
 full dots for rev, empty dots for forward
 modifiable legends color and name, same as iv
-
+normalize by single or by all, 
 
 
 - exception with the default group empty => just remove the default group, annoying to fix...
@@ -82,6 +84,7 @@ DATAmppforexport=[]
 DATAgroupforexport=[]
 takenforplot=[]
 takenforplotmpp=[]
+takenforplotTime=[]
 
 DATAMPP = []
 DATAdark = []
@@ -455,16 +458,18 @@ class IVApp(Toplevel):
         self.savesession_button.grid(row = 0, column = 5, columnspan=1)
         self.ExportAll = Button(self.frame0, text="DB & AutoAnalysis", command = self.AskforRefcells)
         self.ExportAll.grid(row=0, column=6, columnspan=1,rowspan=1)
-        self.Darktolight = Button(self.frame0, text="DtoL.",command = self.darktolightchange,fg='black')
-        self.Darktolight.grid(row=0, column=8, columnspan=1,rowspan=1)
-        self.changeArea = Button(self.frame0, text="ChangeArea",command = self.changecellarea,fg='black')
-        self.changeArea.grid(row=0, column=11, columnspan=1,rowspan=1)
+#        self.Darktolight = Button(self.frame0, text="DtoL.",command = self.darktolightchange,fg='black')
+#        self.Darktolight.grid(row=0, column=8, columnspan=1,rowspan=1)
+#        self.changeArea = Button(self.frame0, text="ChangeArea",command = self.changecellarea,fg='black')
+#        self.changeArea.grid(row=0, column=11, columnspan=1,rowspan=1)
         self.deletetabelem = Button(self.frame0, text = "Delete table elements", command = self.deletedatatreeview)
         self.deletetabelem.grid(row = 0, column = 1, columnspan=1)
         self.plotfromtable = Button(self.frame0, text="Plot",command = self.plottingfromTable,fg='black')
         self.plotfromtable.grid(row=0, column=9, columnspan=1,rowspan=1)
         self.groupbutton = Button(self.frame0, text="Group",command = self.groupfromTable,fg='black')
         self.groupbutton.grid(row=0, column=10, columnspan=1,rowspan=1)
+        self.plotTimefromtable = Button(self.frame0, text="PlotTime",command = self.plottingTimefromTable,fg='black')
+        self.plotTimefromtable.grid(row=0, column=11, columnspan=1,rowspan=1)
 
         self.frame01 = Frame(self.frame0,bg='black')
         self.frame01.grid(row=1,column=0,rowspan=25,columnspan=65)
@@ -2221,8 +2226,8 @@ class IVApp(Toplevel):
 #        except:
 #            pass
     def UpdateTimeGraph(self):
-        global DATA
-        
+        global DATA, takenforplotTime
+        print(takenforplotTime)
         
     def UpdateIVGraph(self):
         global DATA
@@ -6283,6 +6288,14 @@ class IVApp(Toplevel):
             tree.move(item[1], '', ix)
         # switch the heading so it will sort in the opposite direction
         tree.heading(col,text=col.capitalize(), command=lambda _col_=col: self.sortby(tree, _col_, int(not descending)))
+    
+    
+    def plottingTimefromTable(self):
+        global takenforplotTime
+        totake=self.treeview.selection()
+        takenforplotTime=[str(self.treeview.item(item)["values"][1]) for item in totake]
+        
+        self.UpdateTimeGraph()
     
     def plottingfromTable(self):
         global takenforplot

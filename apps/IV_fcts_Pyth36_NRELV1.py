@@ -74,6 +74,8 @@ normalize by single or by all,
 
 - exception with the default group empty => just remove the default group, annoying to fix...
 
+- exception while save session: can't pickle _tkinter.tkapp objects, when pickle.dump(listofanswer, open('listofanswer.pkl','wb'))
+
 """
 #%%############# Global variable definition
 testdata = []
@@ -193,109 +195,114 @@ class IVApp(Toplevel):
         columnpos = 25
         rowpos = 52
         
-        self.saveTimegraph = Button(self.superframe, text="Save graph",
+        self.Frame3 = Frame(self.superframe, bg="white")
+        self.Frame3.grid(row = 55, column = 8, rowspan = 5, columnspan = 30)
+        
+        self.saveTimegraph = Button(self.Frame3, text="Save graph",
                             command = self.GraphTimesave_as)
-        self.saveTimegraph.grid(row=rowpos+4, column=columnpos-15, columnspan=6)
-        
-        self.updateTimegraph = Button(self.superframe, text="Update graph",
-                            command = self.UpdateTimeGraph)
-        self.updateTimegraph.grid(row=rowpos+5, column=columnpos-15, columnspan=6)
-        
-        self.changeTimelegend = Button(self.superframe, text="change legend",
-                            command = self.ChangeLegendTimegraph)
-        self.changeTimelegend.grid(row=rowpos+5, column=columnpos-7, columnspan=3)
-        
-        self.timeminx = tk.DoubleVar()
-        entry=Entry(self.superframe, textvariable=self.timeminx,width=5)
-        entry.grid(row=rowpos+4,column=columnpos,columnspan=1)
-        tk.Label(self.superframe, text="Min X",fg='black',background='white').grid(row=rowpos+5,column=columnpos,columnspan=1)
-        self.timeminx.set(0)
-        self.timemaxx = tk.DoubleVar()
-        Entry(self.superframe, textvariable=self.timemaxx,width=5).grid(row=rowpos+4,column=columnpos+1,columnspan=1)
-        tk.Label(self.superframe, text="Max X",fg='black',background='white').grid(row=rowpos+5,column=columnpos+1,columnspan=1)
-        self.timemaxx.set(1) 
-        self.timeminy = tk.DoubleVar()
-        Entry(self.superframe, textvariable=self.timeminy,width=5).grid(row=rowpos+4,column=columnpos+2,columnspan=1)
-        tk.Label(self.superframe, text="Min Y",fg='black',background='white').grid(row=rowpos+5,column=columnpos+2,columnspan=1)
-        self.timeminy.set(0)
-        self.timemaxy = tk.DoubleVar()
-        Entry(self.superframe, textvariable=self.timemaxy,width=5).grid(row=rowpos+4,column=columnpos+3,columnspan=1)
-        tk.Label(self.superframe, text="Max Y",fg='black',background='white').grid(row=rowpos+5,column=columnpos+3,columnspan=1)
-        self.timemaxy.set(1)
-        
+        self.saveTimegraph.grid(row=0, column=0, columnspan=6)
+
         TimeChoiceList = ["Voc","Jsc","FF", "Eff", "Roc", "Rsc","Vmpp","Jmpp","HI"]
         self.TimeChoice=StringVar()
         self.TimeChoice.set("Eff") # default choice
-        self.dropMenuTime = OptionMenu(self.superframe, self.TimeChoice, *TimeChoiceList, command=self.UpdateTimeGraph)
-        self.dropMenuTime.grid(row=rowpos+4, column=columnpos-9, columnspan=5)
+        self.dropMenuTime = OptionMenu(self.Frame3, self.TimeChoice, *TimeChoiceList, command=self.UpdateTimeGraph)
+        self.dropMenuTime.grid(row=0, column=7, columnspan=5)
+        
+        self.updateTimegraph = Button(self.Frame3, text="Update graph",command = self.UpdateTimeGraph)
+        self.updateTimegraph.grid(row=1, column=0, columnspan=6)
+        
+        self.changeTimelegend = Button(self.Frame3, text="change legend",command = self.ChangeLegendTimegraph)
+        self.changeTimelegend.grid(row=1, column=7, columnspan=5)
+        
+        self.timeminx = tk.DoubleVar()
+        entry=Entry(self.Frame3, textvariable=self.timeminx,width=5).grid(row=0,column=13,columnspan=1)
+        tk.Label(self.Frame3, text="Min X",fg='black',background='white').grid(row=1,column=13,columnspan=1)
+        self.timeminx.set(0)
+        self.timemaxx = tk.DoubleVar()
+        Entry(self.Frame3, textvariable=self.timemaxx,width=5).grid(row=0,column=14,columnspan=1)
+        tk.Label(self.Frame3, text="Max X",fg='black',background='white').grid(row=1,column=14,columnspan=1)
+        self.timemaxx.set(1) 
+        self.timeminy = tk.DoubleVar()
+        Entry(self.Frame3, textvariable=self.timeminy,width=5).grid(row=0,column=15,columnspan=1)
+        tk.Label(self.Frame3, text="Min Y",fg='black',background='white').grid(row=1,column=15,columnspan=1)
+        self.timeminy.set(0)
+        self.timemaxy = tk.DoubleVar()
+        Entry(self.Frame3, textvariable=self.timemaxy,width=5).grid(row=0,column=16,columnspan=1)
+        tk.Label(self.Frame3, text="Max Y",fg='black',background='white').grid(row=1,column=16,columnspan=1)
+        self.timemaxy.set(1)
+        
+
         
         #### Group ####
         columnpos = 8
         rowpos = 51
         
-        self.saveGroupgraph = Button(self.superframe, text="Save graph",
+        self.Frame4 = Frame(self.superframe, bg="white")
+        self.Frame4.grid(row = 47, column = 8, rowspan = 5, columnspan = 30)
+        
+        self.saveGroupgraph = Button(self.Frame4, text="Save graph",
                             command = self.GraphGroupsave_as)
-        self.saveGroupgraph.grid(row=rowpos, column=8, columnspan=5)
+        self.saveGroupgraph.grid(row=0, column=0, columnspan=5)
         
         GroupChoiceList = ["Voc","Jsc","FF", "Eff", "Roc", "Rsc","Vmpp","Jmpp","HI"]
         self.GroupChoice=StringVar()
         self.GroupChoice.set("Eff") # default choice
-        self.dropMenuGroup = OptionMenu(self.superframe, self.GroupChoice, *GroupChoiceList, command=self.UpdateGroupGraph)
-        self.dropMenuGroup.grid(row=rowpos, column=columnpos+5, columnspan=5)
+        self.dropMenuGroup = OptionMenu(self.Frame4, self.GroupChoice, *GroupChoiceList, command=self.UpdateGroupGraph)
+        self.dropMenuGroup.grid(row=0, column=6, columnspan=5)
         
         self.Big4 = IntVar()
-        Big4=Checkbutton(self.superframe,text="Big4",variable=self.Big4, 
+        Big4=Checkbutton(self.Frame4,text="Big4",variable=self.Big4, 
                            onvalue=1,offvalue=0,height=1, width=3, command = (),fg='black',background='white')
-        Big4.grid(row=rowpos, column=columnpos+10, columnspan=3)
+        Big4.grid(row=0, column=12, columnspan=3)
         
         self.RF = IntVar()
-        RF=Checkbutton(self.superframe,text="RF",variable=self.RF, 
+        RF=Checkbutton(self.Frame4,text="RF",variable=self.RF, 
                            onvalue=1,offvalue=0,height=1, width=3, command = lambda: self.UpdateGroupGraph(1),fg='black',background='white')
-        RF.grid(row=rowpos, column=columnpos+14, columnspan=3)
+        RF.grid(row=0, column=15, columnspan=3)
         self.boxplot = IntVar()
-        boxplot=Checkbutton(self.superframe,text="box",variable=self.boxplot, 
+        boxplot=Checkbutton(self.Frame4,text="box",variable=self.boxplot, 
                            onvalue=1,offvalue=0,height=1, width=3, command = lambda: self.UpdateGroupGraph(1),fg='black',background='white')
-        boxplot.grid(row=rowpos, column=columnpos+17, columnspan=3)
+        boxplot.grid(row=0, column=18, columnspan=4)
         self.boxplot.set(0)
         
         self.fontsizeGroupGraph = tk.DoubleVar()
-        entry=Entry(self.superframe, textvariable=self.fontsizeGroupGraph,width=3)
-        entry.grid(row=rowpos,column=columnpos+19,columnspan=1)
-        tk.Label(self.superframe, text="Fontsize",fg='black',background='white').grid(row=rowpos,column=columnpos+20,columnspan=2)
+        entry=Entry(self.Frame4, textvariable=self.fontsizeGroupGraph,width=3)
+        entry.grid(row=0,column=24,columnspan=1)
+        tk.Label(self.Frame4, text="Fontsize",fg='black',background='white').grid(row=0,column=22,columnspan=2)
         self.fontsizeGroupGraph.set(8)
         
         self.rotationGroupGraph = tk.DoubleVar()
-        entry=Entry(self.superframe, textvariable=self.rotationGroupGraph,width=3)
-        entry.grid(row=rowpos+1,column=10,columnspan=1)
-        tk.Label(self.superframe, text="RotLab",fg='black',background='white').grid(row=rowpos+1,column=8,columnspan=2)
+        entry=Entry(self.Frame4, textvariable=self.rotationGroupGraph,width=3)
+        entry.grid(row=1,column=3,columnspan=3)
+        tk.Label(self.Frame4, text="RotLab",fg='black',background='white').grid(row=1,column=0,columnspan=2)
         self.rotationGroupGraph.set(0)
         
         self.aftermppcheck = IntVar()
-        aftermppcheck=Checkbutton(self.superframe,text="aftermpp",variable=self.aftermppcheck, 
+        aftermppcheck=Checkbutton(self.Frame4,text="aftermpp",variable=self.aftermppcheck, 
                            onvalue=1,offvalue=0,height=1, width=6, command = lambda: self.UpdateGroupGraph(1),fg='black',background='white')
-        aftermppcheck.grid(row=rowpos+1, column=13, columnspan=6)
+        aftermppcheck.grid(row=1, column=6, columnspan=5)
 #        tk.Label(self.superframe, text="RotLab",fg='black',background='white').grid(row=rowpos+1,column=8,columnspan=2)
 
-        self.grouptoplotbutton = tk.Menubutton(self.superframe, text="grouptoplot", 
+        self.grouptoplotbutton = tk.Menubutton(self.Frame4, text="grouptoplot", 
                                    indicatoron=True, borderwidth=1, relief="raised")
         self.grouptoplotmenu = tk.Menu(self.grouptoplotbutton, tearoff=False)
         self.grouptoplotbutton.configure(menu=self.grouptoplotmenu)
-        self.grouptoplotbutton.grid(row=rowpos+1, column=16, columnspan=10)
+        self.grouptoplotbutton.grid(row=1, column=12, columnspan=6)
         
         self.updategrouptoplotdropbutton()
         
         self.minYgroupgraph = tk.DoubleVar()
-        entry=Entry(self.superframe, textvariable=self.minYgroupgraph,width=3)
-        entry.grid(row=rowpos+1,column=25,columnspan=1)
+        entry=Entry(self.Frame4, textvariable=self.minYgroupgraph,width=3)
+        entry.grid(row=1,column=18,columnspan=2)
         self.minYgroupgraph.set(0)
         self.maxYgroupgraph = tk.DoubleVar()
-        entry=Entry(self.superframe, textvariable=self.maxYgroupgraph,width=3)
-        entry.grid(row=rowpos+1,column=26,columnspan=1)
+        entry=Entry(self.Frame4, textvariable=self.maxYgroupgraph,width=3)
+        entry.grid(row=1,column=20,columnspan=2)
         self.maxYgroupgraph.set(1)
         self.minmaxgroupgraphcheck = IntVar()
-        aftermppcheck=Checkbutton(self.superframe,text="Yscale",variable=self.minmaxgroupgraphcheck, 
+        aftermppcheck=Checkbutton(self.Frame4,text="Yscale",variable=self.minmaxgroupgraphcheck, 
                            onvalue=1,offvalue=0,height=1, width=6, command = lambda: self.UpdateGroupGraph(1),fg='black',background='white')
-        aftermppcheck.grid(row=rowpos+1, column=27, columnspan=3)
+        aftermppcheck.grid(row=1, column=22, columnspan=3)
         
         #### JV ####
 
@@ -1239,7 +1246,9 @@ class IVApp(Toplevel):
                                 
                     if self.boxplot.get()==0:
                         span=range(1,len(namelist)+1)
-                        plt.xticks(span,namelist)
+#                        plt.xticks(span,namelist)
+                        Effsubfig.set_xticks(span)
+                        Effsubfig.set_xticklabels(namelist)
                         Effsubfig.set_xlim([0.5,span[-1]+0.5])
                     
                     if self.minmaxgroupgraphcheck.get()==1:
@@ -1383,7 +1392,8 @@ class IVApp(Toplevel):
                                 
                     if self.boxplot.get()==0:
                         span=range(1,len(namelist)+1)
-                        plt.xticks(span,namelist)
+                        Vocsubfig.set_xticks(span)
+                        Vocsubfig.set_xticklabels(namelist)
                         Vocsubfig.set_xlim([0.5,span[-1]+0.5])
                         
                     if self.minmaxgroupgraphcheck.get()==1:
@@ -1512,7 +1522,8 @@ class IVApp(Toplevel):
                         
                     if self.boxplot.get()==0:
                         span=range(1,len(namelist)+1)
-                        plt.xticks(span,namelist)
+                        Jscsubfig.set_xticks(span)
+                        Jscsubfig.set_xticklabels(namelist)
                         Jscsubfig.set_xlim([0.5,span[-1]+0.5])
                         
                     if self.minmaxgroupgraphcheck.get()==1:
@@ -1639,7 +1650,8 @@ class IVApp(Toplevel):
                                 
                     if self.boxplot.get()==0:
                         span=range(1,len(namelist)+1)
-                        plt.xticks(span,namelist)
+                        FFsubfig.set_xticks(span)
+                        FFsubfig.set_xticklabels(namelist)
                         FFsubfig.set_xlim([0.5,span[-1]+0.5])
                         
                     if self.minmaxgroupgraphcheck.get()==1:
@@ -1766,7 +1778,8 @@ class IVApp(Toplevel):
                                 Rocsubfig.scatter(x,y,s=15,color='lightblue', alpha=0.5)  
                     if self.boxplot.get()==0:
                         span=range(1,len(namelist)+1)
-                        plt.xticks(span,namelist)
+                        Rocsubfig.set_xticks(span)
+                        Rocsubfig.set_xticklabels(namelist)
                         Rocsubfig.set_xlim([0.5,span[-1]+0.5])
                     
                     if self.minmaxgroupgraphcheck.get()==1:
@@ -1893,7 +1906,8 @@ class IVApp(Toplevel):
                                 Rscsubfig.scatter(x,y,s=15,color='lightblue', alpha=0.5) 
                     if self.boxplot.get()==0:
                         span=range(1,len(namelist)+1)
-                        plt.xticks(span,namelist)
+                        Rscsubfig.set_xticks(span)
+                        Rscsubfig.set_xticklabels(namelist)
                         Rscsubfig.set_xlim([0.5,span[-1]+0.5])
                     
                     if self.minmaxgroupgraphcheck.get()==1:
@@ -2019,7 +2033,8 @@ class IVApp(Toplevel):
                                 Rscsubfig.scatter(x,y,s=15,color='lightblue', alpha=0.5)  
                     if self.boxplot.get()==0:
                         span=range(1,len(namelist)+1)
-                        plt.xticks(span,namelist)
+                        Rscsubfig.set_xticks(span)
+                        Rscsubfig.set_xticklabels(namelist)
                         Rscsubfig.set_xlim([0.5,span[-1]+0.5])
                     if self.minmaxgroupgraphcheck.get()==1:
                         Rscsubfig.set_ylim([self.minYgroupgraph.get(),self.maxYgroupgraph.get()])
@@ -2144,7 +2159,8 @@ class IVApp(Toplevel):
                                 Rscsubfig.scatter(x,y,s=15,color='lightblue', alpha=0.5) 
                     if self.boxplot.get()==0:
                         span=range(1,len(namelist)+1)
-                        plt.xticks(span,namelist)
+                        Rscsubfig.set_xticks(span)
+                        Rscsubfig.set_xticklabels(namelist)
                         Rscsubfig.set_xlim([0.5,span[-1]+0.5])
                     if self.minmaxgroupgraphcheck.get()==1:
                         Rscsubfig.set_ylim([self.minYgroupgraph.get(),self.maxYgroupgraph.get()])
@@ -2206,7 +2222,8 @@ class IVApp(Toplevel):
                     
                     if self.boxplot.get()==0:
                         span=range(1,len(namelist)+1)
-                        plt.xticks(span,namelist)
+                        Rscsubfig.set_xticks(span)
+                        Rscsubfig.set_xticklabels(namelist)
                         Rscsubfig.set_xlim([0.5,span[-1]+0.5])
                     if self.minmaxgroupgraphcheck.get()==1:
                         Rscsubfig.set_ylim([self.minYgroupgraph.get(),self.maxYgroupgraph.get()])

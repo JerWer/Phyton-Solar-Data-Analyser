@@ -213,7 +213,7 @@ class IVApp(Toplevel):
         self.dropMenuTime = OptionMenu(self.Frame3, self.TimeChoice, *TimeChoiceList, command=self.UpdateTimeGraph)
         self.dropMenuTime.grid(row=0, column=7, columnspan=5)
         
-        self.updateTimegraph = Button(self.Frame3, text="Update graph",command = self.UpdateTimeGraph)
+        self.updateTimegraph = Button(self.Frame3, text="Update graph",command = lambda: self.UpdateTimeGraph(1))
         self.updateTimegraph.grid(row=1, column=0, columnspan=6)
         
         self.changeTimelegend = Button(self.Frame3, text="change legend",command = self.ChangeLegendTimegraph)
@@ -2247,27 +2247,74 @@ class IVApp(Toplevel):
                 plt.gcf().canvas.draw()
 #        except:
 #            pass
-    def UpdateTimeGraph(self):
-        global DATA, takenforplotTime
-        print(takenforplotTime)
+    def UpdateTimeGraph(self,a):
+        global DATA, takenforplotTime, colorstylelist
+#        print("")
+#        print(takenforplotTime)
         #"MeasDayTime2"
-        
-        #sort by cell and by scandirection
+        if takenforplotTime!=[]:
+            TimeDatDict={}
+            self.TimeEvolfig.clear()
+            for item in takenforplotTime:
+                newkey=item.split('_')[0]+'_'+item.split('_')[1]+'_'+item.split('_')[2]
+                if newkey not in TimeDatDict.keys():
+                    TimeDatDict[newkey]={'reverse':{'Voc':[[],[]],'Jsc':[[],[]],'FF':[[],[]],'Eff':[[],[]]},'forward':{'Voc':[[],[]],'Jsc':[[],[]],'FF':[[],[]],'Eff':[[],[]]}}
+                for item1 in DATA:
+                    if item1["SampleName"]==item:
+                        if item1["ScanDirection"]=="Reverse" and item1["Illumination"]=="Light":
+                            TimeDatDict[newkey]['reverse']['Voc'][0].append(item1["MeasDayTime2"])
+                            TimeDatDict[newkey]['reverse']['Voc'][1].append(item1["Voc"])
+                            TimeDatDict[newkey]['reverse']['Jsc'][0].append(item1["MeasDayTime2"])
+                            TimeDatDict[newkey]['reverse']['Jsc'][1].append(item1["Jsc"])
+                            TimeDatDict[newkey]['reverse']['FF'][0].append(item1["MeasDayTime2"])
+                            TimeDatDict[newkey]['reverse']['FF'][1].append(item1["FF"])
+                            TimeDatDict[newkey]['reverse']['Eff'][0].append(item1["MeasDayTime2"])
+                            TimeDatDict[newkey]['reverse']['Eff'][1].append(item1["Eff"])
+                        elif item1["ScanDirection"]=="Forward" and item1["Illumination"]=="Light":
+                            TimeDatDict[newkey]['forward']['Voc'][0].append(item1["MeasDayTime2"])
+                            TimeDatDict[newkey]['forward']['Voc'][1].append(item1["Voc"])
+                            TimeDatDict[newkey]['forward']['Jsc'][0].append(item1["MeasDayTime2"])
+                            TimeDatDict[newkey]['forward']['Jsc'][1].append(item1["Jsc"])
+                            TimeDatDict[newkey]['forward']['FF'][0].append(item1["MeasDayTime2"])
+                            TimeDatDict[newkey]['forward']['FF'][1].append(item1["FF"])
+                            TimeDatDict[newkey]['forward']['Eff'][0].append(item1["MeasDayTime2"])
+                            TimeDatDict[newkey]['forward']['Eff'][1].append(item1["Eff"])
+    #        num_plots = len(TimeDatDict.keys())          
+    #        plt.gca().set_prop_cycle(plt.cycler('color', plt.cm.Spectral(np.linspace(0, 1, num_plots))))
+            color1=0    
+    #        print(list(TimeDatDict.keys())) 
+            minx=min(TimeDatDict[newkey]['forward'][self.TimeChoice.get()][0]+TimeDatDict[newkey]['reverse'][self.TimeChoice.get()][0])
+            maxx=max(TimeDatDict[newkey]['forward'][self.TimeChoice.get()][0]+TimeDatDict[newkey]['reverse'][self.TimeChoice.get()][0])
+            
+            for key in list(TimeDatDict.keys()):
+                if minx>min(TimeDatDict[key]['forward'][self.TimeChoice.get()][0]+TimeDatDict[key]['reverse'][self.TimeChoice.get()][0]):
+                    minx=min(TimeDatDict[key]['forward'][self.TimeChoice.get()][0]+TimeDatDict[key]['reverse'][self.TimeChoice.get()][0])
+                if maxx<max(TimeDatDict[key]['forward'][self.TimeChoice.get()][0]+TimeDatDict[key]['reverse'][self.TimeChoice.get()][0]):
+                    maxx=max(TimeDatDict[key]['forward'][self.TimeChoice.get()][0]+TimeDatDict[key]['reverse'][self.TimeChoice.get()][0])
+                try:
+                    xfor, yfor=zip(*sorted(zip(TimeDatDict[key]['forward'][self.TimeChoice.get()][0],TimeDatDict[key]['forward'][self.TimeChoice.get()][1]), key = lambda x: x[1]))
+                    self.TimeEvolfig.plot(xfor, yfor, linestyle='--', marker='o',color=colorstylelist[color1],label=key+'_For')
+                except ValueError:
+                    pass
+                try:
+                    xrev, yrev=zip(*sorted(zip(TimeDatDict[key]['reverse'][self.TimeChoice.get()][0],TimeDatDict[key]['reverse'][self.TimeChoice.get()][1]), key = lambda x: x[1]))                
+                    self.TimeEvolfig.plot(xrev, yrev, linestyle='-', marker='o', color=colorstylelist[color1], alpha=0.5,label=key+'_Rev')
+                except ValueError:
+                    pass
+                color1=color1+1
+                
+            self.TimeEvolfig.set_xlim(minx-0.05*(maxx-minx),maxx+0.05*(maxx-minx))    
+            self.TimeEvolfig.set_xlabel('Time')
+            self.TimeEvolfig.set_ylabel(self.TimeChoice.get())
+            for tick in self.TimeEvolfig.get_xticklabels():
+                tick.set_rotation(20)
+            self.TimeEvolfigleg=self.TimeEvolfig.legend(loc='lower left', bbox_to_anchor=(1, 0))
+            plt.gcf().canvas.draw()
         
         #order by time, and substract the oldest measurement from the other, then transform all in hours
         
         #normalization of y axis
-        
-#        from dateutil import parser
-#        date = parser.parse("Wed, Apr 24, 2019   10:49:04 AM")
-#        date2=parser.parse("Wed, Apr 25, 2019   10:50:06 AM")
-#        print(date)
-#        print(date2)
-#        
-#        hours=divmod((date2-date).total_seconds(), 3600)
-#        minutes=divmod(hours[1],60)
-#        seconds=divmod(minutes[1],1)
-#        print(hours[0]+minutes[1]/60+seconds[1]/3600)
+
         
     def UpdateIVGraph(self):
         global DATA
@@ -6336,7 +6383,7 @@ class IVApp(Toplevel):
         totake=self.treeview.selection()
         takenforplotTime=[str(self.treeview.item(item)["values"][1]) for item in totake]
         
-        self.UpdateTimeGraph()
+        self.UpdateTimeGraph(1)
     
     def plottingfromTable(self):
         global takenforplot

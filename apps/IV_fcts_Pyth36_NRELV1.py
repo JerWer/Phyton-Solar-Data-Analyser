@@ -81,6 +81,8 @@ add time plot to autoanalysis if span over 5hrs
 
 - add HI group plot to autoanalysis
 
+- add reminder to save session when quit the window
+
 """
 #%%############# Global variable definition
 testdata = []

@@ -814,7 +814,7 @@ class XRDApp(Toplevel):
 #            
 #            DATA[samplename]=tempdat
 #            Patternsamplenameslist.append(samplename)
-            if '3DExplore ascii' in filerawdata[0]:
+            if '3DExplore ascii' in filerawdata[0]:#for Smartlab
                 for j in range(14,len(filerawdata)):
                     x.append(float(filerawdata[j].split('\t')[0]))#assume 2theta
                     y.append(float(filerawdata[j].split('\t')[1]))  
@@ -847,7 +847,7 @@ class XRDApp(Toplevel):
 #                        x=[]
 #                        y=[]
 #                        tempdat=[]
-            else:
+            else:#if no information: DMAX
                 i=0
                 for j in range(len(filerawdata)):
                     if ',' in filerawdata[j]:

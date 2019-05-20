@@ -847,6 +847,20 @@ class XRDApp(Toplevel):
 #                        x=[]
 #                        y=[]
 #                        tempdat=[]
+            elif '!@!!' in filerawdata[0]:#for Brucker
+                for j in range(16,len(filerawdata)):
+                    x.append(float(filerawdata[j].split(' ')[0]))#assume 2theta
+                    y.append(float(filerawdata[j].split(' ')[1]))  
+                tempdat.append(x)#original x data 2theta
+                tempdat.append(y)#original y data
+                tempdat.append(x)#corrected x, set as the original on first importation 2theta
+                tempdat.append(y)#corrected y, set as the original on first importation 
+                tempdat.append([])#peak data, list of dictionaries
+                tempdat.append([])#
+                print(tempdat[0][0])
+                DATA[samplename]=tempdat
+                Patternsamplenameslist.append(samplename)
+                
             else:#if no information: DMAX
                 i=0
                 for j in range(len(filerawdata)):

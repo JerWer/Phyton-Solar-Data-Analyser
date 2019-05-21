@@ -49,7 +49,11 @@ TODOLIST
 
 - legend, change color of plots... similar to IVapp
 
+- export raw data with the graph, to be able to replot it later in origin
 
+- add a "cancel last operation" button, that would be a back button if do a mistake and don't want to but complitely back to original
+
+- export with peak fitting visible
 
 """
 #%%

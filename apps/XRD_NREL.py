@@ -49,8 +49,6 @@ TODOLIST
 
 - legend, change color of plots... similar to IVapp
 
-- export raw data with the graph, to be able to replot it later in origin
-
 - add a "cancel last operation" button, that would be a back button if do a mistake and don't want to but complitely back to original
 
 - export with peak fitting visible
@@ -861,7 +859,7 @@ class XRDApp(Toplevel):
                 tempdat.append(y)#corrected y, set as the original on first importation 
                 tempdat.append([])#peak data, list of dictionaries
                 tempdat.append([])#
-                print(tempdat[0][0])
+#                print(tempdat[0][0])
                 DATA[samplename]=tempdat
                 Patternsamplenameslist.append(samplename)
                 
@@ -916,17 +914,34 @@ class XRDApp(Toplevel):
         
         samplestakenforplot = [self.listboxsamples.get(idx) for idx in self.listboxsamples.curselection()]
         if samplestakenforplot!=[]:
+            #exporting the peak analysis results
             for key in samplestakenforplot:
                 for item in DATA[key][4]:
                     testdata.append(key +'\t'+ item["PeakName"]+'\t'+str("%.2f"%item["Position"])+'\t'+str("%.2f"%item["PositionQ"])+'\t'+str("%.2f"%item["Intensity"])+'\t'+str("%.2f"%item["FWHM"])+'\t'+str("%.2f"%item["PeakArea"])+'\t'+str("%.2f"%item["IntBreadth"])+'\n')
             
-        file = open(f[:-4]+"PeakDat.txt",'w', encoding='ISO-8859-1')
-        file.writelines("%s" % item for item in testdata)
-        file.close()    
+            file = open(f[:-4]+"PeakDat.txt",'w', encoding='ISO-8859-1')
+            file.writelines("%s" % item for item in testdata)
+            file.close()    
         
-        #to do: export 2theta-intensity data for all curves selected in the graph, in one txt file, plottable in origin
-                
-        
+            #exporting the data from the graph
+            headline=''
+            headline2=''
+            columns=[]
+            for key in samplestakenforplot:    
+                columns.append(DATA[key][2])
+                columns.append(DATA[key][3])
+                headline+='2theta\tIntensity\t'
+                headline2+='\t'+key+'\t'
+            headline=[headline[:-1]+'\n',headline2[:-1]+'\n']
+            for item in list(map(list,zip(*columns))):
+                line=''
+                for item2 in item:
+                    line+=str(item2)+'\t'
+                line=line[:-1]+'\n'
+                headline.append(line)
+            file = open(f[:-4]+"PatternDat.txt",'w', encoding='ISO-8859-1')
+            file.writelines("%s" % item for item in headline)
+            file.close()
         
     def ExportasRef(self):
         global DATA,RefPattDATA

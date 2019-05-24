@@ -18,6 +18,8 @@ from matplotlib import colors as mcolors
 
 
 """"
+TODOLIST
+- remove background before doing the peak fitting
 
 """
 

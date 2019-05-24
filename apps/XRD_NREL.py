@@ -53,6 +53,8 @@ TODOLIST
 
 - export with peak fitting visible
 
+- y axis in log scale
+
 """
 #%%
 LARGE_FONT= ("Verdana", 12)

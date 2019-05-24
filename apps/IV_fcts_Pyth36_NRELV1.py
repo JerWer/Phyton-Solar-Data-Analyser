@@ -576,7 +576,7 @@ class IVApp(Toplevel):
             if file_path!='':
                 filetypes=[os.path.splitext(item)[1] for item in file_path]
 #                print(list(set(filetypes)))
-                if len(list(set(filetypes)))==1 or (''in list(set(filetypes)) and '.txt'in list(set(filetypes))):
+                if len(list(set(filetypes)))==1 or (''in list(set(filetypes)) and '.txt'in list(set(filetypes))) or (".itx" in list(set(filetypes)) and '.txt'in list(set(filetypes))):
                     directory = str(Path(file_path[0]).parent.parent)+'\\resultFilesIV'
                     if not os.path.exists(directory):
                         os.makedirs(directory)
@@ -588,6 +588,11 @@ class IVApp(Toplevel):
                         file_pathnew=file_path
                         print("these are rawdata files")
                         self.getdatalistsfromIVTFfiles(file_pathnew)
+                        finished=1
+                        break
+                    elif filetype==".itx" or (".itx" in list(set(filetypes)) and '.txt'in list(set(filetypes))):
+                        print("cigs igor text data")
+                        self.getdatalistsfromNRELcigssetup(file_path)
                         finished=1
                         break
                     elif filetype==".txt" or filetype=='':
@@ -2829,6 +2834,21 @@ class IVApp(Toplevel):
     
         return  params
     
+    def getdatalistsfromNRELcigssetup(self, file_path): #reads JV and mpp files from NREL cigs substrate config setup in S&TF 136
+        global DATA, DATAdark
+        global DATAMPP, numbLightfiles, numbDarkfiles
+        
+        for i in range(len(file_path)):
+            if os.path.splitext(file_path[i])[1]=='.txt':
+                print("txt mpp file")
+            elif os.path.splitext(file_path[i])[1]=='.itx':
+                print("cigs iv file")
+#            filetoread = open(file_path[i],"r", encoding='ISO-8859-1')
+#            filerawdata = filetoread.readlines()
+#            print(i)
+        
+        
+        
     def getdatalistsfromNRELfiles(self, file_path): #reads JV and mpp files from NREL
         global DATA, DATAdark
         global DATAMPP, numbLightfiles, numbDarkfiles

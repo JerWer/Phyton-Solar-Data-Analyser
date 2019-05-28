@@ -10,6 +10,15 @@ import datetime
 
 '''
 To Do:
+
+plotter with selectable samples
+export txt file with rawdata to be able to replot it in origin
+normalizable plots, by all or by single
+
+
+    
+    
+    
 Stop Plotting when max power box average falls below 80% to save computing time
 Add option to only plot MPPT
 Add option to only plot every x IV curves

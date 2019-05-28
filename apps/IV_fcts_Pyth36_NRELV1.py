@@ -83,6 +83,9 @@ add time plot to autoanalysis if span over 5hrs
 
 - add reminder to save session when quit the window
 
+- compatibility with cigs station: check if current in itx files is current or current density
+
+
 """
 #%%############# Global variable definition
 testdata = []
@@ -2839,14 +2842,184 @@ class IVApp(Toplevel):
         global DATAMPP, numbLightfiles, numbDarkfiles
         
         for i in range(len(file_path)):
+            filetoread = open(file_path[i],"r", encoding='ISO-8859-1')
+            filerawdata = filetoread.readlines()
             if os.path.splitext(file_path[i])[1]=='.txt':
-                print("txt mpp file")
+#                print("txt mpp file")
+                partdict = {}
+                partdict["filepath"]=file_path[i]
+                filename=os.path.splitext(os.path.basename(partdict["filepath"]))[0]
+                partdict["DepID"]=filename.split('.')[0]+'_'+filename.split('.')[1]
+                partdict["SampleName"]=filename.split('.')[0]+'_'+filename.split('.')[1]+'_'+filename.split('.')[2]
+                partdict["Cellletter"]='Single'
+                partdict["batchname"]=filename.split('.')[0]
+                partdict["MeasComment"]=filerawdata[0].split('\t')[-1]
+
+                partdict["MeasDayTime"]=modification_date(file_path[i])
+
+                partdict["CellSurface"]= float(filerawdata[0].split('\t')[-1])
+
+                partdict["Delay"]=0
+                partdict["IntegTime"]=0
+                partdict["Vstep"]=0
+                partdict["Vstart"]=0
+                partdict["Vend"]=0
+                partdict["ExecTime"]=0
+                partdict["Operator"]='unknown'
+                partdict["Group"]="Default group"
+                
+                mpppartdat = [[],[],[],[],[]]#[voltage,current,time,power,vstep,delay]
+                for item in range(1,len(filerawdata),1):
+                    mpppartdat[0].append(float(filerawdata[item].split("\t")[0]))
+                    mpppartdat[1].append(float(filerawdata[item].split("\t")[1]))
+                    mpppartdat[2].append(float(filerawdata[item].split("\t")[2]))
+                    mpppartdat[3].append(float(filerawdata[item].split("\t")[3]))
+                    mpppartdat[4].append(float(filerawdata[item].split("\t")[4]))
+                partdict["PowerEnd"]=mpppartdat[3][-1]
+                partdict["PowerAvg"]=sum(mpppartdat[3])/float(len(mpppartdat[3]))
+                partdict["trackingduration"]=mpppartdat[2][-1]
+                partdict["MppData"]=mpppartdat
+                DATAMPP.append(partdict)   
+                
+                
             elif os.path.splitext(file_path[i])[1]=='.itx':
-                print("cigs iv file")
-#            filetoread = open(file_path[i],"r", encoding='ISO-8859-1')
-#            filerawdata = filetoread.readlines()
-#            print(i)
-        
+#                print("cigs iv file")
+                partdict = {}
+                partdict["filepath"]=file_path[i]
+                
+                filename=os.path.splitext(os.path.basename(partdict["filepath"]))[0]
+#                print(filename)
+                if 'Reverse' in filename:
+                    partdict["DepID"]=filename[:filename.index('Reverse')-1]
+                    aftername=filename[filename.index('Reverse'):]
+                    partdict["ScanDirection"]="Reverse"
+                elif 'Forward' in filename:
+                    partdict["DepID"]=filename[:filename.index('Forward')-1]
+                    aftername=filename[filename.index('Forward'):]
+                    partdict["ScanDirection"]="Forward" 
+                
+                partdict["Cellletter"]='Single'
+                partdict["batchname"]=partdict["DepID"].split('.')[0]
+                partdict["SampleName"]=partdict["DepID"]+"_"+aftername.split('.')[1]
+#                print(partdict["SampleName"])
+                
+                if 'LIV' in aftername:
+                    partdict["Illumination"]="Light"
+                elif 'DIV' in aftername:
+                    partdict["Illumination"]="Dark"
+                    
+                    
+                
+                for item in range(len(filerawdata)):
+                    if "X Note" in filerawdata[item]:
+#                        print(filerawdata[item].index('\\r'))
+#                        print(filerawdata[item][filerawdata[item].index('\\r')+2:filerawdata[item].index('\\rArea')-1])
+                        partdict["MeasDayTime2"]=parser.parse(filerawdata[item][filerawdata[item].index('\\r')+2:filerawdata[item].index('\\rArea')-1])
+                        partdict["MeasDayTime"]=filerawdata[item][filerawdata[item].index('\\r')+2:filerawdata[item].index('\\rArea')-1]
+#                        print(partdict["MeasDayTime2"])
+                        break
+                
+                partdict["MeasComment"]=filerawdata[-1][filerawdata[-1].index('"')+1:-3]
+                
+                if "aftermpp" in partdict["MeasComment"]:
+                    partdict["aftermpp"]=1
+                else:
+                    partdict["aftermpp"]=0
+                
+                for item in range(len(filerawdata)):
+                    if "X SetScale" in filerawdata[item]:
+                        partdict["Vstart"]=float(filerawdata[item][15:filerawdata[item].index(',')])
+                        break
+                #vstep
+                for item in range(len(filerawdata)):
+                    if "X SetScale" in filerawdata[item]:
+                        partdict["Vstep"]=float(filerawdata[item].split(',')[1])
+                        break
+                
+                ivpartdat = [[],[]]#[voltage,current]
+                increm=0
+                for item in range(3,len(filerawdata),1):
+                    if 'END' not in filerawdata[item]:
+#                        print(item)
+                        if partdict["ScanDirection"]=="Forward":
+                            ivpartdat[0].append(partdict["Vstart"]+increm*partdict["Vstep"])
+                        else:
+                            ivpartdat[0].append(partdict["Vstart"]-increm*partdict["Vstep"])
+                        ivpartdat[1].append(float(filerawdata[item].split('\t')[2][:-2])) 
+                        increm+=1
+                    else:
+                        break
+                partdict["IVData"]=ivpartdat
+                
+                partdict["Vend"]=ivpartdat[0][-1]
+                
+#                if partdict["ScanDirection"]=="Reverse":
+#                    if partdict["Vstart"]<partdict["Vend"]:
+#                        vend=partdict["Vend"]
+#                        partdict["Vend"]=partdict["Vstart"]
+#                        partdict["Vstart"]=vend
+#                else:
+#                    if partdict["Vstart"]>partdict["Vend"]:
+#                        vend=partdict["Vend"]
+#                        partdict["Vend"]=partdict["Vstart"]
+#                        partdict["Vstart"]=vend 
+                        
+                partdict["NbPoints"]=len(ivpartdat[0])
+                for item in range(len(filerawdata)):
+                    if "X Note" in filerawdata[item]:
+                        partdict["CellSurface"]=filerawdata[item][filerawdata[item].index('\\rArea')+18:filerawdata[item].index('\\rVoc')-1]
+                        break
+#                print(partdict["CellSurface"])
+                
+                partdict["Delay"]=-1
+                partdict["IntegTime"]=-1                        
+
+                params=self.extract_jv_params(partdict["IVData"])
+                partdict["Voc"]=params['Voc']*1000 #mV
+                partdict["Jsc"]=params['Jsc'] #mA/cm2
+                partdict["FF"]=params['FF'] #%
+                partdict["Eff"]=params['Pmax'] #%
+                partdict["Pmpp"]=partdict["Eff"]*10 #W/cm2
+                partdict["VocFF"]=partdict["Voc"]*partdict["FF"]
+                partdict["Roc"]=params['Roc'] 
+                partdict["Rsc"]=params['Rsc'] 
+                partdict["RscJsc"]=partdict["Rsc"]*partdict["Jsc"]
+                
+                partdict["Vmpp"]=params['Vmpp']
+                partdict["Jmpp"]=params['Jmpp']
+                partdict["ImaxComp"]=-1
+                partdict["Isenserange"]=-1
+                
+                partdict["Operator"]=-1
+                              
+                try:
+                    if partdict["Illumination"]=="Light" and max(ivpartdat[0])>0.001*float(partdict["Voc"]):
+                        f = interp1d(ivpartdat[0], ivpartdat[1], kind='cubic')
+                        x2 = lambda x: f(x)
+                        partdict["AreaJV"] = integrate.quad(x2,0,0.001*float(partdict["Voc"]))[0]
+                    else:
+                        partdict["AreaJV"] =""
+                except ValueError:
+                    print("there is a ValueError on sample ",i)
+                
+                
+                partdict["Group"]="Default group"
+                partdict["Setup"]="SSIgorC215"              
+                partdict["RefNomCurr"]=999
+                partdict["RefMeasCurr"]=999
+                partdict["AirTemp"]=999
+                partdict["ChuckTemp"]=999
+                    
+                DATA.append(partdict)
+
+                if partdict["Illumination"]=="Light":
+                    DATA.append(partdict)
+                    numbLightfiles+=1
+                else:
+                    partdict["SampleName"]=partdict["SampleName"]+'_D'
+                    DATA.append(partdict)
+                    DATAdark.append(partdict)
+                    numbDarkfiles+=1
         
         
     def getdatalistsfromNRELfiles(self, file_path): #reads JV and mpp files from NREL

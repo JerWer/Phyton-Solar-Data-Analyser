@@ -794,10 +794,12 @@ class XRDApp(Toplevel):
             tempdat=[]
             filetoread = open(filename,"r", encoding='ISO-8859-1')
             filerawdata = list(filetoread.readlines())
-            samplename=os.path.splitext(os.path.basename(filename))[0]
+            samplename, fileextension=os.path.splitext(os.path.basename(filename))
 #            print(samplename)
             x=[]
             y=[]
+            
+            print(fileextension)
                 
 #            for item in filerawdata:
 #                x.append(float(item.split(' ')[0]))
@@ -818,7 +820,52 @@ class XRDApp(Toplevel):
 #            
 #            DATA[samplename]=tempdat
 #            Patternsamplenameslist.append(samplename)
-            if '3DExplore ascii' in filerawdata[0]:#for Smartlab
+            
+            if fileextension =='.raw':
+                for j in range(3):
+                    print(filerawdata[j])
+#                    if '*' not in filerawdata[j]:
+#                        x.append(float(filerawdata[j].split(' ')[0]))#assume 2theta
+#                        y.append(float(filerawdata[j].split(' ')[1]))  
+#                tempdat.append(x)#original x data 2theta
+#                tempdat.append(y)#original y data
+#                tempdat.append(x)#corrected x, set as the original on first importation 2theta
+#                tempdat.append(y)#corrected y, set as the original on first importation 
+#                tempdat.append([])#peak data, list of dictionaries
+#                tempdat.append([])#
+#                
+#                DATA[samplename]=tempdat
+#                Patternsamplenameslist.append(samplename)
+            elif fileextension =='.ras':
+                for j in range(len(filerawdata)):
+                    if '*' not in filerawdata[j]:
+                        x.append(float(filerawdata[j].split(' ')[0]))#assume 2theta
+                        y.append(float(filerawdata[j].split(' ')[1]))  
+                tempdat.append(x)#original x data 2theta
+                tempdat.append(y)#original y data
+                tempdat.append(x)#corrected x, set as the original on first importation 2theta
+                tempdat.append(y)#corrected y, set as the original on first importation 
+                tempdat.append([])#peak data, list of dictionaries
+                tempdat.append([])#
+                
+                DATA[samplename]=tempdat
+                Patternsamplenameslist.append(samplename)
+            
+            elif fileextension =='.csv':
+                for j in range(64,len(filerawdata),2):
+                    x.append(float(filerawdata[j].split(',')[0]))#assume 2theta
+                    y.append(float(filerawdata[j].split(',')[1]))  
+                tempdat.append(x)#original x data 2theta
+                tempdat.append(y)#original y data
+                tempdat.append(x)#corrected x, set as the original on first importation 2theta
+                tempdat.append(y)#corrected y, set as the original on first importation 
+                tempdat.append([])#peak data, list of dictionaries
+                tempdat.append([])#
+                
+                DATA[samplename]=tempdat
+                Patternsamplenameslist.append(samplename)
+                
+            elif '3DExplore ascii' in filerawdata[0]:#for Smartlab
                 for j in range(14,len(filerawdata)):
                     x.append(float(filerawdata[j].split('\t')[0]))#assume 2theta
                     y.append(float(filerawdata[j].split('\t')[1]))  
@@ -832,25 +879,6 @@ class XRDApp(Toplevel):
                 DATA[samplename]=tempdat
                 Patternsamplenameslist.append(samplename)
                 
-#                i=0
-#                for j in range(len(filerawdata)):
-#                    if ',' in filerawdata[j]:
-#                        x.append(float(filerawdata[j].split(',')[0]))
-#                        y.append(float(filerawdata[j].split(',')[1]))  
-#                    else:
-#                        tempdat.append(x)#original x data
-#                        tempdat.append(y)#original y data
-#                        tempdat.append(x)#corrected x, set as the original on first importation
-#                        tempdat.append(y)#corrected y, set as the original on first importation 
-#                        tempdat.append([])#peak data, list of dictionaries
-#                        tempdat.append([])#
-#                        
-#                        DATA[samplename+str(i)]=tempdat
-#                        Patternsamplenameslist.append(samplename+str(i))
-#                        i+=1
-#                        x=[]
-#                        y=[]
-#                        tempdat=[]
             elif '!@!!' in filerawdata[0]:#for Brucker
                 for j in range(16,len(filerawdata)):
                     x.append(float(filerawdata[j].split(' ')[0]))#assume 2theta
@@ -901,7 +929,7 @@ class XRDApp(Toplevel):
         
         for item in Patternsamplenameslist:
             self.listboxsamples.insert(tk.END,item)
-
+        
 #%%
 
     def Export(self):

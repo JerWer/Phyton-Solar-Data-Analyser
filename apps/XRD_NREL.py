@@ -866,9 +866,14 @@ class XRDApp(Toplevel):
                 Patternsamplenameslist.append(samplename)
                 
             elif '3DExplore ascii' in filerawdata[0]:#for Smartlab
-                for j in range(14,len(filerawdata)):
-                    x.append(float(filerawdata[j].split('\t')[0]))#assume 2theta
-                    y.append(float(filerawdata[j].split('\t')[1]))  
+                for j in range(len(filerawdata)):
+                    if '#' not in filerawdata[j]:
+#                        print(filerawdata[j])
+                        try:
+                            x.append(float(filerawdata[j].split('\t')[0]))#assume 2theta
+                            y.append(float(filerawdata[j].split('\t')[1])) 
+                        except:
+                            pass
                 tempdat.append(x)#original x data 2theta
                 tempdat.append(y)#original y data
                 tempdat.append(x)#corrected x, set as the original on first importation 2theta

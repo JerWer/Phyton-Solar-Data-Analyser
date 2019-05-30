@@ -41,7 +41,7 @@ if changedFilePath == '':
 # if item in selected directory is a folder, then add to subDirectory list
 subDirs = [i for i in os.listdir(changedFilePath) if os.path.isdir(os.path.join(changedFilePath,i))]
 subDirs.sort()
-subDirs = subDirs[1:2]
+subDirs = subDirs[0:-1]
 
 # loop over each cell
 importedData = []

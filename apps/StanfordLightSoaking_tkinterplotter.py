@@ -4,7 +4,7 @@ import os,datetime
 import matplotlib.pyplot as plt
 #from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-#from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk as NavigationToolbar2TkAgg
+from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk as NavigationToolbar2TkAgg
 
 import tkinter as tk
 from tkinter import *
@@ -12,43 +12,43 @@ from tkinter.ttk import Treeview
 from tkinter import messagebox, Button, Label, Frame, Entry, Checkbutton, IntVar, Toplevel, Scrollbar, Canvas, OptionMenu, StringVar
 
 from tkinter import filedialog
-from pathlib import Path
+#from pathlib import Path
 import numpy as np
-import copy
-import xlsxwriter
-import xlrd
-from scipy.interpolate import interp1d
-from scipy import integrate
-from operator import itemgetter
-from itertools import groupby, chain
+#import copy
+#import xlsxwriter
+#import xlrd
+#from scipy.interpolate import interp1d
+#from scipy import integrate
+#from operator import itemgetter
+#from itertools import groupby, chain
 #import PIL
-from PIL import Image as ImageTk
-from matplotlib.ticker import MaxNLocator
-from tkinter import font as tkFont
-from matplotlib.transforms import Bbox
-import pickle
-import six
-from tkinter import colorchooser
-from functools import partial
-import darktolight as DtoL
+#from PIL import Image as ImageTk
+#from matplotlib.ticker import MaxNLocator
+#from tkinter import font as tkFont
+#from matplotlib.transforms import Bbox
+#import pickle
+#import six
+#from tkinter import colorchooser
+#from functools import partial
+#import darktolight as DtoL
 import os.path
-import shutil
-import sqlite3
-from dateutil import parser
+#import shutil
+#import sqlite3
+#from dateutil import parser
 
 
 
 
 
 from PyQt5 import QtWidgets, QtCore
-import numpy as np
+#import numpy as np
 import scipy.interpolate as interp
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 from scipy.signal import savgol_filter
 import pandas as pd
 import sys
 import os
-import datetime
+#import datetime
 
 '''
 To Do:
@@ -86,7 +86,7 @@ def center(win):
     win.geometry('{}x{}+{}+{}'.format(width, height, x, y))
     win.deiconify()
 
-importedData = {}
+importedData = []
 
 class StanfordStabilityDat(Toplevel):
 
@@ -95,7 +95,7 @@ class StanfordStabilityDat(Toplevel):
         Toplevel.__init__(self, *args, **kwargs)
         Toplevel.wm_title(self, "StanfordStabilityDat")
         Toplevel.config(self,background="white")
-        self.wm_geometry("390x500")
+        self.wm_geometry("900x700")
         center(self)
         self.initUI()
 
@@ -103,9 +103,49 @@ class StanfordStabilityDat(Toplevel):
         self.master.withdraw()
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
 
-        self.selectSamplesBut = Button(self, text="SelectFolder", command = self.SelectFolder)
+        
+        
+        
+        self.canvas0 = tk.Canvas(self, borderwidth=0, background="white")
+#        self.superframe=Frame(self.canvas0,background="white")
+        
+#        self.vsb = tk.Scrollbar(self, orient="vertical", command=self.canvas0.yview)
+#        self.canvas0.configure(yscrollcommand=self.vsb.set)
+#        self.vsb.pack(side="right", fill="y")
+#        self.hsb = tk.Scrollbar(self, orient="horizontal", command=self.canvas0.xview)
+#        self.canvas0.configure(xscrollcommand=self.hsb.set)
+#        self.hsb.pack(side="bottom", fill="x")
+        
+        self.canvas0.pack(side="left", fill="both", expand=True)
+        frame1=Frame(self.canvas0,borderwidth=0,  bg="white")
+        frame1.pack(fill=tk.BOTH,expand=1)
+        frame1.bind("<Configure>", self.onFrameConfigure)
+#        self.canvas0.create_window((1,4), window=self.superframe, anchor="nw", 
+#                                  tags="self.superframe")
+#        self.superframe.bind("<Configure>", self.onFrameConfigure)
+        
+        ############ the figures #################
+        self.fig = plt.figure(figsize=(9, 6))
+        self.fig.patch.set_facecolor('white')
+        canvas = FigureCanvasTkAgg(self.fig, frame1)
+        canvas.get_tk_widget().pack(fill=tk.BOTH,expand=1)
+        self.fig1 = self.fig.add_subplot(221)   
+        self.fig2 = self.fig.add_subplot(222)
+        self.fig3 = self.fig.add_subplot(223)
+        self.fig4 = self.fig.add_subplot(247)
+        self.fig5 = self.fig.add_subplot(248)
+        
+        self.toolbar = NavigationToolbar2TkAgg(canvas, frame1)
+        self.toolbar.update()
+        canvas._tkcanvas.pack(fill = BOTH, expand = 1) 
+        
+        self.selectSamplesBut = Button(self.canvas0, text="SelectFolder", command = self.SelectFolder)
         self.selectSamplesBut.pack(side=tk.LEFT,expand=1)
 
+    def onFrameConfigure(self, event):
+        self.canvas0.configure(scrollregion=self.canvas0.bbox("all"))
+        #self.canvas0.configure(scrollregion=(0,0,500,500))
+        
     def SelectFolder(self):
         current_path = os.getcwd()
         self.changedFilePath = filedialog.askdirectory(title = "Choose the folder that has the date title", initialdir=os.path.dirname(current_path))
@@ -139,8 +179,8 @@ class StanfordStabilityDat(Toplevel):
     def selectbut(self): 
         self.samplelist=[self.subDirs[i] for i in list(self.lb.curselection())]
 #        print(self.samplelist)
-        self.importData()
         self.selectwin.destroy() 
+        self.importData()
     
     def on_closing(self):
         
@@ -165,26 +205,24 @@ class StanfordStabilityDat(Toplevel):
         	mpptFiles.sort()
         	# mpptFiles = mpptFiles[0:4]
         
-        	ivFiles = [file for file in files if subDir+'_IV_' in file]
-        	ivFiles.sort()
+        	self.ivFiles = [file for file in files if subDir+'_IV_' in file]
+        	self.ivFiles.sort()
         	# ivFiles = ivFiles[0:1]
         
-#        	importedData.append([])
-#        	importedData[i].append([])
-#        	importedData[i].append([])
-        	importedData[subDir]=[[],[]]
-            
-        
+        	importedData.append([])
+        	importedData[i].append([])
+        	importedData[i].append([])
+                    
         	#import IV Scans
         	n_skip = 5
-        	for j, ivFile in enumerate(ivFiles):
+        	for j, ivFile in enumerate(self.ivFiles):
         		print ('Processing IV File: '+ivFile)
         
         		iFile = (os.path.join(self.changedFilePath,subDir,ivFile))
         		iData = pd.read_csv(iFile, delimiter='\t', header = None, names=['Channel', 'Step', 'Voltage', 'Current', 'Power', 'B'], skiprows = n_skip)
-        		importedData[subDir][0].append([])
-        		importedData[subDir][0][j].append(iData.Voltage)
-        		importedData[subDir][0][j].append(iData.Current)
+        		importedData[i][0].append([])
+        		importedData[i][0][j].append(iData.Voltage)
+        		importedData[i][0][j].append(iData.Current)
         
         		with open(iFile, 'r') as file:
         			for k, line in enumerate(file):
@@ -193,198 +231,106 @@ class StanfordStabilityDat(Toplevel):
         					ivTime -= datetime.datetime(1899,12,30,0,0,0,0)
         					ivTime = ivTime.total_seconds()/(24*3600)
         
-        		importedData[subDir][0][j].insert(0,ivTime)
+        		importedData[i][0][j].insert(0,ivTime)
         
-#        	#import MPPT Data
-#        	n_skip = 1
-#        	mpptTime = []
-#        	mpptPower = []
-#        	mpptVoltage = []
-#        	mpptCurrent = []
-#        	for k, mpptFile in enumerate(mpptFiles):
-#        		print ('Processing MPPT File: '+mpptFiles[k])
-#        		iFile = (os.path.join(self.changedFilePath,subDirs[i],mpptFiles[k]))
-#        		iData = pd.read_csv(iFile, delimiter='\t', header = None, names=['Time', 'Hour', 'Voltage', 'Current', 'Power', 'B', 'Jsc', 'Voc', 'FF', 'P/B', 'Temp'], skiprows = n_skip)
-#        		mpptTime += iData.Time.tolist()
-#        		mpptPower += iData.Power.tolist()
-#        		mpptVoltage += iData.Voltage.tolist()
-#        		iData.Current *= -1
-#        		mpptCurrent += iData.Current.tolist()
-#        
-#        	importedData[i][1].append([24*(x - importedData[0][0][0][0]) for x in mpptTime])
-#        	importedData[i][1].append(mpptPower)
-#        	importedData[i][1].append(mpptVoltage)
-#        	importedData[i][1].append(mpptCurrent)
+        	#import MPPT Data
+        	n_skip = 1
+        	mpptTime = []
+        	mpptPower = []
+        	mpptVoltage = []
+        	mpptCurrent = []
+        	for k, mpptFile in enumerate(mpptFiles):
+        		print ('Processing MPPT File: '+mpptFiles[k])
+        		iFile = (os.path.join(self.changedFilePath,subDirs[i],mpptFiles[k]))
+        		iData = pd.read_csv(iFile, delimiter='\t', header = None, names=['Time', 'Hour', 'Voltage', 'Current', 'Power', 'B', 'Jsc', 'Voc', 'FF', 'P/B', 'Temp'], skiprows = n_skip)
+        		mpptTime += iData.Time.tolist()
+        		mpptPower += iData.Power.tolist()
+        		mpptVoltage += iData.Voltage.tolist()
+        		iData.Current *= -1
+        		mpptCurrent += iData.Current.tolist()
+        
+        	importedData[i][1].append([24*(x - importedData[i][0][0][0]) for x in mpptTime])
+        	importedData[i][1].append(mpptPower)
+        	importedData[i][1].append(mpptVoltage)
+        	importedData[i][1].append(mpptCurrent)
+            
+        self.plotter()
+            
+    def plotter(self):
+        global importedData
+        subDirs=self.samplelist
+        normalize = 1
+        figs = []
+        axs = []
+        print (len(importedData[0][1]))
+        for i,parameter in enumerate(['Power','Voltage','Current']):
+        	figs.append(plt.figure(parameter))
+        	axs.append(figs[i].add_subplot(111))
+        	for j,subDir in enumerate(subDirs):
+        		axs[i].plot(importedData[j][1][0],importedData[j][1][i+1],linestyle='-',label=subDir)
+        		axs[i].set_title(parameter)
+        		axs[i].set_xlabel('Time (Hours)')
+        		axs[i].legend()
+        
+        # plt.show()
+        # sys.exit()
+        
+        # Plot One Device
+        # Make Plot Canvas
+        fig, ax = plt.subplots(1,2)
+        
+        # Add Origin Lines for IV Curves
+        ax[0].axhline(y=0, color='k')
+        ax[0].axvline(x=0, color='k')
+        
+        currentMax = 0
+        for i, subDir in enumerate(subDirs):
+        	for j, ivFile in enumerate(self.ivFiles):
+        		# Find Voc and Jsc
+        		xs = importedData[i][0][j][1]
+        		ys = importedData[i][0][j][2]
+        		ys*= -1
+        
+        		ps = xs*ys
+        
+        		pMax = max(ps)
+        		xMax = [i for i, j in enumerate(ps) if j == pMax]
+        
+        		fjsc = interp.interp1d(xs,ys)
+        		fvoc = interp.interp1d(ys,xs)
+        
+        		jsc = fjsc(0)
+        		voc = fvoc(0)
+        
+        		ax[0].plot(voc,0,marker='o',color='k')
+        		ax[0].plot(0,jsc,marker='o',color='k')
+        		ax[0].plot(xs[xMax],ys[xMax],marker='o',color='k')
+        		ax[0].plot(xs,ys,linestyle='-')
+        
+        		ax[1].plot(24*(importedData[i][0][j][0] - importedData[0][0][0][0]),pMax,marker='o')
+        
+        		mag = abs(np.floor(np.log10(pMax)))
+        		newMax = np.ceil(10**mag*pMax)*10**(-1*mag)
+        		if newMax > currentMax:
+        			currentMax = newMax
+        
+        		ax[0].grid()
+        
+        	ax[1].plot(importedData[i][1][0],importedData[i][1][1],linestyle='-',color='k')
+        
+        	#change ylim properly
+        	mag = abs(np.floor(np.log10(max(importedData[i][1][1]))))
+        	# mag += 0
+        	newMax = np.ceil(10**mag*max(importedData[i][1][1]))*10**(-1*mag)
+        	if newMax > currentMax:
+        		currentMax = newMax
+        
+        ax[1].set_ylim(bottom = 0, top = currentMax)
+        plt.show()
         
 
 ###############################################################################        
 if __name__ == '__main__':
     app = StanfordStabilityDat()
     app.mainloop()
-
-
-
-#current_path = os.getcwd()
-#changedFilePath = filedialog.askdirectory(title = "Choose the folder that has the date title", initialdir=os.path.dirname(current_path))
-#
-#subDirs = [i for i in os.listdir(changedFilePath) if os.path.isdir(os.path.join(changedFilePath,i))]
-#subDirs.sort()
-#print(subDirs)
-#
-#chosensamples=selectSamples(subDirs)
-#
-#print(chosensamples)
-"""
-
-
-#Select Folder to Load Data From
-#Choose the folder that has the date title
-app = QtWidgets.QApplication(sys.argv)
-app.aboutToQuit.connect(app.deleteLater)
-changedFilePath = QtWidgets.QFileDialog.getExistingDirectory(None, 'Select the Folder')
-
-# if no folder selected, quit
-if changedFilePath == '':
-	sys.exit()
-	changedFilePath = '/Volumes/GoogleDrive/Team Drives/CHEMENGR-TD-McGeheeGroupTeamDrive/Eli/Stability Data/test data/test/2019-02-07'
-
-# if item in selected directory is a folder, then add to subDirectory list
-subDirs = [i for i in os.listdir(changedFilePath) if os.path.isdir(os.path.join(changedFilePath,i))]
-subDirs.sort()
-subDirs = subDirs[1:2]
-
-# loop over each cell
-importedData = []
-for i, subDir in enumerate(subDirs):
-	print ('Processing Cell: '+subDirs[i])
-
-	files = os.listdir(os.path.join(changedFilePath,subDirs[i]))
-	files.sort()
-
-	mpptFiles = [file for file in files if subDirs[i]+'_LT_' in file]
-	mpptFiles.sort()
-	# mpptFiles = mpptFiles[0:4]
-
-	ivFiles = [file for file in files if subDirs[i]+'_IV_' in file]
-	ivFiles.sort()
-	# ivFiles = ivFiles[0:1]
-
-	importedData.append([])
-	importedData[i].append([])
-	importedData[i].append([])
-
-	#import IV Scans
-	n_skip = 5
-	for j, ivFile in enumerate(ivFiles):
-		print ('Processing IV File: '+ivFiles[j])
-
-		iFile = (os.path.join(changedFilePath,subDirs[i],ivFiles[j]))
-		iData = pd.read_csv(iFile, delimiter='\t', header = None, names=['Channel', 'Step', 'Voltage', 'Current', 'Power', 'B'], skiprows = n_skip)
-		importedData[i][0].append([])
-		importedData[i][0][j].append(iData.Voltage)
-		importedData[i][0][j].append(iData.Current)
-
-		with open(iFile, 'r') as file:
-			for k, line in enumerate(file):
-				if k == 2:
-					ivTime = datetime.datetime.strptime(line[:-1],'%m/%d/%Y %H:%M:%S')
-					ivTime -= datetime.datetime(1899,12,30,0,0,0,0)
-					ivTime = ivTime.total_seconds()/(24*3600)
-
-		importedData[i][0][j].insert(0,ivTime)
-
-	#import MPPT Data
-	n_skip = 1
-	mpptTime = []
-	mpptPower = []
-	mpptVoltage = []
-	mpptCurrent = []
-	for k, mpptFile in enumerate(mpptFiles):
-		print ('Processing MPPT File: '+mpptFiles[k])
-		iFile = (os.path.join(changedFilePath,subDirs[i],mpptFiles[k]))
-		iData = pd.read_csv(iFile, delimiter='\t', header = None, names=['Time', 'Hour', 'Voltage', 'Current', 'Power', 'B', 'Jsc', 'Voc', 'FF', 'P/B', 'Temp'], skiprows = n_skip)
-		mpptTime += iData.Time.tolist()
-		mpptPower += iData.Power.tolist()
-		mpptVoltage += iData.Voltage.tolist()
-		iData.Current *= -1
-		mpptCurrent += iData.Current.tolist()
-
-	importedData[i][1].append([24*(x - importedData[0][0][0][0]) for x in mpptTime])
-	importedData[i][1].append(mpptPower)
-	importedData[i][1].append(mpptVoltage)
-	importedData[i][1].append(mpptCurrent)
-
-
-normalize = 1
-figs = []
-axs = []
-print (len(importedData[0][1]))
-for i,parameter in enumerate(['Power','Voltage','Current']):
-	figs.append(plt.figure(parameter))
-	axs.append(figs[i].add_subplot(111))
-	for j,subDir in enumerate(subDirs):
-		axs[i].plot(importedData[j][1][0],importedData[j][1][i+1],linestyle='-',label=subDir)
-		axs[i].set_title(parameter)
-		axs[i].set_xlabel('Time (Hours)')
-		axs[i].legend()
-
-# plt.show()
-# sys.exit()
-
-# Plot One Device
-# Make Plot Canvas
-fig, ax = plt.subplots(1,2)
-
-# Add Origin Lines for IV Curves
-ax[0].axhline(y=0, color='k')
-ax[0].axvline(x=0, color='k')
-
-currentMax = 0
-for i, subDir in enumerate(subDirs):
-	for j, ivFile in enumerate(ivFiles):
-		# Find Voc and Jsc
-		xs = importedData[i][0][j][1]
-		ys = importedData[i][0][j][2]
-		ys*= -1
-
-		ps = xs*ys
-
-		pMax = max(ps)
-		xMax = [i for i, j in enumerate(ps) if j == pMax]
-
-		fjsc = interp.interp1d(xs,ys)
-		fvoc = interp.interp1d(ys,xs)
-
-		jsc = fjsc(0)
-		voc = fvoc(0)
-
-		ax[0].plot(voc,0,marker='o',color='k')
-		ax[0].plot(0,jsc,marker='o',color='k')
-		ax[0].plot(xs[xMax],ys[xMax],marker='o',color='k')
-		ax[0].plot(xs,ys,linestyle='-')
-
-		ax[1].plot(24*(importedData[i][0][j][0] - importedData[0][0][0][0]),pMax,marker='o')
-
-		mag = abs(np.floor(np.log10(pMax)))
-		newMax = np.ceil(10**mag*pMax)*10**(-1*mag)
-		if newMax > currentMax:
-			currentMax = newMax
-
-		ax[0].grid()
-
-	ax[1].plot(importedData[i][1][0],importedData[i][1][1],linestyle='-',color='k')
-
-	#change ylim properly
-	mag = abs(np.floor(np.log10(max(importedData[i][1][1]))))
-	# mag += 0
-	newMax = np.ceil(10**mag*max(importedData[i][1][1]))*10**(-1*mag)
-	if newMax > currentMax:
-		currentMax = newMax
-
-ax[1].set_ylim(bottom = 0, top = currentMax)
-plt.show()
-
-
-
-"""
 

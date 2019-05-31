@@ -53,20 +53,18 @@ import os
 '''
 To Do:
 
-plotter with selectable samples
 export txt file with rawdata to be able to replot it in origin
-normalizable plots, by all or by single
 
+normalize at time X specified by user
+do the normalization at import and not at plotting
 
+selectable substrates to plot in listbox
     
     
     
-Stop Plotting when max power box average falls below 80% to save computing time
 Add option to only plot MPPT
 Add option to only plot every x IV curves
 Add option to only plot first x IV curves (follow same rule as stop plotting condition)
-Plot Voltage Over Time
-Plot Current Over Time
 '''
 
 #get folder path 
@@ -95,7 +93,7 @@ class StanfordStabilityDat(Toplevel):
         Toplevel.__init__(self, *args, **kwargs)
         Toplevel.wm_title(self, "StanfordStabilityDat")
         Toplevel.config(self,background="white")
-        self.wm_geometry("900x700")
+        self.wm_geometry("100x100")
         center(self)
         self.initUI()
 
@@ -106,7 +104,7 @@ class StanfordStabilityDat(Toplevel):
         
         
         
-        self.canvas0 = tk.Canvas(self, borderwidth=0, background="white")
+#        self.canvas0 = tk.Canvas(self, borderwidth=0, background="white")
 #        self.superframe=Frame(self.canvas0,background="white")
         
 #        self.vsb = tk.Scrollbar(self, orient="vertical", command=self.canvas0.yview)
@@ -116,34 +114,43 @@ class StanfordStabilityDat(Toplevel):
 #        self.canvas0.configure(xscrollcommand=self.hsb.set)
 #        self.hsb.pack(side="bottom", fill="x")
         
-        self.canvas0.pack(side="left", fill="both", expand=True)
-        frame1=Frame(self.canvas0,borderwidth=0,  bg="white")
-        frame1.pack(fill=tk.BOTH,expand=1)
-        frame1.bind("<Configure>", self.onFrameConfigure)
+#        self.canvas0.pack(side="left", fill="both", expand=True)
+#        frame1=Frame(self.canvas0,borderwidth=0,  bg="white")
+#        frame1.pack(fill=tk.BOTH,expand=1)
+#        frame1.bind("<Configure>", self.onFrameConfigure)
 #        self.canvas0.create_window((1,4), window=self.superframe, anchor="nw", 
 #                                  tags="self.superframe")
 #        self.superframe.bind("<Configure>", self.onFrameConfigure)
         
         ############ the figures #################
-        self.fig = plt.figure(figsize=(9, 6))
-        self.fig.patch.set_facecolor('white')
-        canvas = FigureCanvasTkAgg(self.fig, frame1)
-        canvas.get_tk_widget().pack(fill=tk.BOTH,expand=1)
-        self.fig1 = self.fig.add_subplot(221)   
-        self.fig2 = self.fig.add_subplot(222)
-        self.fig3 = self.fig.add_subplot(223)
-        self.fig4 = self.fig.add_subplot(247)
-        self.fig5 = self.fig.add_subplot(248)
+#        self.fig = plt.figure(figsize=(9, 6))
+#        self.fig.patch.set_facecolor('white')
+#        canvas = FigureCanvasTkAgg(self.fig, frame1)
+#        canvas.get_tk_widget().pack(fill=tk.BOTH,expand=1)
+#        self.fig1 = self.fig.add_subplot(221)   
+#        self.fig2 = self.fig.add_subplot(222)
+#        self.fig3 = self.fig.add_subplot(223)
+#        self.fig4 = self.fig.add_subplot(247)
+#        self.fig5 = self.fig.add_subplot(248)
+#        
+#        self.toolbar = NavigationToolbar2TkAgg(canvas, frame1)
+#        self.toolbar.update()
+#        canvas._tkcanvas.pack(fill = BOTH, expand = 1) 
         
-        self.toolbar = NavigationToolbar2TkAgg(canvas, frame1)
-        self.toolbar.update()
-        canvas._tkcanvas.pack(fill = BOTH, expand = 1) 
-        
-        self.selectSamplesBut = Button(self.canvas0, text="SelectFolder", command = self.SelectFolder)
+        self.selectSamplesBut = Button(self, text="SelectFolder", command = self.SelectFolder)
         self.selectSamplesBut.pack(side=tk.LEFT,expand=1)
+        
+#        Ytype = ["Original","Normalized"]
+#        self.YtypeChoice=StringVar()
+#        self.YtypeChoice.set("Original") # default choice
+#        self.dropMenuFrame = OptionMenu(self.canvas0, self.YtypeChoice, *Ytype, command=self.plotter())
+#        self.dropMenuFrame.pack(side=tk.LEFT,fill=tk.X,expand=1)
+#        
+#        self.exportTxt = Button(self.canvas0, text="Export Txt rawdat", command = ())
+#        self.exportTxt.pack(side=tk.LEFT,expand=1)
 
     def onFrameConfigure(self, event):
-        self.canvas0.configure(scrollregion=self.canvas0.bbox("all"))
+        self.canvas1.configure(scrollregion=self.canvas1.bbox("all"))
         #self.canvas0.configure(scrollregion=(0,0,500,500))
         
     def SelectFolder(self):
@@ -158,7 +165,7 @@ class StanfordStabilityDat(Toplevel):
         
         
     def selectSamples(self):
-       
+        self.withdraw()
         self.selectwin=tk.Tk()
         self.selectwin.wm_title("Select 1 or more")
         self.selectwin.geometry("250x200")
@@ -188,12 +195,18 @@ class StanfordStabilityDat(Toplevel):
             plt.close()
             self.destroy()
             self.master.deiconify()
+    def on_closingPlot(self):
+        if messagebox.askokcancel("Quit", "Do you want to quit?"):
+            plt.close()
+            self.plotwin.destroy()
+            self.deiconify()
     
     def importData(self):
         #written by Eli Wolf
         
         # loop over each cell
         global importedData #importedData[samplename][]
+        importedData=[]
         subDirs=self.samplelist
         for i, subDir in enumerate(subDirs):
             print('Processing Cell: '+subDir)           
@@ -225,8 +238,10 @@ class StanfordStabilityDat(Toplevel):
                 voltage=[]
                 current=[]
                 for line in range(n_skip,len(filerawdata)):
-                    voltage.append(filerawdata[line].split('\t')[2])
-                    current.append(filerawdata[line].split('\t')[3])
+                    voltage.append(float(filerawdata[line].split('\t')[2]))
+                    current.append(float(filerawdata[line].split('\t')[3]))
+#                print(len(voltage))
+#                print(len(current))
                 importedData[i][0][j].append(voltage)
                 importedData[i][0][j].append(current)
         
@@ -251,38 +266,106 @@ class StanfordStabilityDat(Toplevel):
                 filetoread = open(iFile,"r", encoding='ISO-8859-1')
                 filerawdata = list(filetoread.readlines())
 #                iData = pd.read_csv(iFile, delimiter='\t', header = None, names=['Time', 'Hour', 'Voltage', 'Current', 'Power', 'B', 'Jsc', 'Voc', 'FF', 'P/B', 'Temp'], skiprows = n_skip)
-                
-                mpptTime += iData.Time.tolist()
-                mpptPower += iData.Power.tolist()
-                mpptVoltage += iData.Voltage.tolist()
-                iData.Current *= -1
-                mpptCurrent += iData.Current.tolist()
-        
+                Time=[]
+                Power=[]
+                voltage=[]
+                current=[]
+                for line in range(n_skip,len(filerawdata)):
+                    Time.append(float(filerawdata[line].split('\t')[0]))
+                    Power.append(float(filerawdata[line].split('\t')[4]))
+                    voltage.append(float(filerawdata[line].split('\t')[2]))
+                    current.append(float(filerawdata[line].split('\t')[3]))
+#                print(len(Time))
+#                print(len(Power))
+#                print(len(voltage))
+#                print(len(current))
+                mpptTime += Time
+                mpptPower += Power
+                mpptVoltage += voltage
+                current =[-x for x in current]
+                mpptCurrent += current
+#                print(len(current))
+#            print(type(importedData[i][0][0][0]))
+#            print(len(mpptTime))
+#            print(len(mpptCurrent))
             importedData[i][1].append([24*(x - importedData[i][0][0][0]) for x in mpptTime])
             importedData[i][1].append(mpptPower)
             importedData[i][1].append(mpptVoltage)
             importedData[i][1].append(mpptCurrent)
-            
+#            print(len(importedData[i][1][0]))
+#            print(len(importedData[i][1][3]))
         self.plotter()
             
     def plotter(self):
         global importedData
+        
+        self.plotwin=tk.Tk()
+        self.plotwin.wm_title("The graphs")
+        self.plotwin.geometry("900x700")
+        center(self.plotwin)
+        self.plotwin.protocol("WM_DELETE_WINDOW", self.on_closingPlot)
+        self.canvas1 = tk.Canvas(self.plotwin, borderwidth=0, background="white")
+        self.canvas1.pack(side="left", fill="both", expand=True)
+        frame1=Frame(self.canvas1,borderwidth=0,  bg="white")
+        frame1.pack(fill=tk.BOTH,expand=1)
+        frame1.bind("<Configure>", self.onFrameConfigure)
+        ############ the figures #################
+        self.fig = plt.figure(figsize=(6, 4))
+        self.fig.patch.set_facecolor('white')
+        canvas = FigureCanvasTkAgg(self.fig, frame1)
+        canvas.get_tk_widget().pack(fill=tk.BOTH,expand=1)
+        self.fig1 = self.fig.add_subplot(221)   
+        self.fig2 = self.fig.add_subplot(222)
+        self.fig3 = self.fig.add_subplot(223)
+        self.fig4 = self.fig.add_subplot(247)
+        self.fig5 = self.fig.add_subplot(248)
+        
+        self.toolbar = NavigationToolbar2TkAgg(canvas, frame1)
+        self.toolbar.update()
+        canvas._tkcanvas.pack(fill = tk.BOTH, expand = 1) 
+        
+        Ytype = ["Original","NormalizedAtT0", "NormalizedAtMax"]
+        self.YtypeChoice=StringVar()
+        self.YtypeChoice.set("Original") # default choice
+        self.dropMenuFrame = OptionMenu(self.canvas1, self.YtypeChoice, *Ytype, command=self.plot)
+        self.dropMenuFrame.pack(side=tk.LEFT,fill=tk.BOTH,expand=1)
+        
+        self.exportTxt = Button(self.canvas1, text="Export Txt rawdat", command = self.exportTxtfiles)
+        self.exportTxt.pack(side=tk.LEFT,expand=1)
+        
+    def exportTxtfiles(self):
+        print('exporting')
+        
+        
+        
+        
+    def plot(self,a):
+        global importedData
+        self.fig1.clear()
+        self.fig2.clear()
+        self.fig3.clear()
+        self.fig4.clear()
+        self.fig5.clear()
+        
+        
         subDirs=self.samplelist
-        normalize = 1
+#        normalize = 1
         figs = []
         axs = [self.fig1,self.fig2,self.fig3]
-        print (len(importedData[0][1]))
+        
         for i,parameter in enumerate(['Power','Voltage','Current']):
 #        	figs.append(plt.figure(parameter))
 #        	axs.append(figs[i].add_subplot(111))
             for j,subDir in enumerate(subDirs):
-                axs[i].plot(importedData[j][1][0],importedData[j][1][i+1],linestyle='-',label=subDir)
-                [i].set_title(parameter)
-                axs[i].set_xlabel('Time (Hours)')
-                axs[i].legend()
-        
-        # plt.show()
-        # sys.exit()
+                if self.YtypeChoice.get()=='NormalizedAtT0':
+                    axs[i].plot(importedData[j][1][0],[1+(m-importedData[j][1][i+1][0])/importedData[j][1][i+1][0] for m in importedData[j][1][i+1]],linestyle='-',label=subDir)
+                elif self.YtypeChoice.get()=='NormalizedAtMax':
+                    axs[i].plot(importedData[j][1][0],[1+(m-max(importedData[j][1][i+1]))/max(importedData[j][1][i+1]) for m in importedData[j][1][i+1]],linestyle='-',label=subDir)                   
+                else:
+                    axs[i].plot(importedData[j][1][0],importedData[j][1][i+1],linestyle='-',label=subDir)
+            axs[i].set_ylabel(parameter)
+            axs[i].set_xlabel('Time (Hours)')
+            axs[i].legend()
         
         # Plot One Device
         # Make Plot Canvas
@@ -295,45 +378,47 @@ class StanfordStabilityDat(Toplevel):
         
         currentMax = 0
         for i, subDir in enumerate(subDirs):
-        	for j, ivFile in enumerate(self.ivFiles):
-        		# Find Voc and Jsc
-        		xs = importedData[i][0][j][1]
-        		ys = importedData[i][0][j][2]
-        		ys*= -1
+            for j, ivFile in enumerate(self.ivFiles):
+                # Find Voc and Jsc
+                xs = importedData[i][0][j][1]
+                ys = importedData[i][0][j][2]
+                ys=[-y for y in ys]
+            
+                ps=[a*b for a,b in zip(xs,ys)]
+#               ps = xs*ys
+            
+                pMax = max(ps)
+                xMax = [i for i, j in enumerate(ps) if j == pMax][0]
+#                print(xMax)
+            
+                fjsc = interp.interp1d(xs,ys)
+                fvoc = interp.interp1d(ys,xs)
+            
+                jsc = fjsc(0)
+                voc = fvoc(0)
+            
+                ax[0].plot(voc,0,marker='o',color='k')
+                ax[0].plot(0,jsc,marker='o',color='k')
+                ax[0].plot(xs[xMax],ys[xMax],marker='o',color='k')
+                ax[0].plot(xs,ys,linestyle='-')
+            
+                ax[1].plot(24*(importedData[i][0][j][0] - importedData[0][0][0][0]),pMax,marker='o')
+            
+                mag = abs(np.floor(np.log10(pMax)))
+                newMax = np.ceil(10**mag*pMax)*10**(-1*mag)
+                if newMax > currentMax:
+                    currentMax = newMax
+            
+                ax[0].grid()
         
-        		ps = xs*ys
+            ax[1].plot(importedData[i][1][0],importedData[i][1][1],linestyle='-',color='k')
         
-        		pMax = max(ps)
-        		xMax = [i for i, j in enumerate(ps) if j == pMax]
-        
-        		fjsc = interp.interp1d(xs,ys)
-        		fvoc = interp.interp1d(ys,xs)
-        
-        		jsc = fjsc(0)
-        		voc = fvoc(0)
-        
-        		ax[0].plot(voc,0,marker='o',color='k')
-        		ax[0].plot(0,jsc,marker='o',color='k')
-        		ax[0].plot(xs[xMax],ys[xMax],marker='o',color='k')
-        		ax[0].plot(xs,ys,linestyle='-')
-        
-        		ax[1].plot(24*(importedData[i][0][j][0] - importedData[0][0][0][0]),pMax,marker='o')
-        
-        		mag = abs(np.floor(np.log10(pMax)))
-        		newMax = np.ceil(10**mag*pMax)*10**(-1*mag)
-        		if newMax > currentMax:
-        			currentMax = newMax
-        
-        		ax[0].grid()
-        
-        	ax[1].plot(importedData[i][1][0],importedData[i][1][1],linestyle='-',color='k')
-        
-        	#change ylim properly
-        	mag = abs(np.floor(np.log10(max(importedData[i][1][1]))))
-        	# mag += 0
-        	newMax = np.ceil(10**mag*max(importedData[i][1][1]))*10**(-1*mag)
-        	if newMax > currentMax:
-        		currentMax = newMax
+        #change ylim properly
+        mag = abs(np.floor(np.log10(max(importedData[i][1][1]))))
+        # mag += 0
+        newMax = np.ceil(10**mag*max(importedData[i][1][1]))*10**(-1*mag)
+        if newMax > currentMax:
+            currentMax = newMax
         
         ax[1].set_ylim(bottom = 0, top = currentMax)
         

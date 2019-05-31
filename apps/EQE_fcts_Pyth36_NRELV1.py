@@ -31,6 +31,7 @@ TODOLIST
 - DB batch and samplename: might fail if user did not follow exactly the pattern. put some safety 
 when there are several tabs, numbers are added to the tab names => don't use that as batch and samplename
 
+- add curve thickness option
 
 """
 #%%

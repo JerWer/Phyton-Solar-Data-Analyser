@@ -196,63 +196,72 @@ class StanfordStabilityDat(Toplevel):
         global importedData #importedData[samplename][]
         subDirs=self.samplelist
         for i, subDir in enumerate(subDirs):
-        	print('Processing Cell: '+subDir)           
+            print('Processing Cell: '+subDir)           
             
-        	files = os.listdir(os.path.join(self.changedFilePath,subDir))
-        	files.sort()
+            files = os.listdir(os.path.join(self.changedFilePath,subDir))
+            files.sort()
         
-        	mpptFiles = [file for file in files if subDir+'_LT_' in file]
-        	mpptFiles.sort()
-        	# mpptFiles = mpptFiles[0:4]
+            mpptFiles = [file for file in files if subDir+'_LT_' in file]
+            mpptFiles.sort()
+            # mpptFiles = mpptFiles[0:4]
         
-        	self.ivFiles = [file for file in files if subDir+'_IV_' in file]
-        	self.ivFiles.sort()
-        	# ivFiles = ivFiles[0:1]
+            self.ivFiles = [file for file in files if subDir+'_IV_' in file]
+            self.ivFiles.sort()
+            # ivFiles = ivFiles[0:1]
         
-        	importedData.append([])
-        	importedData[i].append([])
-        	importedData[i].append([])
-                    
-        	#import IV Scans
-        	n_skip = 5
-        	for j, ivFile in enumerate(self.ivFiles):
-        		print ('Processing IV File: '+ivFile)
+            importedData.append([])
+            importedData[i].append([])
+            importedData[i].append([])
+            
+            #import IV Scans
+            n_skip=5
+            
+            for j, ivFile in enumerate(self.ivFiles):
+                print ('Processing IV File: '+ivFile)
+                iFile = (os.path.join(self.changedFilePath,subDir,ivFile))
+                filetoread = open(iFile,"r", encoding='ISO-8859-1')
+                filerawdata = list(filetoread.readlines())
+                importedData[i][0].append([])
+                voltage=[]
+                current=[]
+                for line in range(n_skip,len(filerawdata)):
+                    voltage.append(filerawdata[line].split('\t')[2])
+                    current.append(filerawdata[line].split('\t')[3])
+                importedData[i][0][j].append(voltage)
+                importedData[i][0][j].append(current)
         
-        		iFile = (os.path.join(self.changedFilePath,subDir,ivFile))
-        		iData = pd.read_csv(iFile, delimiter='\t', header = None, names=['Channel', 'Step', 'Voltage', 'Current', 'Power', 'B'], skiprows = n_skip)
-        		importedData[i][0].append([])
-        		importedData[i][0][j].append(iData.Voltage)
-        		importedData[i][0][j].append(iData.Current)
+                with open(iFile, 'r', encoding='ISO-8859-1') as file:
+                     for k, line in enumerate(file):
+                         if k == 2:
+                             ivTime = datetime.datetime.strptime(line[:-1],'%m/%d/%Y %H:%M:%S')
+                             ivTime -= datetime.datetime(1899,12,30,0,0,0,0)
+                             ivTime = ivTime.total_seconds()/(24*3600)
         
-        		with open(iFile, 'r') as file:
-        			for k, line in enumerate(file):
-        				if k == 2:
-        					ivTime = datetime.datetime.strptime(line[:-1],'%m/%d/%Y %H:%M:%S')
-        					ivTime -= datetime.datetime(1899,12,30,0,0,0,0)
-        					ivTime = ivTime.total_seconds()/(24*3600)
+                importedData[i][0][j].insert(0,ivTime)
+
+            #import MPPT Data
+            n_skip = 1
+            mpptTime = []
+            mpptPower = []
+            mpptVoltage = []
+            mpptCurrent = []
+            for k, mpptFile in enumerate(mpptFiles):
+                print ('Processing MPPT File: '+mpptFiles[k])
+                iFile = (os.path.join(self.changedFilePath,subDirs[i],mpptFiles[k]))
+                filetoread = open(iFile,"r", encoding='ISO-8859-1')
+                filerawdata = list(filetoread.readlines())
+#                iData = pd.read_csv(iFile, delimiter='\t', header = None, names=['Time', 'Hour', 'Voltage', 'Current', 'Power', 'B', 'Jsc', 'Voc', 'FF', 'P/B', 'Temp'], skiprows = n_skip)
+                
+                mpptTime += iData.Time.tolist()
+                mpptPower += iData.Power.tolist()
+                mpptVoltage += iData.Voltage.tolist()
+                iData.Current *= -1
+                mpptCurrent += iData.Current.tolist()
         
-        		importedData[i][0][j].insert(0,ivTime)
-        
-        	#import MPPT Data
-        	n_skip = 1
-        	mpptTime = []
-        	mpptPower = []
-        	mpptVoltage = []
-        	mpptCurrent = []
-        	for k, mpptFile in enumerate(mpptFiles):
-        		print ('Processing MPPT File: '+mpptFiles[k])
-        		iFile = (os.path.join(self.changedFilePath,subDirs[i],mpptFiles[k]))
-        		iData = pd.read_csv(iFile, delimiter='\t', header = None, names=['Time', 'Hour', 'Voltage', 'Current', 'Power', 'B', 'Jsc', 'Voc', 'FF', 'P/B', 'Temp'], skiprows = n_skip)
-        		mpptTime += iData.Time.tolist()
-        		mpptPower += iData.Power.tolist()
-        		mpptVoltage += iData.Voltage.tolist()
-        		iData.Current *= -1
-        		mpptCurrent += iData.Current.tolist()
-        
-        	importedData[i][1].append([24*(x - importedData[i][0][0][0]) for x in mpptTime])
-        	importedData[i][1].append(mpptPower)
-        	importedData[i][1].append(mpptVoltage)
-        	importedData[i][1].append(mpptCurrent)
+            importedData[i][1].append([24*(x - importedData[i][0][0][0]) for x in mpptTime])
+            importedData[i][1].append(mpptPower)
+            importedData[i][1].append(mpptVoltage)
+            importedData[i][1].append(mpptCurrent)
             
         self.plotter()
             
@@ -261,23 +270,24 @@ class StanfordStabilityDat(Toplevel):
         subDirs=self.samplelist
         normalize = 1
         figs = []
-        axs = []
+        axs = [self.fig1,self.fig2,self.fig3]
         print (len(importedData[0][1]))
         for i,parameter in enumerate(['Power','Voltage','Current']):
-        	figs.append(plt.figure(parameter))
-        	axs.append(figs[i].add_subplot(111))
-        	for j,subDir in enumerate(subDirs):
-        		axs[i].plot(importedData[j][1][0],importedData[j][1][i+1],linestyle='-',label=subDir)
-        		axs[i].set_title(parameter)
-        		axs[i].set_xlabel('Time (Hours)')
-        		axs[i].legend()
+#        	figs.append(plt.figure(parameter))
+#        	axs.append(figs[i].add_subplot(111))
+            for j,subDir in enumerate(subDirs):
+                axs[i].plot(importedData[j][1][0],importedData[j][1][i+1],linestyle='-',label=subDir)
+                [i].set_title(parameter)
+                axs[i].set_xlabel('Time (Hours)')
+                axs[i].legend()
         
         # plt.show()
         # sys.exit()
         
         # Plot One Device
         # Make Plot Canvas
-        fig, ax = plt.subplots(1,2)
+#        fig, ax = plt.subplots(1,2)
+        ax=[self.fig4,self.fig5]
         
         # Add Origin Lines for IV Curves
         ax[0].axhline(y=0, color='k')
@@ -326,7 +336,9 @@ class StanfordStabilityDat(Toplevel):
         		currentMax = newMax
         
         ax[1].set_ylim(bottom = 0, top = currentMax)
-        plt.show()
+        
+        plt.gcf().canvas.draw()
+#        plt.show()
         
 
 ###############################################################################        

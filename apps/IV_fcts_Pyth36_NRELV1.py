@@ -2857,7 +2857,7 @@ class IVApp(Toplevel):
 
                 partdict["MeasDayTime"]=modification_date(file_path[i])
 
-                partdict["CellSurface"]= float(filerawdata[0].split('\t')[-1])
+                partdict["CellSurface"]= 1
 
                 partdict["Delay"]=0
                 partdict["IntegTime"]=0
@@ -2869,7 +2869,7 @@ class IVApp(Toplevel):
                 partdict["Group"]="Default group"
                 
                 mpppartdat = [[],[],[],[],[]]#[voltage,current,time,power,vstep,delay]
-                for item in range(1,len(filerawdata),1):
+                for item in range(2,len(filerawdata),1):
                     mpppartdat[0].append(float(filerawdata[item].split("\t")[0]))
                     mpppartdat[1].append(float(filerawdata[item].split("\t")[1]))
                     mpppartdat[2].append(float(filerawdata[item].split("\t")[2]))

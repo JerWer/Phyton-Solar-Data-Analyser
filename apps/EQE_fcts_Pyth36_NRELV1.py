@@ -1657,7 +1657,7 @@ class EQEApp(Toplevel):
                 listoflinestyle.append(DATAx[item][9])
                 listofcolorstyle.append(DATAx[item][10])
                 listofanswer.append(DATAx[item][0])
-                listoflinewidthstyle.append(DATAx[item][29])
+                listoflinewidthstyle.append(str(DATAx[item][29]))
             
             rowpos=1
             forbiddenrange=[]
@@ -1690,10 +1690,10 @@ class EQEApp(Toplevel):
                             colstyle.grid(row=rowpos, column=6, columnspan=2)
                             
                             
-                            linewidth = tk.IntVar()
+                            linewidth = tk.StringVar()
                             listoflinewidthstyle[item1]=Entry(self.frame,textvariable=linewidth)
                             listoflinewidthstyle[item1].grid(row=rowpos,column=8, columnspan=1)
-                            linewidth.set(DATAx[item1][29])
+                            linewidth.set(str(DATAx[item1][29]))
                             
                             rowpos=rowpos+1
                             
@@ -1701,7 +1701,7 @@ class EQEApp(Toplevel):
                             listofanswer[item1]=str(DATAx[item1][5])
                             listoflinestyle.append(str(DATAx[item1][9]))
                             listofcolorstyle.append(str(DATAx[item1][10]))
-                            listoflinewidthstyle.append(int(DATAx[item1][29]))
+                            listoflinewidthstyle.append(str(DATAx[item1][29]))
             #print(listofanswer)
             
         def getColor(self,rowitem):
@@ -1821,7 +1821,7 @@ class EQEApp(Toplevel):
         global listofanswer
         global listoflinestyle
         global listofcolorstyle,listoflinewidthstyle
-        
+
         leglist=[]
         for e in listofanswer:
             if type(e)!=str:

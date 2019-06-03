@@ -53,7 +53,6 @@ TODOLIST
 
 - export with peak fitting visible
 
-- y axis in log scale
 
 """
 #%%
@@ -186,6 +185,10 @@ class XRDApp(Toplevel):
         self.ylabel = IntVar()
         Checkbutton(frame211,text="noylab",variable=self.ylabel, command = lambda: self.updateXRDgraph(0),
                            onvalue=1,offvalue=0,height=1, width=4, fg='black',background='lightgrey').pack(side=tk.LEFT,expand=1)
+        self.ylog = IntVar()
+        Checkbutton(frame211,text="ylog",variable=self.ylog, command = lambda: self.updateXRDgraph(0),
+                           onvalue=1,offvalue=0,height=1, width=4, fg='black',background='lightgrey').pack(side=tk.LEFT,expand=1)
+
         self.changetoQ = IntVar()
         Checkbutton(frame211,text="q?",variable=self.changetoQ, command = lambda: self.updateXRDgraph(0),
                            onvalue=1,offvalue=0,height=1, width=3, fg='black',background='lightgrey').pack(side=tk.LEFT,expand=1)
@@ -373,8 +376,12 @@ class XRDApp(Toplevel):
                 if max(y)>maxY:
                     maxY=max(y)
                 
-                self.XRDgraph.plot(x,y, color=colorstylelist[coloridx], label=item)
-                coloridx+=1
+                if self.ylog.get():
+                    self.XRDgraph.semilogy(x,y, color=colorstylelist[coloridx], label=item)
+                    coloridx+=1
+                else:
+                    self.XRDgraph.plot(x,y, color=colorstylelist[coloridx], label=item)
+                    coloridx+=1
                 
 #            if self.changetoQ.get():
 #                # Find min and max two theta, make a list of tth values for the tick labels

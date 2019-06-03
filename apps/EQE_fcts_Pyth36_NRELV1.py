@@ -31,8 +31,6 @@ TODOLIST
 - DB batch and samplename: might fail if user did not follow exactly the pattern. put some safety 
 when there are several tabs, numbers are added to the tab names => don't use that as batch and samplename
 
-- add curve thickness option
-
 """
 #%%
 
@@ -79,6 +77,7 @@ takenforplot=[]
 listofanswer=[]
 listoflinestyle=[]
 listofcolorstyle=[]
+listoflinewidthstyle=[]
 colorstylelist = ['black', 'red', 'blue', 'brown', 'green','cyan','magenta','olive','navy','orange','gray','aliceblue','antiquewhite','aqua','aquamarine','azure','beige','bisque','blanchedalmond','blue','blueviolet','brown','burlywood','cadetblue','chartreuse','chocolate','coral','cornflowerblue','cornsilk','crimson','darkblue','darkcyan','darkgoldenrod','darkgray','darkgreen','darkkhaki','darkmagenta','darkolivegreen','darkorange','darkorchid','darkred','darksalmon','darkseagreen','darkslateblue','darkslategray','darkturquoise','darkviolet','deeppink','deepskyblue','dimgray','dodgerblue','firebrick','floralwhite','forestgreen','fuchsia','gainsboro','ghostwhite','gold','goldenrod','greenyellow','honeydew','hotpink','indianred','indigo','ivory','khaki','lavender','lavenderblush','lawngreen','lemonchiffon','lightblue','lightcoral','lightcyan','lightgoldenrodyellow','lightgreen','lightgray','lightpink','lightsalmon','lightseagreen','lightskyblue','lightslategray','lightsteelblue','lightyellow','lime','limegreen','linen','magenta','maroon','mediumaquamarine','mediumblue','mediumorchid','mediumpurple','mediumseagreen','mediumslateblue','mediumspringgreen','mediumturquoise','mediumvioletred','midnightblue','mintcream','mistyrose','moccasin','navajowhite','navy','oldlace','olive','olivedrab','orange','orangered','orchid','palegoldenrod','palegreen','paleturquoise','palevioletred','papayawhip','peachpuff','peru','pink','plum','powderblue','purple','red','rosybrown','royalblue','saddlebrown','salmon','sandybrown','seagreen','seashell','sienna','silver','skyblue','slateblue','slategray','snow','springgreen','steelblue','tan','teal','thistle','tomato','turquoise','violet','wheat','white','whitesmoke','yellow','yellowgreen']
 
 
@@ -306,7 +305,7 @@ class EQEApp(Toplevel):
         global takenforplot
         global listofanswer
         global listoflinestyle
-        global listofcolorstyle
+        global listofcolorstyle, listoflinewidthstyle
         global colorstylelist
         
         if messagebox.askokcancel("Quit", "Do you want to quit?"):
@@ -318,6 +317,7 @@ class EQEApp(Toplevel):
             listofanswer=[]
             listoflinestyle=[]
             listofcolorstyle=[]
+            listoflinewidthstyle=[]
             colorstylelist = ['black', 'red', 'blue', 'brown', 'green','cyan','magenta','olive','navy','orange','gray','aliceblue','antiquewhite','aqua','aquamarine','azure','beige','bisque','blanchedalmond','blue','blueviolet','brown','burlywood','cadetblue','chartreuse','chocolate','coral','cornflowerblue','cornsilk','crimson','darkblue','darkcyan','darkgoldenrod','darkgray','darkgreen','darkkhaki','darkmagenta','darkolivegreen','darkorange','darkorchid','darkred','darksalmon','darkseagreen','darkslateblue','darkslategray','darkturquoise','darkviolet','deeppink','deepskyblue','dimgray','dodgerblue','firebrick','floralwhite','forestgreen','fuchsia','gainsboro','ghostwhite','gold','goldenrod','greenyellow','honeydew','hotpink','indianred','indigo','ivory','khaki','lavender','lavenderblush','lawngreen','lemonchiffon','lightblue','lightcoral','lightcyan','lightgoldenrodyellow','lightgreen','lightgray','lightpink','lightsalmon','lightseagreen','lightskyblue','lightslategray','lightsteelblue','lightyellow','lime','limegreen','linen','magenta','maroon','mediumaquamarine','mediumblue','mediumorchid','mediumpurple','mediumseagreen','mediumslateblue','mediumspringgreen','mediumturquoise','mediumvioletred','midnightblue','mintcream','mistyrose','moccasin','navajowhite','navy','oldlace','olive','olivedrab','orange','orangered','orchid','palegoldenrod','palegreen','paleturquoise','palevioletred','papayawhip','peachpuff','peru','pink','plum','powderblue','purple','red','rosybrown','royalblue','saddlebrown','salmon','sandybrown','seagreen','seashell','sienna','silver','skyblue','slateblue','slategray','snow','springgreen','steelblue','tan','teal','thistle','tomato','turquoise','violet','wheat','white','whitesmoke','yellow','yellowgreen']
             plt.close()
             self.destroy()
@@ -968,7 +968,7 @@ class EQEApp(Toplevel):
         print(len(DATA))
         self.DATA=DATA
         DATAforgraph=[] # [0 samplenameshort, 1 jsc, 2 dataWave, 3 dataInt, 4 Eg, 5 NameMod, 6 Name_Jsc, 7 Name_Eg, 8 Name_Jsc_Eg, 9 linestyle, 10 linecolor, 11 slope, 12 h, 13 slopeLn, 14 hln, 
-                            #15 dataEnergyLn, 16 dataIntLn, 17 ptstgtLnX, 18 ptstgtLnY, 19 EgTauc, 20 xtauc, 21 ytauc, 22 mtauc, 23 htauc, 24 Name_Egln, 25 Name_Jsc_Egln, 26 Name_Egtauc, 27 Name_Jsc_Egtauc, 28 integJsclist ]
+                            #15 dataEnergyLn, 16 dataIntLn, 17 ptstgtLnX, 18 ptstgtLnY, 19 EgTauc, 20 xtauc, 21 ytauc, 22 mtauc, 23 htauc, 24 Name_Egln, 25 Name_Jsc_Egln, 26 Name_Egtauc, 27 Name_Jsc_Egtauc, 28 integJsclist , 29 linewidth]
         for i in range(len(DATA)):
             for j in range(len(DATA[i]['Jsc'])):
                 DATAforgraph.append([DATA[i]['Name']+'_'+str(j),DATA[i]['Jsc'][j],DATA[i]['DATA'][0],DATA[i]['DATA'][j+1],
@@ -978,7 +978,7 @@ class EQEApp(Toplevel):
                                      DATA[i]['tangentLn'][j][2],DATA[i]['tangentLn'][j][3],DATA[i]['EgTauc'][j][0],DATA[i]['EgTauc'][j][1],DATA[i]['EgTauc'][j][2],DATA[i]['EgTauc'][j][3],DATA[i]['EgTauc'][j][4],
                                      DATA[i]['Name']+'_'+str(j)+'_'+'Eg: %.2f' % DATA[i]['EgLn'][j],DATA[i]['Name']+'_'+str(j)+'_'+'Jsc: %.2f' % DATA[i]['Jsc'][j]+'_'+'Eg: %.2f' % DATA[i]['EgLn'][j],
                                      DATA[i]['Name']+'_'+str(j)+'_'+'Eg: %.2f' % DATA[i]['EgTauc'][j][0],DATA[i]['Name']+'_'+str(j)+'_'+'Jsc: %.2f' % DATA[i]['Jsc'][j]+'_'+'Eg: %.2f' % DATA[i]['EgTauc'][j][0],
-                                     DATA[i]['integJsclist'][j+1]
+                                     DATA[i]['integJsclist'][j+1],int(2)
                                      ])
         DATAFORGRAPH = DATAforgraph
         messagebox.showinfo("Information","It's done")
@@ -1272,15 +1272,15 @@ class EQEApp(Toplevel):
                     
                     if self.CheckLegend.get()==1:
                         if self.CheckLegJsc.get()==0 and self.CheckLegEg.get()==0:
-                            EQEfig.plot(x,y,label=DATAx[sampletotake[i]][5],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10])
+                            EQEfig.plot(x,y,label=DATAx[sampletotake[i]][5],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])
                         elif self.CheckLegJsc.get()==1 and self.CheckLegEg.get()==0:
-                            EQEfig.plot(x,y,label=DATAx[sampletotake[i]][6],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10])
+                            EQEfig.plot(x,y,label=DATAx[sampletotake[i]][6],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])
                         elif self.CheckLegJsc.get()==0 and self.CheckLegEg.get()==1:
-                            EQEfig.plot(x,y,label=DATAx[sampletotake[i]][7],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10])
+                            EQEfig.plot(x,y,label=DATAx[sampletotake[i]][7],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])
                         elif self.CheckLegJsc.get()==1 and self.CheckLegEg.get()==1:
-                            EQEfig.plot(x,y,label=DATAx[sampletotake[i]][8],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10])
+                            EQEfig.plot(x,y,label=DATAx[sampletotake[i]][8],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])
                     else:
-                        EQEfig.plot(x,y,linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10])
+                        EQEfig.plot(x,y,linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])
                     
                     if self.CheckTangent.get()==1:
                         m=DATAx[sampletotake[i]][11]
@@ -1325,20 +1325,20 @@ class EQEApp(Toplevel):
                     
                     if self.CheckLegend.get()==1:
                         if self.CheckLegJsc.get()==0 and self.CheckLegEg.get()==0:
-                            EQEfig.plot(x,y,label=DATAx[sampletotake[i]][5],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10])
-                            ax2.plot(x,y2,label=DATAx[sampletotake[i]][5],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10])                      
+                            EQEfig.plot(x,y,label=DATAx[sampletotake[i]][5],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])
+                            ax2.plot(x,y2,label=DATAx[sampletotake[i]][5],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])                      
                         elif self.CheckLegJsc.get()==1 and self.CheckLegEg.get()==0:
-                            EQEfig.plot(x,y,label=DATAx[sampletotake[i]][6],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10])
-                            ax2.plot(x,y2,label=DATAx[sampletotake[i]][6],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10])
+                            EQEfig.plot(x,y,label=DATAx[sampletotake[i]][6],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])
+                            ax2.plot(x,y2,label=DATAx[sampletotake[i]][6],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])
                         elif self.CheckLegJsc.get()==0 and self.CheckLegEg.get()==1:
-                            EQEfig.plot(x,y,label=DATAx[sampletotake[i]][7],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10])
-                            ax2.plot(x,y2,label=DATAx[sampletotake[i]][7],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10])                        
+                            EQEfig.plot(x,y,label=DATAx[sampletotake[i]][7],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])
+                            ax2.plot(x,y2,label=DATAx[sampletotake[i]][7],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])                        
                         elif self.CheckLegJsc.get()==1 and self.CheckLegEg.get()==1:
-                            EQEfig.plot(x,y,label=DATAx[sampletotake[i]][8],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10])
-                            ax2.plot(x,y2,label=DATAx[sampletotake[i]][8],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10])                    
+                            EQEfig.plot(x,y,label=DATAx[sampletotake[i]][8],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])
+                            ax2.plot(x,y2,label=DATAx[sampletotake[i]][8],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])                    
                     else:
-                        EQEfig.plot(x,y,linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10])
-                        ax2.plot(x,y2,linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10])
+                        EQEfig.plot(x,y,linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])
+                        ax2.plot(x,y2,linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])
                         
                     if self.CheckTangent.get()==1:
                         m=DATAx[sampletotake[i]][11]
@@ -1392,15 +1392,15 @@ class EQEApp(Toplevel):
                 
                 if self.CheckLegend.get()==1:
                     if self.CheckLegJsc.get()==0 and self.CheckLegEg.get()==0:
-                        EQEfig.plot(x,y,label=DATAx[sampletotake[i]][5],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10])
+                        EQEfig.plot(x,y,label=DATAx[sampletotake[i]][5],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])
                     elif self.CheckLegJsc.get()==1 and self.CheckLegEg.get()==0:
-                        EQEfig.plot(x,y,label=DATAx[sampletotake[i]][6],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10])
+                        EQEfig.plot(x,y,label=DATAx[sampletotake[i]][6],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])
                     elif self.CheckLegJsc.get()==0 and self.CheckLegEg.get()==1:
-                        EQEfig.plot(x,y,label=DATAx[sampletotake[i]][24],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10])
+                        EQEfig.plot(x,y,label=DATAx[sampletotake[i]][24],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])
                     elif self.CheckLegJsc.get()==1 and self.CheckLegEg.get()==1:
-                        EQEfig.plot(x,y,label=DATAx[sampletotake[i]][25],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10])
+                        EQEfig.plot(x,y,label=DATAx[sampletotake[i]][25],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])
                 else:
-                    EQEfig.plot(x,y,linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10])
+                    EQEfig.plot(x,y,linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])
                 
                 if self.CheckTangent.get()==1:
                     m=DATAx[sampletotake[i]][13]
@@ -1450,15 +1450,15 @@ class EQEApp(Toplevel):
                 
                 if self.CheckLegend.get()==1:
                     if self.CheckLegJsc.get()==0 and self.CheckLegEg.get()==0:
-                        EQEfig.plot(x,y,label=DATAx[sampletotake[i]][5],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10])
+                        EQEfig.plot(x,y,label=DATAx[sampletotake[i]][5],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])
                     elif self.CheckLegJsc.get()==1 and self.CheckLegEg.get()==0:
-                        EQEfig.plot(x,y,label=DATAx[sampletotake[i]][6],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10])
+                        EQEfig.plot(x,y,label=DATAx[sampletotake[i]][6],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])
                     elif self.CheckLegJsc.get()==0 and self.CheckLegEg.get()==1:
-                        EQEfig.plot(x,y,label=DATAx[sampletotake[i]][26],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10])
+                        EQEfig.plot(x,y,label=DATAx[sampletotake[i]][26],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])
                     elif self.CheckLegJsc.get()==1 and self.CheckLegEg.get()==1:
-                        EQEfig.plot(x,y,label=DATAx[sampletotake[i]][27],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10])
+                        EQEfig.plot(x,y,label=DATAx[sampletotake[i]][27],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])
                 else:
-                    EQEfig.plot(x,y,linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10])
+                    EQEfig.plot(x,y,linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])
                 
                 if self.CheckTangent.get()==1:
                     m=DATAx[sampletotake[i]][22]
@@ -1502,15 +1502,15 @@ class EQEApp(Toplevel):
                 
                 if self.CheckLegend.get()==1:
                     if self.CheckLegJsc.get()==0 and self.CheckLegEg.get()==0:
-                        EQEfig.plot(x,y,label=DATAx[sampletotake[i]][5],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10])
+                        EQEfig.plot(x,y,label=DATAx[sampletotake[i]][5],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])
                     elif self.CheckLegJsc.get()==1 and self.CheckLegEg.get()==0:
-                        EQEfig.plot(x,y,label=DATAx[sampletotake[i]][6],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10])
+                        EQEfig.plot(x,y,label=DATAx[sampletotake[i]][6],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])
                     elif self.CheckLegJsc.get()==0 and self.CheckLegEg.get()==1:
-                        EQEfig.plot(x,y,label=DATAx[sampletotake[i]][7],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10])
+                        EQEfig.plot(x,y,label=DATAx[sampletotake[i]][7],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])
                     elif self.CheckLegJsc.get()==1 and self.CheckLegEg.get()==1:
-                        EQEfig.plot(x,y,label=DATAx[sampletotake[i]][8],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10])
+                        EQEfig.plot(x,y,label=DATAx[sampletotake[i]][8],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])
                 else:
-                    EQEfig.plot(x,y,linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10])
+                    EQEfig.plot(x,y,linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])
             self.EQEgraph.set_ylabel('Norm. EQE (-)', fontsize=14)
             self.EQEgraph.set_xlabel('Wavelength (nm)', fontsize=14)
             if titEQE:
@@ -1549,15 +1549,15 @@ class EQEApp(Toplevel):
                 
                 if self.CheckLegend.get()==1:
                     if self.CheckLegJsc.get()==0 and self.CheckLegEg.get()==0:
-                        EQEfig.plot(x,y,label=DATAx[sampletotake[i]][5],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10])
+                        EQEfig.plot(x,y,label=DATAx[sampletotake[i]][5],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])
                     elif self.CheckLegJsc.get()==1 and self.CheckLegEg.get()==0:
-                        EQEfig.plot(x,y,label=DATAx[sampletotake[i]][6],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10])
+                        EQEfig.plot(x,y,label=DATAx[sampletotake[i]][6],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])
                     elif self.CheckLegJsc.get()==0 and self.CheckLegEg.get()==1:
-                        EQEfig.plot(x,y,label=DATAx[sampletotake[i]][7],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10])
+                        EQEfig.plot(x,y,label=DATAx[sampletotake[i]][7],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])
                     elif self.CheckLegJsc.get()==1 and self.CheckLegEg.get()==1:
-                        EQEfig.plot(x,y,label=DATAx[sampletotake[i]][8],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10])
+                        EQEfig.plot(x,y,label=DATAx[sampletotake[i]][8],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])
                 else:
-                    EQEfig.plot(x,y,linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10])
+                    EQEfig.plot(x,y,linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])
             self.EQEgraph.set_ylabel('Norm. EQE (-)', fontsize=14)
             self.EQEgraph.set_xlabel('Wavelength (nm)', fontsize=14)
             if titEQE:
@@ -1642,7 +1642,7 @@ class EQEApp(Toplevel):
             global colorstylelist
             global listofanswer
             global listoflinestyle
-            global listofcolorstyle
+            global listofcolorstyle, listoflinewidthstyle
             DATAx=DATAFORGRAPH
             listofanswer=[]
             sampletotake=[]
@@ -1652,11 +1652,12 @@ class EQEApp(Toplevel):
                     
             listoflinestyle=[]
             listofcolorstyle=[]
+            listoflinewidthstyle=[]
             for item in range(len(DATAx)):
                 listoflinestyle.append(DATAx[item][9])
                 listofcolorstyle.append(DATAx[item][10])
                 listofanswer.append(DATAx[item][0])
-            
+                listoflinewidthstyle.append(DATAx[item][29])
             
             rowpos=1
             forbiddenrange=[]
@@ -1687,11 +1688,20 @@ class EQEApp(Toplevel):
                             self.positioncolor=item1
                             colstyle=Button(self.frame, text='Select Color', foreground=listofcolorstyle[item1], command=partial(self.getColor,item1))
                             colstyle.grid(row=rowpos, column=6, columnspan=2)
+                            
+                            
+                            linewidth = tk.IntVar()
+                            listoflinewidthstyle[item1]=Entry(self.frame,textvariable=linewidth)
+                            listoflinewidthstyle[item1].grid(row=rowpos,column=8, columnspan=1)
+                            linewidth.set(DATAx[item1][29])
+                            
                             rowpos=rowpos+1
+                            
                         else:
                             listofanswer[item1]=str(DATAx[item1][5])
                             listoflinestyle.append(str(DATAx[item1][9]))
                             listofcolorstyle.append(str(DATAx[item1][10]))
+                            listoflinewidthstyle.append(int(DATAx[item1][29]))
             #print(listofanswer)
             
         def getColor(self,rowitem):
@@ -1796,7 +1806,7 @@ class EQEApp(Toplevel):
             self.window = tk.Toplevel()
             self.window.wm_title("Change Legends")
             center(self.window)
-            self.window.geometry("400x300")
+            self.window.geometry("450x300")
             
             Button(self.window, text="Update",
                                 command = self.UpdateEQELegMod).pack()
@@ -1810,7 +1820,7 @@ class EQEApp(Toplevel):
         global DATAFORGRAPH
         global listofanswer
         global listoflinestyle
-        global listofcolorstyle
+        global listofcolorstyle,listoflinewidthstyle
         
         leglist=[]
         for e in listofanswer:
@@ -1839,6 +1849,14 @@ class EQEApp(Toplevel):
                 leglist.append(e) 
         for item in range(len(DATAFORGRAPH)):
             DATAFORGRAPH[item][10]=leglist[item]  
+        leglist=[]
+        for e in listoflinewidthstyle:
+            if type(e)!=str:
+                leglist.append(e.get())
+            else:
+                leglist.append(e) 
+        for item in range(len(DATAFORGRAPH)):
+            DATAFORGRAPH[item][29]=int(leglist[item]) 
                 
         
         self.UpdateEQEGraph()

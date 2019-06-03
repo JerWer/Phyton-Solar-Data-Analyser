@@ -2,65 +2,24 @@
 
 import os,datetime
 import matplotlib.pyplot as plt
-#from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk as NavigationToolbar2TkAgg
-
 import tkinter as tk
 from tkinter import *
-from tkinter.ttk import Treeview
-from tkinter import messagebox, Button, Label, Frame, Entry, Checkbutton, IntVar, Toplevel, Scrollbar, Canvas, OptionMenu, StringVar
-
+from tkinter import messagebox, Button, Frame, Toplevel, OptionMenu, StringVar
 from tkinter import filedialog
-#from pathlib import Path
 import numpy as np
-#import copy
-#import xlsxwriter
-#import xlrd
-#from scipy.interpolate import interp1d
-#from scipy import integrate
-#from operator import itemgetter
-#from itertools import groupby, chain
-#import PIL
-#from PIL import Image as ImageTk
-#from matplotlib.ticker import MaxNLocator
-#from tkinter import font as tkFont
-#from matplotlib.transforms import Bbox
-#import pickle
-#import six
-#from tkinter import colorchooser
-#from functools import partial
-#import darktolight as DtoL
 import os.path
-#import shutil
-#import sqlite3
-#from dateutil import parser
-
-
-
-
-
-from PyQt5 import QtWidgets, QtCore
-#import numpy as np
 import scipy.interpolate as interp
-#import matplotlib.pyplot as plt
-from scipy.signal import savgol_filter
-import pandas as pd
-import sys
 import os
 #import datetime
 
 '''
 To Do:
 
-export txt file with rawdata to be able to replot it in origin
-
 normalize at time X specified by user
-do the normalization at import and not at plotting
 
 selectable substrates to plot in listbox
-    
-    
     
 Add option to only plot MPPT
 Add option to only plot every x IV curves
@@ -288,12 +247,20 @@ class StanfordStabilityDat(Toplevel):
 #            print(type(importedData[i][0][0][0]))
 #            print(len(mpptTime))
 #            print(len(mpptCurrent))
-            importedData[i][1].append([24*(x - importedData[i][0][0][0]) for x in mpptTime])
-            importedData[i][1].append(mpptPower)
-            importedData[i][1].append(mpptVoltage)
-            importedData[i][1].append(mpptCurrent)
-#            print(len(importedData[i][1][0]))
-#            print(len(importedData[i][1][3]))
+            importedData[i][1].append([24*(x - importedData[i][0][0][0]) for x in mpptTime])#0
+            importedData[i][1].append(mpptPower)#1
+            importedData[i][1].append(mpptVoltage)#2
+            importedData[i][1].append(mpptCurrent)#3
+            importedData[i][1].append([1+(m-mpptPower[0])/mpptPower[0] for m in mpptPower])#4
+            importedData[i][1].append([1+(m-mpptVoltage[0])/mpptVoltage[0] for m in mpptVoltage])#5
+            importedData[i][1].append([1+(m-mpptCurrent[0])/mpptCurrent[0] for m in mpptCurrent])#6
+            maxp=max(mpptPower)
+            importedData[i][1].append([1+(m-maxp)/maxp for m in mpptPower])#7
+            maxv=max(mpptVoltage)
+            importedData[i][1].append([1+(m-maxv)/maxv for m in mpptVoltage])#8
+            maxc=max(mpptCurrent)
+            importedData[i][1].append([1+(m-maxc)/maxc for m in mpptCurrent])#9
+            
         self.plotter()
             
     def plotter(self):
@@ -301,7 +268,7 @@ class StanfordStabilityDat(Toplevel):
         
         self.plotwin=tk.Tk()
         self.plotwin.wm_title("The graphs")
-        self.plotwin.geometry("900x700")
+        self.plotwin.geometry("800x600")
         center(self.plotwin)
         self.plotwin.protocol("WM_DELETE_WINDOW", self.on_closingPlot)
         self.canvas1 = tk.Canvas(self.plotwin, borderwidth=0, background="white")
@@ -333,11 +300,55 @@ class StanfordStabilityDat(Toplevel):
         self.exportTxt = Button(self.canvas1, text="Export Txt rawdat", command = self.exportTxtfiles)
         self.exportTxt.pack(side=tk.LEFT,expand=1)
         
+        self.plot(1)
+        
     def exportTxtfiles(self):
-        print('exporting')
-        
-        
-        
+#        print('exporting')
+        current_path = os.getcwd()
+        f = filedialog.askdirectory(title = "Choose the folder to save the raw txt files", initialdir=os.path.dirname(current_path))
+
+#        f = filedialog.asksaveasfilename(defaultextension=".txt")
+        for j,subDir in enumerate(self.samplelist):
+            #mppt data
+            DATAforexport=['Time\tPower\tVoltage\tCurrent\n']
+            for i in range(len(importedData[j][1][0])):
+                DATAforexport.append(str(importedData[j][1][0][i])+'\t'+str(importedData[j][1][1][i])+'\t'+str(importedData[j][1][2][i])+'\t'+str(importedData[j][1][3][i])+'\n')
+            
+            if self.YtypeChoice.get()=='NormalizedAtT0':
+                DATAforexport=['Time\tPower\tVoltage\tCurrent\n']
+                for i in range(len(importedData[j][1][0])):
+                    DATAforexport.append(str(importedData[j][1][0][i])+'\t'+str(importedData[j][1][4][i])+'\t'+str(importedData[j][1][5][i])+'\t'+str(importedData[j][1][6][i])+'\n')
+            elif self.YtypeChoice.get()=='NormalizedAtMax': 
+                DATAforexport=['Time\tPower\tVoltage\tCurrent\n']
+                for i in range(len(importedData[j][1][0])):
+                    DATAforexport.append(str(importedData[j][1][0][i])+'\t'+str(importedData[j][1][7][i])+'\t'+str(importedData[j][1][8][i])+'\t'+str(importedData[j][1][9][i])+'\n')           
+            else:
+                DATAforexport=['Time\tPower\tVoltage\tCurrent\n']
+                for i in range(len(importedData[j][1][0])):
+                    DATAforexport.append(str(importedData[j][1][0][i])+'\t'+str(importedData[j][1][1][i])+'\t'+str(importedData[j][1][2][i])+'\t'+str(importedData[j][1][3][i])+'\n')
+
+#            file = open(str(f[:-4]+'_'+subDir+".txt"),'w', encoding='ISO-8859-1')
+            file = open(os.path.join(f,subDir+"_mppt.txt"),'w', encoding='ISO-8859-1')
+            file.writelines("%s" % item for item in DATAforexport)
+            file.close()
+            
+            #iv curves
+            DATAforexport=[]
+            dat=list(zip(*self.ivcurvestoexport[j]))
+            for i in range(len(dat)):
+                line=''
+                for item in dat[i]:
+                    line+=str(item)+'\t'
+                DATAforexport.append(line[:-2]+'\n')
+            
+            file = open(os.path.join(f,subDir+"_ivcurves.txt"),'w', encoding='ISO-8859-1')
+            file.writelines("%s" % item for item in DATAforexport)
+            file.close()
+            #iv parameters
+            
+            file = open(os.path.join(f,subDir+"_ivparam.txt"),'w', encoding='ISO-8859-1')
+            file.writelines("%s" % item for item in self.ivparamtoexport[j])
+            file.close()
         
     def plot(self,a):
         global importedData
@@ -347,10 +358,9 @@ class StanfordStabilityDat(Toplevel):
         self.fig4.clear()
         self.fig5.clear()
         
-        
         subDirs=self.samplelist
 #        normalize = 1
-        figs = []
+#        figs = []
         axs = [self.fig1,self.fig2,self.fig3]
         
         for i,parameter in enumerate(['Power','Voltage','Current']):
@@ -358,9 +368,11 @@ class StanfordStabilityDat(Toplevel):
 #        	axs.append(figs[i].add_subplot(111))
             for j,subDir in enumerate(subDirs):
                 if self.YtypeChoice.get()=='NormalizedAtT0':
-                    axs[i].plot(importedData[j][1][0],[1+(m-importedData[j][1][i+1][0])/importedData[j][1][i+1][0] for m in importedData[j][1][i+1]],linestyle='-',label=subDir)
+#                    axs[i].plot(importedData[j][1][0],[1+(m-importedData[j][1][i+1][0])/importedData[j][1][i+1][0] for m in importedData[j][1][i+1]],linestyle='-',label=subDir)
+                    axs[i].plot(importedData[j][1][0],importedData[j][1][i+4],linestyle='-',label=subDir)
                 elif self.YtypeChoice.get()=='NormalizedAtMax':
-                    axs[i].plot(importedData[j][1][0],[1+(m-max(importedData[j][1][i+1]))/max(importedData[j][1][i+1]) for m in importedData[j][1][i+1]],linestyle='-',label=subDir)                   
+#                    axs[i].plot(importedData[j][1][0],[1+(m-max(importedData[j][1][i+1]))/max(importedData[j][1][i+1]) for m in importedData[j][1][i+1]],linestyle='-',label=subDir)                   
+                    axs[i].plot(importedData[j][1][0],importedData[j][1][i+7],linestyle='-',label=subDir)
                 else:
                     axs[i].plot(importedData[j][1][0],importedData[j][1][i+1],linestyle='-',label=subDir)
             axs[i].set_ylabel(parameter)
@@ -376,13 +388,20 @@ class StanfordStabilityDat(Toplevel):
         ax[0].axhline(y=0, color='k')
         ax[0].axvline(x=0, color='k')
         
+        self.ivcurvestoexport=[]
+        self.ivparamtoexport=[]
         currentMax = 0
         for i, subDir in enumerate(subDirs):
+            ivcurvestoexport=[]
+            ivparamtoexport=['Jsc\tVoc\tVmpp\tJmpp\tPmpp\n']
             for j, ivFile in enumerate(self.ivFiles):
                 # Find Voc and Jsc
                 xs = importedData[i][0][j][1]
                 ys = importedData[i][0][j][2]
                 ys=[-y for y in ys]
+                
+                ivcurvestoexport.append(['Voltage']+xs)
+                ivcurvestoexport.append(['Current']+ys)
             
                 ps=[a*b for a,b in zip(xs,ys)]
 #               ps = xs*ys
@@ -401,6 +420,8 @@ class StanfordStabilityDat(Toplevel):
                 ax[0].plot(0,jsc,marker='o',color='k')
                 ax[0].plot(xs[xMax],ys[xMax],marker='o',color='k')
                 ax[0].plot(xs,ys,linestyle='-')
+                
+                ivparamtoexport.append(str(jsc)+'\t'+str(voc)+'\t'+str(xs[xMax])+'\t'+str(ys[xMax])+'\t'+str(pMax)+'\n')
             
                 ax[1].plot(24*(importedData[i][0][j][0] - importedData[0][0][0][0]),pMax,marker='o')
             
@@ -410,7 +431,8 @@ class StanfordStabilityDat(Toplevel):
                     currentMax = newMax
             
                 ax[0].grid()
-        
+            self.ivcurvestoexport.append(ivcurvestoexport)
+            self.ivparamtoexport.append(ivparamtoexport)
             ax[1].plot(importedData[i][1][0],importedData[i][1][1],linestyle='-',color='k')
         
         #change ylim properly

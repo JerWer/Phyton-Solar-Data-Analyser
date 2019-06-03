@@ -16,9 +16,6 @@ still to be added:
     - E field in device
     - modifiable IQE
     
-- when simulation is done, opens a toplevel window with the plot, with toolbar to rescale and save differently
-
-
 - optimization: if have several layers with same material, it does not distinguise them => eg MgF2 front and middle in 4TT, or ITO front and recombination in 2TT...
 
 """
@@ -744,12 +741,20 @@ class TMSimApp(Toplevel):
     def on_closing(self):
         
         if messagebox.askokcancel("Quit", "Do you want to quit?"):
-            self.destroy()
-            self.master.deiconify()
+            try:
+                self.plotwin.destroy()
+                self.destroy()
+                self.master.deiconify()
+            except:
+                pass
         
     def onFrameConfigure(self, event):
-        self.canvas0.configure(scrollregion=self.canvas0.bbox("all"))
-
+        try:
+            self.canvas0.configure(scrollregion=self.canvas0.bbox("all"))
+            self.canvas1.configure(scrollregion=self.canvas1.bbox("all"))
+        except:
+            pass
+        
     def populate(self):
         global numberofLayer
         global matnamelist
@@ -1138,20 +1143,46 @@ class TMSimApp(Toplevel):
                 spectotal[1]+=np.asarray(spectofactivelayers[i][1])
 
             #make graph and export
+            try:
+                self.plotwin.destroy()
+                plt.close()
+            except:
+                pass
+            self.plotwin=tk.Tk()
+            self.plotwin.wm_title("The graph")
+            self.plotwin.geometry("600x400")
+            center(self.plotwin)
+            self.canvas1 = tk.Canvas(self.plotwin, borderwidth=0, background="white")
+            self.canvas1.pack(side="left", fill="both", expand=True)
+            frame1=Frame(self.canvas1,borderwidth=0,  bg="white")
+            frame1.pack(fill=tk.BOTH,expand=1)
+            frame1.bind("<Configure>", self.onFrameConfigure)
+            ############ the figures #################
+            self.fig = plt.figure(figsize=(6, 4))
+            self.fig.patch.set_facecolor('white')
+            canvas = FigureCanvasTkAgg(self.fig, frame1)
+            canvas.get_tk_widget().pack(fill=tk.BOTH,expand=1)
+            self.fig1 = self.fig.add_subplot(111)   
+            
+            self.toolbar = NavigationToolbar2TkAgg(canvas, frame1)
+            self.toolbar.update()
+            canvas._tkcanvas.pack(fill = tk.BOTH, expand = 1) 
+            
+            
             datatoexport=[]
             headoffile1=""
             headoffile2=""
-            plt.figure()
+#            plt.figure()
             k=0
             for item in spectofactivelayers:
-                plt.plot(item[0],item[1],label=currents[k][:-1])
+                self.fig1.plot(item[0],item[1],label=currents[k][:-1])
                 datatoexport.append(item[0])
                 datatoexport.append(item[1])
                 headoffile1+="Wavelength\tIntensity\t"
                 headoffile2+=" \t"+namesofactive[k]+"\t"
                 k+=1
             if len(spectofactivelayers)>1:
-                plt.plot(spectotal[0],spectotal[1],label="Total")
+                self.fig1.plot(spectotal[0],spectotal[1],label="Total")
                 datatoexport.append(spectotal[0])
                 datatoexport.append(spectotal[1])
                 headoffile1+="Wavelength\tIntensity\t"
@@ -1162,14 +1193,14 @@ class TMSimApp(Toplevel):
             datatoexport.append(specRR[1])
             headoffile1+="Wavelength\tIntensity\n"
             headoffile2+=" \tReflectance\n"
-            plt.plot(specRR[0],specRR[1],label="Reflectance")
-            plt.xlabel("Wavelength (nm)")
-            plt.ylabel("Light Intensity Fraction")
-            plt.xlim([specRR[0][0],specRR[0][-1]])
-            plt.ylim([0,1])
-            plt.legend(loc='lower right',ncol=1)
-            plt.savefig(f, dpi=300, transparent=False) 
-            plt.close()
+            self.fig1.plot(specRR[0],specRR[1],label="Reflectance")
+            self.fig1.set_xlabel("Wavelength (nm)")
+            self.fig1.set_ylabel("Light Intensity Fraction")
+            self.fig1.set_xlim([specRR[0][0],specRR[0][-1]])
+            self.fig1.set_ylim([0,1])
+            self.fig1.legend(loc='lower right',ncol=1)
+            self.fig.savefig(f, dpi=300, transparent=False) 
+            plt.close("all")
             datatoexportINV=[list(x) for x in zip(*datatoexport)]
             datatoexportINVtxt=[]
             for item in datatoexportINV:

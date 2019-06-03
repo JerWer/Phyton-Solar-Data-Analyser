@@ -21,6 +21,7 @@ import IV_fcts_Pyth36_NRELV1 as IVfcts
 #import Database_v0 as DB
 import XRDautoA_NREL as xrdauto
 import XRD_NREL as xrd
+import StanfordLightSoaking_tkinterplotter as SLS
 
 
 """todolist
@@ -90,6 +91,8 @@ class TheAnalyser(Frame):
         XRDbutton.grid(row=3,column=10,columnspan=3)
         XRDbutton = Button(root, text='XRD', command = self.callXRD)
         XRDbutton.grid(row=3,column=12,columnspan=2)
+        SLSbutton = Button(root, text='StanfordLightSoaking', command = self.callSLS)
+        SLSbutton.grid(row=5,column=12,columnspan=2)
         
             
     def callEQE(self):
@@ -134,6 +137,9 @@ class TheAnalyser(Frame):
 #    
     def callXRD(self):
         xrd.XRDApp()
+        
+    def callSLS(self):
+        SLS.StanfordStabilityDat()
         
 root = Tk()
 background_image=ImageTk.PhotoImage(file=os.path.join(os.path.dirname(os.path.abspath(__file__)),'images','background.png'))

@@ -84,6 +84,8 @@ add time plot to autoanalysis if span over 5hrs
 - add reminder to save session when quit the window
 
 - compatibility with cigs station: check if current in itx files is current or current density
+problem with forward/reverse, problem with excel file
+
 
 
 """

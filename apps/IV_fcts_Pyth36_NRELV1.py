@@ -85,7 +85,9 @@ add time plot to autoanalysis if span over 5hrs
 
 - compatibility with cigs station: check if current in itx files is current or current density
 problem with forward/reverse, problem with excel file
+problem of double files?
 
+- add labels size modif in mppt graph
 
 
 """

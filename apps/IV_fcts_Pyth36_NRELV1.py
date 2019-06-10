@@ -87,8 +87,6 @@ add time plot to autoanalysis if span over 5hrs
 problem with forward/reverse, problem with excel file
 problem of double files?
 
-- add labels size modif in mppt graph
-
 
 """
 #%%############# Global variable definition
@@ -125,7 +123,7 @@ groupstoplot=["Default group"]
 listofanswer=[]
 listoflinestyle=[]
 listofcolorstyle=[]
-
+listoflinewidthstyle=[]
 
 #%%#############
 def modification_date(path_to_file):
@@ -345,6 +343,12 @@ class IVApp(Toplevel):
                            onvalue=1,offvalue=0,height=1, width=10, command = self.UpdateIVGraph,fg='black',background='white')
         logJV.grid(row=rowpos+1, column=columnpos+5, columnspan=3)
         
+        self.fontsizeJVGraph = tk.DoubleVar()
+        entry=Entry(self.Frame2, textvariable=self.fontsizeJVGraph,width=3)
+        entry.grid(row=rowpos+2, column=columnpos+5, columnspan=1)
+        tk.Label(self.Frame2, text="Fontsize",fg='black',background='white').grid(row=rowpos+2, column=columnpos+6, columnspan=1)
+        self.fontsizeJVGraph.set(8)
+        
         self.IVtitle = Button(self.Frame2, text="Title",
                             command = self.GiveIVatitle)
         self.IVtitle.grid(row=rowpos, column=columnpos+3, columnspan=3)
@@ -421,6 +425,11 @@ class IVApp(Toplevel):
                             command = self.GiveMPPatitle)
         self.mpptitle.grid(row=rowpos, column=columnpos+3, columnspan=3)
 
+        self.fontsizeMppGraph = tk.DoubleVar()
+        entry=Entry(self.Frame2, textvariable=self.fontsizeMppGraph,width=3)
+        entry.grid(row=rowpos+1, column=columnpos+5, columnspan=1)
+        tk.Label(self.Frame2, text="Fontsize",fg='black',background='white').grid(row=rowpos+1, column=columnpos+6, columnspan=1)
+        self.fontsizeMppGraph.set(8)
         
         self.mppminx = tk.DoubleVar()
         Entry(self.Frame2, textvariable=self.mppminx,width=5).grid(row=rowpos+4,column=columnpos,columnspan=1)
@@ -459,6 +468,8 @@ class IVApp(Toplevel):
         pos=Checkbutton(self.Frame2,text=None,variable=self.mpplegpos1, 
                            onvalue=5,offvalue=0,height=1, width=1, command = self.UpdateMppGraph,fg='black',background='white')
         pos.grid(row=rowpos+4, column=columnpos+4, columnspan=1)
+        
+        
         
         ############ the table ###################
         global testdata
@@ -513,7 +524,7 @@ class IVApp(Toplevel):
         global DATAmppforexport, DATAgroupforexport, takenforplot
         global takenforplotmpp, DATAMPP, DATAdark, DATAFV, IVlegendMod
         global IVlinestyle, colorstylelist, MPPlegendMod, MPPlinestyle
-        global titIV, titmpp, titStat, samplesgroups, listofanswer, listoflinestyle, listofcolorstyle
+        global titIV, titmpp, titStat, samplesgroups, listofanswer, listoflinestyle, listofcolorstyle,listoflinewidthstyle
         
         if messagebox.askokcancel("Quit", "Do you want to quit?"):
             testdata = []
@@ -543,7 +554,8 @@ class IVApp(Toplevel):
             
             listofanswer=[]
             listoflinestyle=[]
-            listofcolorstyle=[]            
+            listofcolorstyle=[]   
+            listoflinewidthstyle=[]
 
             self.destroy()
             self.master.deiconify()
@@ -1239,36 +1251,39 @@ class IVApp(Toplevel):
 #                                         namelist.append(names[i])
 #                                except:
 #                                    print("indexError8")
-                                    
-                        if self.boxplot.get()==1:
-                            Effsubfig.boxplot(valstot,0,'',labels=namelist)
-                    
-                        for i in range(len(namelist)):
-#                            if len(listofthegroup)!=0:
-                            y=Rev[i]
-                            if len(y)>0:
-                                x=np.random.normal(i+0.9,0.04,size=len(y))
-                                Effsubfig.scatter(x,y,s=15,color='red', alpha=0.5)
-                            y=Forw[i]
-                            if len(y)>0:
-                                x=np.random.normal(i+0.9,0.04,size=len(y))
-                                Effsubfig.scatter(x,y,s=15,color='blue', alpha=0.5) 
-#                            if len(listofthegroup2)!=0:   
-                                y=RevAMPP[i]
-                            if len(y)>0:
-                                x=np.random.normal(i+1.1,0.04,size=len(y))
-                                Effsubfig.scatter(x,y,s=15,color='orange', alpha=0.5)
-                            y=ForwAMPP[i]
-                            if len(y)>0:
-                                x=np.random.normal(i+1.1,0.04,size=len(y))
-                                Effsubfig.scatter(x,y,s=15,color='lightblue', alpha=0.5) 
+                        if namelist!=[]:            
+                            if self.boxplot.get()==1:
+                                Effsubfig.boxplot(valstot,0,'',labels=namelist)
+                        
+                            for i in range(len(namelist)):
+    #                            if len(listofthegroup)!=0:
+                                y=Rev[i]
+                                if len(y)>0:
+                                    x=np.random.normal(i+0.9,0.04,size=len(y))
+                                    Effsubfig.scatter(x,y,s=15,color='red', alpha=0.5)
+                                y=Forw[i]
+                                if len(y)>0:
+                                    x=np.random.normal(i+0.9,0.04,size=len(y))
+                                    Effsubfig.scatter(x,y,s=15,color='blue', alpha=0.5) 
+    #                            if len(listofthegroup2)!=0:   
+                                    y=RevAMPP[i]
+                                if len(y)>0:
+                                    x=np.random.normal(i+1.1,0.04,size=len(y))
+                                    Effsubfig.scatter(x,y,s=15,color='orange', alpha=0.5)
+                                y=ForwAMPP[i]
+                                if len(y)>0:
+                                    x=np.random.normal(i+1.1,0.04,size=len(y))
+                                    Effsubfig.scatter(x,y,s=15,color='lightblue', alpha=0.5) 
                                 
                     if self.boxplot.get()==0:
-                        span=range(1,len(namelist)+1)
-#                        plt.xticks(span,namelist)
-                        Effsubfig.set_xticks(span)
-                        Effsubfig.set_xticklabels(namelist)
-                        Effsubfig.set_xlim([0.5,span[-1]+0.5])
+                        if namelist!=[]:
+                            span=range(1,len(namelist)+1)
+#                            print(namelist)
+#                            print(span)
+    #                        plt.xticks(span,namelist)
+                            Effsubfig.set_xticks(span)
+                            Effsubfig.set_xticklabels(namelist)
+                            Effsubfig.set_xlim([0.5,span[-1]+0.5])
                     
                     if self.minmaxgroupgraphcheck.get()==1:
                         Effsubfig.set_ylim([self.minYgroupgraph.get(),self.maxYgroupgraph.get()])
@@ -2372,16 +2387,16 @@ class IVApp(Toplevel):
                         for item1 in range(len(IVlegendMod)):
                             if IVlegendMod[item1][0]==DATAx[item]["SampleName"]:
                                 try:
-                                    IVfig.plot(x,y,label=IVlegendMod[item1][1],linestyle=IVlinestyle[item1][1],color=IVlinestyle[item1][2])
+                                    IVfig.plot(x,y,label=IVlegendMod[item1][1],linestyle=IVlinestyle[item1][1],color=IVlinestyle[item1][2],linewidth=IVlinestyle[item1][3])
                                 except IndexError:
                                     print("some indexerror... but just continue...")
                                 newlegend=0
                                 break
                         if newlegend:
                             try:
-                                IVfig.plot(x,y,label=DATAx[item]["SampleName"],linestyle=IVlinestyle[item1][1],color=IVlinestyle[item1][2])
+                                IVfig.plot(x,y,label=DATAx[item]["SampleName"],linestyle=IVlinestyle[item1][1],color=IVlinestyle[item1][2],linewidth=IVlinestyle[item1][3])
                                 IVlegendMod.append([DATAx[item]["SampleName"],DATAx[item]["SampleName"]])
-                                IVlinestyle.append([DATAx[item]["SampleName"],"-",colorstylelist[color1]])
+                                IVlinestyle.append([DATAx[item]["SampleName"],"-",colorstylelist[color1],1])
                             except IndexError:
                                 print("some indexerror... but just continue...")
                     else:
@@ -2406,7 +2421,7 @@ class IVApp(Toplevel):
                         try:
                             IVfig.plot(x,y,label=DATAx[item]["SampleName"],color=colorstylelist[color1])
                             IVlegendMod.append([DATAx[item]["SampleName"],DATAx[item]["SampleName"]])
-                            IVlinestyle.append([DATAx[item]["SampleName"],"-",colorstylelist[color1]])
+                            IVlinestyle.append([DATAx[item]["SampleName"],"-",colorstylelist[color1],1])
                         except IndexError:
                             print("some indexerror... but just continue...")
                     else:
@@ -2421,6 +2436,7 @@ class IVApp(Toplevel):
             self.IVsubfig.axhline(y=0, color='k')
             self.IVsubfig.axvline(x=0, color='k')
             self.IVsubfig.axis([self.IVminx.get(),self.IVmaxx.get(),self.IVminy.get(),self.IVmaxy.get()])
+            
         else:
             if IVlegendMod!=[]:
                 self.IVsubfig.clear()
@@ -2442,16 +2458,16 @@ class IVApp(Toplevel):
                         for item1 in range(len(IVlegendMod)):
                             if IVlegendMod[item1][0]==DATAx[item]["SampleName"]:
                                 try:
-                                    IVfig.semilogy(x,y,label=IVlegendMod[item1][1],linestyle=IVlinestyle[item1][1],color=IVlinestyle[item1][2])
+                                    IVfig.semilogy(x,y,label=IVlegendMod[item1][1],linestyle=IVlinestyle[item1][1],color=IVlinestyle[item1][2],linewidth=IVlinestyle[item1][3])
                                 except IndexError:
                                     print("some indexerror... but just continue...")
                                 newlegend=0
                                 break
                         if newlegend:
                             try:
-                                IVfig.semilogy(x,y,label=DATAx[item]["SampleName"],linestyle=IVlinestyle[item1][1],color=IVlinestyle[item1][2])
+                                IVfig.semilogy(x,y,label=DATAx[item]["SampleName"],linestyle=IVlinestyle[item1][1],color=IVlinestyle[item1][2],linewidth=IVlinestyle[item1][3])
                                 IVlegendMod.append([DATAx[item]["SampleName"],DATAx[item]["SampleName"]])
-                                IVlinestyle.append([DATAx[item]["SampleName"],"-",colorstylelist[color1]])
+                                IVlinestyle.append([DATAx[item]["SampleName"],"-",colorstylelist[color1],1])
                             except IndexError:
                                 print("some indexerror... but just continue...")
                     else:
@@ -2477,7 +2493,7 @@ class IVApp(Toplevel):
                         try:
                             IVfig.semilogy(x,y,label=DATAx[item]["SampleName"],color=colorstylelist[color1])
                             IVlegendMod.append([DATAx[item]["SampleName"],DATAx[item]["SampleName"]])
-                            IVlinestyle.append([DATAx[item]["SampleName"],"-",colorstylelist[color1]])
+                            IVlinestyle.append([DATAx[item]["SampleName"],"-",colorstylelist[color1],1])
                         except IndexError:
                             print("some indexerror... but just continue...")
                     else:
@@ -2492,7 +2508,10 @@ class IVApp(Toplevel):
             self.IVsubfig.axhline(y=0, color='k')
             self.IVsubfig.axvline(x=0, color='k')  
             self.IVsubfig.axis([self.IVminx.get(),self.IVmaxx.get(),0,self.IVmaxy.get()])
-            
+        
+        for item in ([self.IVsubfig.title, self.IVsubfig.xaxis.label, self.IVsubfig.yaxis.label] +
+                             self.IVsubfig.get_xticklabels() + self.IVsubfig.get_yticklabels()):
+            item.set_fontsize(self.fontsizeJVGraph.get())
             
         DATAJVforexport=map(list, six.moves.zip_longest(*DATAJVforexport, fillvalue=' '))
         DATAJVtabforexport.insert(0,[" ","Voc", "Jsc", "FF","Eff","Roc","Rsc","Vstart","Vend","Cellsurface"])
@@ -2538,7 +2557,7 @@ class IVApp(Toplevel):
                         founded=1
                 if founded==0:
                     MPPlegendMod.append([item,item])
-                    MPPlinestyle.append([item,"-",colorstylelist[len(MPPlegendMod)]])
+                    MPPlinestyle.append([item,"-",colorstylelist[len(MPPlegendMod)],1])
             
         self.UpdateMppGraph()
         
@@ -2581,13 +2600,13 @@ class IVApp(Toplevel):
                     newlegend=1
                     for item1 in range(len(MPPlegendMod)):
                         if MPPlegendMod[item1][0]==DATAx[item]["SampleName"]:
-                            mppfig.plot(x,y,label=MPPlegendMod[item1][1],linestyle=MPPlinestyle[item1][1],color=MPPlinestyle[item1][2])
+                            mppfig.plot(x,y,label=MPPlegendMod[item1][1],linestyle=MPPlinestyle[item1][1],color=MPPlinestyle[item1][2],linewidth=MPPlinestyle[item1][3])
                             newlegend=0
                             break
                     if newlegend:
-                        mppfig.plot(x,y,label=DATAx[item]["SampleName"],linestyle=MPPlinestyle[item][1],color=MPPlinestyle[item][2])
+                        mppfig.plot(x,y,label=DATAx[item]["SampleName"],linestyle=MPPlinestyle[item][1],color=MPPlinestyle[item][2],linewidth=MPPlinestyle[item1][3])
                         MPPlegendMod.append([DATAx[item]["SampleName"],DATAx[item]["SampleName"]])
-                        MPPlinestyle.append([DATAx[item]["SampleName"],"-",colorstylelist[color]])
+                        MPPlinestyle.append([DATAx[item]["SampleName"],"-",colorstylelist[color],1])
                 else:
                     mppfig.plot(x,y)
                 color=color+1
@@ -2601,7 +2620,7 @@ class IVApp(Toplevel):
                 if self.CheckmppLegend.get()==1:
                     mppfig.plot(x,y,label=DATAx[sampletotake[i]]["SampleName"],color=colorstylelist[color])
                     MPPlegendMod.append([DATAx[sampletotake[i]]["SampleName"],DATAx[sampletotake[i]]["SampleName"]])
-                    MPPlinestyle.append([DATAx[sampletotake[i]]["SampleName"],"-",colorstylelist[color]])
+                    MPPlinestyle.append([DATAx[sampletotake[i]]["SampleName"],"-",colorstylelist[color],1])
                 else:
                     mppfig.plot(x,y,color=colorstylelist[color])
                 color=color+1
@@ -2609,6 +2628,10 @@ class IVApp(Toplevel):
         self.mppsubfig.set_ylabel('Power (mW/cm'+'\xb2'+')')
         self.mppsubfig.set_xlabel('Time (s)')
         
+        for item in ([self.mppsubfig.title, self.mppsubfig.xaxis.label, self.mppsubfig.yaxis.label] +
+                             self.mppsubfig.get_xticklabels() + self.mppsubfig.get_yticklabels()):
+            item.set_fontsize(self.fontsizeMppGraph.get())
+            
         if titmpp:
             self.mppsubfig.set_title(self.titlempp.get())
         
@@ -6011,11 +6034,12 @@ class IVApp(Toplevel):
             global colorstylelist
             global listofanswer
             global listoflinestyle
-            global listofcolorstyle
+            global listofcolorstyle, listoflinewidthstyle
             
             listofanswer=[]
             listoflinestyle=[]
             listofcolorstyle=[]
+            listoflinewidthstyle=[]
             
             for item in range(len(IVlegendMod)):
                 listofanswer.append(IVlegendMod[item][1])
@@ -6023,6 +6047,7 @@ class IVApp(Toplevel):
             for item in range(len(IVlinestyle)):
                 listoflinestyle.append(IVlinestyle[item][1])
                 listofcolorstyle.append(IVlinestyle[item][2])
+                listoflinewidthstyle.append(IVlinestyle[item][3])
             rowpos=1
             
             for itemm in takenforplot:
@@ -6045,6 +6070,11 @@ class IVApp(Toplevel):
                         self.positioncolor=rowitem
                         JVcolstyle=Button(self.frame, text='Select Color', foreground=listofcolorstyle[rowitem], command=partial(self.getColor,rowitem))
                         JVcolstyle.grid(row=rowpos, column=6, columnspan=2)
+
+                        linewidth = tk.StringVar()
+                        listoflinewidthstyle[rowitem]=Entry(self.frame,textvariable=linewidth)
+                        listoflinewidthstyle[rowitem].grid(row=rowpos,column=8, columnspan=1)
+                        linewidth.set(str(IVlinestyle[rowitem][3]))
 
                         rowpos=rowpos+1
         
@@ -6157,7 +6187,7 @@ class IVApp(Toplevel):
         global IVlinestyle
         global listofanswer
         global listoflinestyle
-        global listofcolorstyle
+        global listofcolorstyle,listoflinewidthstyle
         
                 
         leglist=[]
@@ -6189,7 +6219,16 @@ class IVApp(Toplevel):
         #leglist=[e.get() for e in self.listofcolorstyle]
         for item in range(len(IVlinestyle)):
             IVlinestyle[item][2]=leglist[item]
-        
+            
+        leglist=[]
+        for e in listoflinewidthstyle:
+            if type(e)!=str:
+                leglist.append(e.get())
+            else:
+                leglist.append(e)
+        for item in range(len(IVlinestyle)):
+            IVlinestyle[item][3]=int(leglist[item])
+            
         self.UpdateIVGraph()
         self.window.destroy()
         self.ChangeLegendIVgraph()
@@ -6221,7 +6260,7 @@ class IVApp(Toplevel):
             global colorstylelist
             global listofanswer
             global listoflinestyle
-            global listofcolorstyle
+            global listofcolorstyle, listoflinewidthstyle
             
             listofanswer=[]
             listoflinestyle=[]
@@ -6233,6 +6272,7 @@ class IVApp(Toplevel):
             for item in range(len(MPPlinestyle)):
                 listoflinestyle.append(MPPlinestyle[item][1])
                 listofcolorstyle.append(MPPlinestyle[item][2])
+                listoflinewidthstyle.append(str(MPPlinestyle[item][3]))
             rowpos=1
             
             for itemm in takenforplotmpp:
@@ -6252,8 +6292,13 @@ class IVApp(Toplevel):
                         self.dropMPPstyle=OptionMenu(self.frame, listoflinestyle[rowitem], *linestylelist, command=())
                         self.dropMPPstyle.grid(row=rowpos, column=4, columnspan=2)
 
+                        linewidth = tk.StringVar()
+                        listoflinewidthstyle[rowitem]=Entry(self.frame,textvariable=linewidth)
+                        listoflinewidthstyle[rowitem].grid(row=rowpos,column=8, columnspan=1)
+                        linewidth.set(str(MPPlinestyle[rowitem][3]))
+
                         self.positioncolor=rowitem
-                        Button(self.frame, text='Select Color', foreground=listofcolorstyle[rowitem], command=partial(self.getColor,rowitem)).grid(row=rowpos, column=6, columnspan=2)
+                        Button(self.frame, text='Select Color', foreground=MPPlinestyle[rowitem][2], command=partial(self.getColor,rowitem)).grid(row=rowpos, column=6, columnspan=2)
 
                         rowpos=rowpos+1
         
@@ -6313,7 +6358,7 @@ class IVApp(Toplevel):
         global MPPlinestyle
         global listofanswer
         global listoflinestyle
-        global listofcolorstyle
+        global listofcolorstyle,listoflinewidthstyle
 
 
         leglist=[]
@@ -6336,6 +6381,16 @@ class IVApp(Toplevel):
         for item in range(len(MPPlinestyle)):
             MPPlinestyle[item][1]=leglist[item]
         
+        leglist=[]
+        for e in listoflinewidthstyle:
+            if type(e)!=str:
+                leglist.append(e.get())
+            else:
+                leglist.append(e)
+        #leglist=[e.get() for e in self.listoflinestyle]
+        for item in range(len(MPPlinestyle)):
+            MPPlinestyle[item][3]=int(leglist[item])
+            
         leglist=[]
         for e in listofcolorstyle:
             if type(e)!=str:

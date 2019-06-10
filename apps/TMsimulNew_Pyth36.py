@@ -18,6 +18,9 @@ still to be added:
     
 - optimization: if have several layers with same material, it does not distinguise them => eg MgF2 front and middle in 4TT, or ITO front and recombination in 2TT...
 
+- IQE calculation?
+- absorption losses per layer?
+
 """
 #%%
 import os
@@ -743,10 +746,11 @@ class TMSimApp(Toplevel):
         if messagebox.askokcancel("Quit", "Do you want to quit?"):
             try:
                 self.plotwin.destroy()
-                self.destroy()
-                self.master.deiconify()
             except:
                 pass
+            self.destroy()
+            self.master.deiconify()
+            
         
     def onFrameConfigure(self, event):
         try:
@@ -1079,7 +1083,7 @@ class TMSimApp(Toplevel):
         os.chdir(resDir)
         
         f = filedialog.asksaveasfilename(defaultextension=".png", filetypes = (("graph file", "*.png"),("All Files", "*.*")))
-            
+        f1=f    
         os.chdir(owd)
         
         #check the wavelength range and readapt to have only in decades (round to nearest decade)
@@ -1126,8 +1130,12 @@ class TMSimApp(Toplevel):
         numbofactive=0
         spectofactivelayers=[]
         namesofactive=[]
+        numbofnonactive=0
+        spectofnonactivelayers=[]
+        namesofnonactive=[]
         specR=structure.calculateRTrange(specttotake[0],1,0,1,'s')
         currents=[]
+        currentsnon=[]
         for i in range(len(MatThickActList)):
             if MatThickActList[i][2]==1:
                 numbofactive+=1
@@ -1136,9 +1144,16 @@ class TMSimApp(Toplevel):
                 currents.append(Jsc)
                 namesofactive.append(MatThickActList[i][0])
                 print(Jsc)
+            else:
+                numbofnonactive+=1
+                spectofnonactivelayers.append(structure.absspectruminlay(i+1,specttotake[0],1,0,1,'s'))
+                Jsc=str(MatThickActList[i][0])+': '+"%.2f"%huss[i+1]+'\n'
+                currentsnon.append(Jsc)
+                namesofnonactive.append(MatThickActList[i][0])
+#                print(Jsc)
         if spectofactivelayers!=[]:
             spectotal=[specR[0],np.asarray(spectofactivelayers[0][1])]
-
+            
             for i in range(1,len(spectofactivelayers)):   
                 spectotal[1]+=np.asarray(spectofactivelayers[i][1])
 
@@ -1191,16 +1206,51 @@ class TMSimApp(Toplevel):
             specRR=[specR[0],1-np.asarray(specR[1])-np.asarray(specR[2])]
             datatoexport.append(specRR[0])
             datatoexport.append(specRR[1])
-            headoffile1+="Wavelength\tIntensity\n"
-            headoffile2+=" \tReflectance\n"
+            headoffile1+="Wavelength\tIntensity\t"
+            headoffile2+=" \tReflectance\t"
             self.fig1.plot(specRR[0],specRR[1],label="Reflectance")
             self.fig1.set_xlabel("Wavelength (nm)")
             self.fig1.set_ylabel("Light Intensity Fraction")
             self.fig1.set_xlim([specRR[0][0],specRR[0][-1]])
             self.fig1.set_ylim([0,1])
-            self.fig1.legend(loc='lower right',ncol=1)
+            self.fig1.legend(ncol=1)#loc='lower right',
             self.fig.savefig(f, dpi=300, transparent=False) 
-            plt.close("all")
+            
+            
+            k=0
+            if len(spectofnonactivelayers)>0:
+                for item in spectofnonactivelayers:
+                    self.fig1.plot(item[0],item[1],label=currentsnon[k][:-1])
+                    datatoexport.append(item[0])
+                    datatoexport.append(item[1])
+                    headoffile1+="Wavelength\tIntensity\t"
+                    headoffile2+=" \t"+namesofnonactive[k]+"\t"
+                    k+=1
+                self.fig1.set_xlabel("Wavelength (nm)")
+                self.fig1.set_ylabel("Light Intensity Fraction")
+                self.fig1.set_xlim([specRR[0][0],specRR[0][-1]])
+                self.fig1.set_ylim([0,1])
+                self.fig1.legend(ncol=1)#loc='lower right',
+                self.fig.savefig(f[:-4]+'_withParasitic.png', dpi=300, transparent=False) 
+            
+            headoffile1=headoffile1[:-1]+'\n'
+            headoffile2=headoffile2[:-1]+'\n'
+#            plt.close("all")
+            self.fig.clear()
+            
+            spectotalparas=[specR[0],np.asarray(spectofactivelayers[0][1])]
+            
+            for i in range(1,len(spectofactivelayers)):   
+                spectotalparas[1]+=np.asarray(spectofactivelayers[i][1])
+            for i in range(len(spectofnonactivelayers)):   
+                spectotalparas.append(spectotalparas[-1]+np.asarray(spectofnonactivelayers[i][1]))
+            print(len(spectotalparas))
+            for i in range(1,len(spectotalparas)):
+                self.fig1.plot(spectotalparas[0],spectotalparas[i])
+            self.fig1.set_xlabel("Wavelength (nm)")
+            self.fig1.set_ylabel("Light Intensity Fraction")
+            self.fig.savefig(f[:-4]+'_withParasitic2.png', dpi=300, transparent=False) 
+            
             datatoexportINV=[list(x) for x in zip(*datatoexport)]
             datatoexportINVtxt=[]
             for item in datatoexportINV:

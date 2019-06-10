@@ -34,7 +34,7 @@ from scipy.optimize import curve_fit
 import peakutils
 from peakutils.plot import plot as pplot
 from tkinter import font as tkFont
-
+from math import factorial,radians, sin, cos
 
 """
 TODOLIST
@@ -52,6 +52,20 @@ TODOLIST
 - add a "cancel last operation" button, that would be a back button if do a mistake and don't want to but complitely back to original
 
 - export with peak fitting visible
+
+- FWHM left and right
+
+- crystallite size only: B = K*lambda/(L*cos(theta))
+K=0.89 for integral breadth of spherical crystals w/ cubic symmetry
+lamda=1.54
+L=integral breadth
+theta= peak position/2 in radians
+
+- microstrain only
+•When microstrain is present, the calculated “Crystallite Size only” will tend to decrease as a function of 2theta
+•When crystallite size broadening is present, the calculated “Microstrainonly” will tend to decrease as a function of 2theta
+
+- export williamson-hall plot with linear regression, and fit to find the strain component
 
 
 """
@@ -109,7 +123,7 @@ listofanswer={}
 samplestakenforplot=[]
 peaknamesforplot=[]
 
-lambdaXRD=1.54
+lambdaXRD=1.5406
 
 def q_to_tth(Q):
     "convert q to tth, lam is wavelength in angstrom"
@@ -127,6 +141,77 @@ def tth_to_q_list(tth):
     "convert tth to q, lam is wavelength in angstrom"
     return [4 * np.pi * np.sin(tthitem * np.pi/(2 * 180)) / lambdaXRD for tthitem in tth]
 
+def savitzky_golay(y, window_size, order, deriv=0, rate=1):
+    r"""Smooth (and optionally differentiate) data with a Savitzky-Golay filter.
+    The Savitzky-Golay filter removes high frequency noise from data.
+    It has the advantage of preserving the original shape and
+    features of the signal better than other types of filtering
+    approaches, such as moving averages techniques.
+    Parameters
+    ----------
+    y : array_like, shape (N,)
+        the values of the time history of the signal.
+    window_size : int
+        the length of the window. Must be an odd integer number.
+    order : int
+        the order of the polynomial used in the filtering.
+        Must be less then `window_size` - 1.
+    deriv: int
+        the order of the derivative to compute (default = 0 means only smoothing)
+    Returns
+    -------
+    ys : ndarray, shape (N)
+        the smoothed signal (or it's n-th derivative).
+    Notes
+    -----
+    The Savitzky-Golay is a type of low-pass filter, particularly
+    suited for smoothing noisy data. The main idea behind this
+    approach is to make for each point a least-square fit with a
+    polynomial of high order over a odd-sized window centered at
+    the point.
+    Examples
+    --------
+    t = np.linspace(-4, 4, 500)
+    y = np.exp( -t**2 ) + np.random.normal(0, 0.05, t.shape)
+    ysg = savitzky_golay(y, window_size=31, order=4)
+    import matplotlib.pyplot as plt
+    plt.plot(t, y, label='Noisy signal')
+    plt.plot(t, np.exp(-t**2), 'k', lw=1.5, label='Original signal')
+    plt.plot(t, ysg, 'r', label='Filtered signal')
+    plt.legend()
+    plt.show()
+    References
+    ----------
+    .. [1] A. Savitzky, M. J. E. Golay, Smoothing and Differentiation of
+       Data by Simplified Least Squares Procedures. Analytical
+       Chemistry, 1964, 36 (8), pp 1627-1639.
+    .. [2] Numerical Recipes 3rd Edition: The Art of Scientific Computing
+       W.H. Press, S.A. Teukolsky, W.T. Vetterling, B.P. Flannery
+       Cambridge University Press ISBN-13: 9780521880688
+    """
+    
+
+    try:
+        window_size = np.abs(np.int(window_size))
+        order = np.abs(np.int(order))
+    except ValueError:
+        raise ValueError("window_size and order have to be of type int")
+    if window_size % 2 != 1 or window_size < 1:
+        raise TypeError("window_size size must be a positive odd number")
+    if window_size < order + 2:
+        raise TypeError("window_size is too small for the polynomials order")
+    order_range = range(order+1)
+    half_window = (window_size -1) // 2
+    # precompute coefficients
+    b = np.mat([[k**i for i in order_range] for k in range(-half_window, half_window+1)])
+    m = np.linalg.pinv(b).A[deriv] * rate**deriv * factorial(deriv)
+    # pad the signal at the extremes with
+    # values taken from the signal itself
+    firstvals = y[0] - np.abs( y[1:half_window+1][::-1] - y[0] )
+    lastvals = y[-1] + np.abs(y[-half_window-1:-1][::-1] - y[-1])
+    y = np.concatenate((firstvals, y, lastvals))
+    return np.convolve( m[::-1], y, mode='valid')
+
 #%%###############################################################################             
     
 class XRDApp(Toplevel):
@@ -136,7 +221,7 @@ class XRDApp(Toplevel):
         Toplevel.__init__(self, *args, **kwargs)
         Toplevel.wm_title(self, "XRDApp")
         Toplevel.config(self,background="white")
-        self.wm_geometry("700x650")
+        self.wm_geometry("780x650")
         center(self)
         self.initUI()
 
@@ -199,7 +284,14 @@ class XRDApp(Toplevel):
         self.backgroundorder = tk.IntVar()
         Entry(frame212, textvariable=self.backgroundorder,width=1).pack(side=tk.LEFT,fill=tk.X,expand=1)
         self.backgroundorder.set(12)
-        self.CheckBkgRemoval = Button(frame212, text="BkgRemoval",command = self.backgroundremoval).pack(side=tk.LEFT,expand=1)
+        self.CheckBkgRemoval = Button(frame212, text="BkgRemovalPoly",command = self.backgroundremoval).pack(side=tk.LEFT,expand=1)
+        self.SGwinsize = tk.IntVar()
+        Entry(frame212, textvariable=self.SGwinsize,width=1).pack(side=tk.LEFT,fill=tk.X,expand=1)
+        self.SGwinsize.set(31)
+        self.SGorder = tk.IntVar()
+        Entry(frame212, textvariable=self.SGorder,width=1).pack(side=tk.LEFT,fill=tk.X,expand=1)
+        self.SGorder.set(5)
+        self.CheckBkgRemoval = Button(frame212, text="SavitzkyGolayFilter",command = self.SavitzkyGolayFiltering).pack(side=tk.LEFT,expand=1)
         self.CheckBkgRemovalImport = Button(frame212, text="BkgRefImport",command = self.backgroundremovalImport).pack(side=tk.LEFT,expand=1)
 
 #        refpattern=StringVar()
@@ -217,6 +309,10 @@ class XRDApp(Toplevel):
         self.rescaleBut = Button(frame213, text="Rescale to ref",command = self.scaleYtoRef).pack(side=tk.LEFT,expand=1)
         self.backtoOriginalBut = Button(frame213, text="BackToOriginal",command = self.backtoOriginal).pack(side=tk.LEFT,expand=1)
 
+        self.showOriginal = IntVar()
+        Checkbutton(frame213,text="showOrig.",variable=self.showOriginal, command = lambda: self.updateXRDgraph(0),
+                           onvalue=1,offvalue=0,height=1, width=3, fg='black',background='lightgrey').pack(side=tk.LEFT,fill=tk.X,expand=1)
+
         
         frame22=Frame(frame2,borderwidth=0,  bg="white")
         frame22.pack(side=tk.LEFT,fill=tk.BOTH,expand=1)
@@ -229,6 +325,10 @@ class XRDApp(Toplevel):
         frame222.pack(fill=tk.BOTH,expand=1)
         self.ShowPeakDetectionBut = Button(frame222, text="Peak Detection",command = self.PeakDetection).pack(side="left",expand=1)
         self.ChangePeakNameBut = Button(frame222, text="Change Peak Names",command = self.ChangePeakNames).pack(side="left",expand=1)
+        self.ScherrerCst = tk.DoubleVar()
+        Entry(frame222, textvariable=self.ScherrerCst,width=4).pack(side=tk.LEFT,expand=1)
+        self.ScherrerCst.set(0.89)
+        tk.Label(frame222, text="ScherrerCst", bg="grey").pack(side=tk.LEFT,expand=1)
         self.CheckPeakNames = IntVar()
         Checkbutton(frame222,text="ShowNames",variable=self.CheckPeakNames, 
                            onvalue=1,offvalue=0,height=1, width=10, command = lambda: self.updateXRDgraph(0),fg='black',background='grey').pack(side=tk.LEFT,expand=1)
@@ -255,6 +355,7 @@ class XRDApp(Toplevel):
 #        frame231=Frame(frame23,borderwidth=0,  bg="lightgrey")
 #        frame231.pack(fill=tk.BOTH,expand=1)
         self.ExportBut = Button(frame221, text="Export",command =self.Export).pack(side="left",expand=1)
+        self.ExportWHBut = Button(frame221, text="ExportWillHall",command =self.ExportWH).pack(side="left",expand=1)
         self.ExportRefFileBut = Button(frame221, text="ExportasRefFile",command = ()).pack(side="left",expand=1)
 #        self.GraphCheck = IntVar()
 #        legend=Checkbutton(frame23,text='Graph',variable=self.GraphCheck, 
@@ -353,12 +454,20 @@ class XRDApp(Toplevel):
         #plot patterns from DATA
         samplestakenforplot = [self.listboxsamples.get(idx) for idx in self.listboxsamples.curselection()]
         if samplestakenforplot!=[]:
-            if self.changetoQ.get():
-                minX=min(tth_to_q_list(DATA[samplestakenforplot[0]][2]))
-                maxX=max(tth_to_q_list(DATA[samplestakenforplot[0]][2]))
+            if self.showOriginal.get():
+                if self.changetoQ.get():
+                    minX=min(tth_to_q_list(DATA[samplestakenforplot[0]][2]+DATA[samplestakenforplot[0]][0]))
+                    maxX=max(tth_to_q_list(DATA[samplestakenforplot[0]][2]+DATA[samplestakenforplot[0]][0]))
+                else:
+                    minX=min(DATA[samplestakenforplot[0]][2]+DATA[samplestakenforplot[0]][0])
+                    maxX=max(DATA[samplestakenforplot[0]][2]+DATA[samplestakenforplot[0]][0])
             else:
-                minX=min(DATA[samplestakenforplot[0]][2])
-                maxX=max(DATA[samplestakenforplot[0]][2])
+                if self.changetoQ.get():
+                    minX=min(tth_to_q_list(DATA[samplestakenforplot[0]][2]))
+                    maxX=max(tth_to_q_list(DATA[samplestakenforplot[0]][2]))
+                else:
+                    minX=min(DATA[samplestakenforplot[0]][2])
+                    maxX=max(DATA[samplestakenforplot[0]][2])
             minY=min(DATA[samplestakenforplot[0]][3])
             maxY=max(DATA[samplestakenforplot[0]][3])
             for item in samplestakenforplot:
@@ -378,9 +487,33 @@ class XRDApp(Toplevel):
                 
                 if self.ylog.get():
                     self.XRDgraph.semilogy(x,y, color=colorstylelist[coloridx], label=item)
-                    coloridx+=1
+#                    coloridx+=1
                 else:
                     self.XRDgraph.plot(x,y, color=colorstylelist[coloridx], label=item)
+#                    coloridx+=1
+                
+                if self.showOriginal.get():
+                    if self.changetoQ.get():
+                        x = tth_to_q_list(DATA[item][0])
+                    else:
+                        x = DATA[item][0]
+                    y = DATA[item][1]
+                    if min(x)<minX:
+                        minX=min(x)
+                    if max(x)>maxX:
+                        maxX=max(x)
+                    if min(y)<minY:
+                        minY=min(y)
+                    if max(y)>maxY:
+                        maxY=max(y)
+                    
+                    if self.ylog.get():
+                        self.XRDgraph.semilogy(x,y, color=colorstylelist[coloridx],linestyle='--', label=item+'_original')
+                        coloridx+=1
+                    else:
+                        self.XRDgraph.plot(x,y, color=colorstylelist[coloridx],linestyle='--', label=item+'_original')
+                        coloridx+=1
+                else:
                     coloridx+=1
                 
 #            if self.changetoQ.get():
@@ -554,7 +687,23 @@ class XRDApp(Toplevel):
                     DATA[item][3]=list(y-base)
             
             self.updateXRDgraph(0)
-    
+
+    def SavitzkyGolayFiltering(self):
+        global DATA
+        if self.SGwinsize.get()>self.SGorder.get() and self.SGwinsize.get()%2==1:
+            if self.listboxsamples.curselection()!=():
+                samplestakenforplot = [self.listboxsamples.get(idx) for idx in self.listboxsamples.curselection()]
+                if samplestakenforplot!=[]:
+                    for item in samplestakenforplot:
+                        y = DATA[item][3]
+                        y=np.array(y)
+                        DATA[item][3] = savitzky_golay(y, window_size=self.SGwinsize.get(), order=self.SGorder.get())
+                
+                self.updateXRDgraph(0)
+        else:
+            messagebox.showinfo("Information","the SG window-size must be larger than the SG order, positive and odd.")
+            
+            
     def backgroundremovalImport(self):
         global DATA
         
@@ -721,6 +870,7 @@ class XRDApp(Toplevel):
                                     tempdat["PeakArea"]=peakarea
                                     tempdat["IntBreadth"]=peakarea/Peakheight
                                     tempdat["PeakName"]=''
+                                    tempdat["CrystSize"]=self.ScherrerCst.get()*0.1*lambdaXRD/(radians(tempdat["IntBreadth"])*cos(radians(tempdat["Position"]/2)))
                                     
                                     appendcheck=1
                                     break
@@ -806,7 +956,7 @@ class XRDApp(Toplevel):
             x=[]
             y=[]
             
-            print(fileextension)
+#            print(fileextension)
                 
 #            for item in filerawdata:
 #                x.append(float(item.split(' ')[0]))
@@ -984,6 +1134,27 @@ class XRDApp(Toplevel):
             file = open(f[:-4]+"PatternDat.txt",'w', encoding='ISO-8859-1')
             file.writelines("%s" % item for item in headline)
             file.close()
+    def ExportWH(self):
+        global DATA, lambdaXRD
+        
+        
+        f = filedialog.asksaveasfilename(defaultextension=".png", filetypes = (("graph file", "*.png"),("All Files", "*.*")))
+#        self.fig1.savefig(f, dpi=300) 
+        
+        testdata=['name\tPosition\tFWHM\t4Sin(theta)/lambda\tBCos(theta)/lambda\n']
+        
+        samplestakenforplot = [self.listboxsamples.get(idx) for idx in self.listboxsamples.curselection()]
+        if samplestakenforplot!=[]:
+            #exporting the peak analysis results
+            for key in samplestakenforplot:
+                for item in DATA[key][4]:
+                    xWH=4*sin(radians(item["Position"]/2))/(0.1*lambdaXRD) #4sin(theta)/lambda
+                    yWH=item["IntBreadth"]*cos(radians(item["Position"]/2))/(0.1*lambdaXRD) #
+                    testdata.append(key +'\t'+str("%.2f"%item["Position"])+'\t'+str("%.2f"%item["FWHM"])+'\t'+str("%.2f"%xWH)+'\t'+str("%.2f"%yWH)+'\n')
+            
+            file = open(f[:-4]+"WH.txt",'w', encoding='ISO-8859-1')
+            file.writelines("%s" % item for item in testdata)
+            file.close()    
         
     def ExportasRef(self):
         global DATA,RefPattDATA
@@ -1007,9 +1178,9 @@ class XRDApp(Toplevel):
         if samplestakenforplot!=[]:
             for key in samplestakenforplot:
                 for item in DATA[key][4]:
-                    testdata.append([key,item["PeakName"],"%.2f"%item["Position"],"%.2f"%item["PositionQ"],"%.2f"%item["Intensity"],"%.2f"%item["FWHM"],"%.2f"%item["PeakArea"],"%.2f"%item["IntBreadth"]])
+                    testdata.append([key,item["PeakName"],"%.2f"%item["Position"],"%.2f"%item["PositionQ"],"%.2f"%item["Intensity"],"%.2f"%item["FWHM"],"%.2f"%item["PeakArea"],"%.2f"%item["IntBreadth"],"%.2f"%item["CrystSize"]])
             
-        self.tableheaders=('name','PeakName','Position 2\u0398','Position q','Intensity','FWHM','PeakArea','IntBreadth')
+        self.tableheaders=('name','PeakName','Position (2\u0398)','Position q','Intensity (a.u.)','FWHM (2\u0398)','PeakArea','IntBreadth (2\u0398)', 'CrystalliteSize KL/dcos(thet)(nm)')
                     
         # Set the treeview
         self.tree = Treeview(self.frame41, columns=self.tableheaders, show="headings")
@@ -1022,6 +1193,10 @@ class XRDApp(Toplevel):
         scrollbar.config(command=self.tree.yview)
         scrollbar.pack(side="right", fill="y")
         self.tree.config(yscrollcommand=scrollbar.set)
+        scrollbar = tk.Scrollbar(self.frame41, orient="horizontal")
+        scrollbar.config(command=self.tree.xview)
+        scrollbar.pack(side="bottom", fill="x")
+        self.tree.config(xscrollcommand=scrollbar.set)
         self.tree.pack(side="left", fill=tk.BOTH, expand=1)
         
         self.treeview = self.tree

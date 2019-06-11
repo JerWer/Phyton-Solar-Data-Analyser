@@ -2927,8 +2927,9 @@ class IVApp(Toplevel):
                 
                 partdict["Cellletter"]='Single'
                 partdict["batchname"]=partdict["DepID"].split('.')[0]
-                partdict["SampleName"]=partdict["DepID"]+"_"+aftername.split('.')[1]
-#                print(partdict["SampleName"])
+                partdict["SampleName"]=partdict["DepID"]+"_"+aftername.split('.')[1]+"_"+aftername.split('.')[2]
+                
+                print(partdict["SampleName"])
                 
                 if 'LIV' in aftername:
                     partdict["Illumination"]="Light"
@@ -2962,16 +2963,18 @@ class IVApp(Toplevel):
                     if "X SetScale" in filerawdata[item]:
                         partdict["Vstep"]=float(filerawdata[item].split(',')[1])
                         break
-                
+#                print(partdict["Vstart"])
+#                print(partdict["Vstep"])
                 ivpartdat = [[],[]]#[voltage,current]
                 increm=0
                 for item in range(3,len(filerawdata),1):
                     if 'END' not in filerawdata[item]:
+                        ivpartdat[0].append(partdict["Vstart"]+increm*partdict["Vstep"])
 #                        print(item)
-                        if partdict["ScanDirection"]=="Forward":
-                            ivpartdat[0].append(partdict["Vstart"]+increm*partdict["Vstep"])
-                        else:
-                            ivpartdat[0].append(partdict["Vstart"]-increm*partdict["Vstep"])
+#                        if partdict["ScanDirection"]=="Forward":
+#                            ivpartdat[0].append(partdict["Vstart"]+increm*partdict["Vstep"])
+#                        else:
+#                            ivpartdat[0].append(partdict["Vstart"]+increm*partdict["Vstep"])
                         ivpartdat[1].append(float(filerawdata[item].split('\t')[2][:-2])) 
                         increm+=1
                     else:
@@ -3037,7 +3040,7 @@ class IVApp(Toplevel):
                 partdict["AirTemp"]=999
                 partdict["ChuckTemp"]=999
                     
-                DATA.append(partdict)
+#                DATA.append(partdict)
 
                 if partdict["Illumination"]=="Light":
                     DATA.append(partdict)
@@ -6047,7 +6050,7 @@ class IVApp(Toplevel):
             for item in range(len(IVlinestyle)):
                 listoflinestyle.append(IVlinestyle[item][1])
                 listofcolorstyle.append(IVlinestyle[item][2])
-                listoflinewidthstyle.append(IVlinestyle[item][3])
+                listoflinewidthstyle.append(str(IVlinestyle[item][3]))
             rowpos=1
             
             for itemm in takenforplot:

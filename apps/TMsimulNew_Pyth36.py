@@ -21,6 +21,13 @@ still to be added:
 - IQE calculation?
 - absorption losses per layer?
 
+refractive index graph:
+    - if layer is larger than 1um, cut off
+
+graph with layer parasitic losses:
+- add current losses for reflectance and transmittance
+- add main absorber layer and current
+
 """
 #%%
 import os
@@ -253,7 +260,8 @@ class multilayer:
             zpos.append(pos)
             zn.append(layer.material.indexatWL(wavelength))
             zn.append(layer.material.indexatWL(wavelength))
-        plt.plot(zpos,zn)
+#        plt.plot(zpos,zn)
+        return [zpos,zn]
     
     def lengthstructure(self):
         return len(self.structure)
@@ -1184,7 +1192,19 @@ class TMSimApp(Toplevel):
             self.toolbar.update()
             canvas._tkcanvas.pack(fill = tk.BOTH, expand = 1) 
             
+            [x,y]=structure.plotnprofile(400)
+            self.fig1.plot(x,y,label='500nm')
+            [x,y]=structure.plotnprofile(500)
+            self.fig1.plot(x,y,label='500nm')
+            [x,y]=structure.plotnprofile(600)
+            self.fig1.plot(x,y,label='600nm')
+            self.fig1.set_xlabel("Distance in device (nm)")
+            self.fig1.set_ylabel("Refractive index")
+            self.fig1.legend(ncol=1)
+            self.fig.savefig(f[:-4]+'_n.png', dpi=300, transparent=False) 
             
+            self.fig.clear()
+            self.fig1 = self.fig.add_subplot(111) 
             datatoexport=[]
             headoffile1=""
             headoffile2=""
@@ -1269,7 +1289,7 @@ class TMSimApp(Toplevel):
             spectotalparas.append(spectotalparas[-1]+np.asarray(specR[2]))
             
             for i in range(1,len(spectotalparas)):
-                self.fig1.plot(spectotalparas[0],spectotalparas[i],label=names[i-1],color=colorstylelist[i-1])
+                self.fig1.plot(spectotalparas[0],spectotalparas[i],label=names[i-1],color=colorstylelist[i-1],linewidth=1)
 
             for i in range(1,len(spectotalparas)-1):
                 self.fig1.fill_between(spectotalparas[0],spectotalparas[i],spectotalparas[i+1],facecolor=colorstylelist[i])

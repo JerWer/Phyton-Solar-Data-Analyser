@@ -461,6 +461,7 @@ matDir			= os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__
 resDir        = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),'results')
 matPrefix		= 'nk_'		# materials data prefix
 matHeader		= 1				# number of lines in header
+colorstylelist = ['white', 'red', 'blue', 'brown', 'green','cyan','magenta','olive','navy','orange','gray','aliceblue','antiquewhite','aqua','aquamarine','azure','beige','bisque','blanchedalmond','blue','blueviolet','brown','burlywood','cadetblue','chartreuse','chocolate','coral','cornflowerblue','cornsilk','crimson','darkblue','darkcyan','darkgoldenrod','darkgray','darkgreen','darkkhaki','darkmagenta','darkolivegreen','darkorange','darkorchid','darkred','darksalmon','darkseagreen','darkslateblue','darkslategray','darkturquoise','darkviolet','deeppink','deepskyblue','dimgray','dodgerblue','firebrick','floralwhite','forestgreen','fuchsia','gainsboro','ghostwhite','gold','goldenrod','greenyellow','honeydew','hotpink','indianred','indigo','ivory','khaki','lavender','lavenderblush','lawngreen','lemonchiffon','lightblue','lightcoral','lightcyan','lightgoldenrodyellow','lightgreen','lightgray','lightpink','lightsalmon','lightseagreen','lightskyblue','lightslategray','lightsteelblue','lightyellow','lime','limegreen','linen','magenta','maroon','mediumaquamarine','mediumblue','mediumorchid','mediumpurple','mediumseagreen','mediumslateblue','mediumspringgreen','mediumturquoise','mediumvioletred','midnightblue','mintcream','mistyrose','moccasin','navajowhite','navy','oldlace','olive','olivedrab','orange','orangered','orchid','palegoldenrod','palegreen','paleturquoise','palevioletred','papayawhip','peachpuff','peru','pink','plum','powderblue','purple','red','rosybrown','royalblue','saddlebrown','salmon','sandybrown','seagreen','seashell','sienna','silver','skyblue','slateblue','slategray','snow','springgreen','steelblue','tan','teal','thistle','tomato','turquoise','violet','wheat','white','whitesmoke','yellow','yellowgreen']
 
 
 #get list of stack names
@@ -1203,7 +1204,7 @@ class TMSimApp(Toplevel):
                 headoffile1+="Wavelength\tIntensity\t"
                 headoffile2+=" \tTotal\t"
                 
-            specRR=[specR[0],1-np.asarray(specR[1])-np.asarray(specR[2])]
+            specRR=[specR[0],1-np.asarray(specR[1])]#-np.asarray(specR[2])]
             datatoexport.append(specRR[0])
             datatoexport.append(specRR[1])
             headoffile1+="Wavelength\tIntensity\t"
@@ -1216,7 +1217,7 @@ class TMSimApp(Toplevel):
             self.fig1.legend(ncol=1)#loc='lower right',
             self.fig.savefig(f, dpi=300, transparent=False) 
             
-            
+            #with absorption spectra of non active layers
             k=0
             if len(spectofnonactivelayers)>0:
                 for item in spectofnonactivelayers:
@@ -1226,29 +1227,58 @@ class TMSimApp(Toplevel):
                     headoffile1+="Wavelength\tIntensity\t"
                     headoffile2+=" \t"+namesofnonactive[k]+"\t"
                     k+=1
-                self.fig1.set_xlabel("Wavelength (nm)")
-                self.fig1.set_ylabel("Light Intensity Fraction")
-                self.fig1.set_xlim([specRR[0][0],specRR[0][-1]])
-                self.fig1.set_ylim([0,1])
-                self.fig1.legend(ncol=1)#loc='lower right',
-                self.fig.savefig(f[:-4]+'_withParasitic.png', dpi=300, transparent=False) 
+#                self.fig1.set_xlabel("Wavelength (nm)")
+#                self.fig1.set_ylabel("Light Intensity Fraction")
+#                self.fig1.set_xlim([specRR[0][0],specRR[0][-1]])
+#                self.fig1.set_ylim([0,1])
+#                self.fig1.legend(ncol=1)#loc='lower right',
+#                self.fig.savefig(f[:-4]+'_withParasitic.png', dpi=300, transparent=False) 
             
             headoffile1=headoffile1[:-1]+'\n'
             headoffile2=headoffile2[:-1]+'\n'
-#            plt.close("all")
+            
             self.fig.clear()
+            self.fig1 = self.fig.add_subplot(111)  
+            
+            specRR=[specR[0],1-np.asarray(specR[1])-np.asarray(specR[2])]
+            self.fig1.plot(specRR[0],specRR[1],label="Absorptance of full stack")
+            specRR=[specR[0],1-np.asarray(specR[1])]
+            self.fig1.plot(specRR[0],specRR[1],label="1-Reflectance")
+            specRR=[specR[0],np.asarray(specR[2])]
+            self.fig1.plot(specRR[0],specRR[1],label="Transmittance")
+            self.fig1.set_xlabel("Wavelength (nm)")
+            self.fig1.set_ylabel("Light Intensity Fraction")
+            self.fig1.set_xlim([specRR[0][0],specRR[0][-1]])
+            self.fig1.set_ylim([0,1])
+            self.fig1.legend(ncol=1)#loc='lower right',
+            self.fig.savefig(f[:-4]+'_ART.png', dpi=300, transparent=False) 
+            
+            self.fig.clear()
+            self.fig1 = self.fig.add_subplot(111) 
             
             spectotalparas=[specR[0],np.asarray(spectofactivelayers[0][1])]
-            
+            names=['']
             for i in range(1,len(spectofactivelayers)):   
                 spectotalparas[1]+=np.asarray(spectofactivelayers[i][1])
             for i in range(len(spectofnonactivelayers)):   
+                names.append(currentsnon[i][:-1])
                 spectotalparas.append(spectotalparas[-1]+np.asarray(spectofnonactivelayers[i][1]))
-            print(len(spectotalparas))
+            names.append('Reflectance')
+            spectotalparas.append(spectotalparas[-1]+np.asarray(specR[1]))
+            names.append('Transmittance')
+            spectotalparas.append(spectotalparas[-1]+np.asarray(specR[2]))
+            
             for i in range(1,len(spectotalparas)):
-                self.fig1.plot(spectotalparas[0],spectotalparas[i])
+                self.fig1.plot(spectotalparas[0],spectotalparas[i],label=names[i-1],color=colorstylelist[i-1])
+
+            for i in range(1,len(spectotalparas)-1):
+                self.fig1.fill_between(spectotalparas[0],spectotalparas[i],spectotalparas[i+1],facecolor=colorstylelist[i])
+            
+            self.fig1.set_xlim([specRR[0][0],specRR[0][-1]])
             self.fig1.set_xlabel("Wavelength (nm)")
             self.fig1.set_ylabel("Light Intensity Fraction")
+            self.fig1.set_ylim([0,1])
+            self.fig1.legend(ncol=1)#loc='lower right',
             self.fig.savefig(f[:-4]+'_withParasitic2.png', dpi=300, transparent=False) 
             
             datatoexportINV=[list(x) for x in zip(*datatoexport)]
@@ -1265,6 +1295,7 @@ class TMSimApp(Toplevel):
             file.writelines(headoffile2)
             file.writelines(item for item in datatoexportINVtxt)
             file.close()
+            plt.close("all")
         
         if self.check1D.get()==1:
             #ask which layer to scan and what range

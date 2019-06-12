@@ -77,8 +77,6 @@ add time plot to autoanalysis if span over 5hrs
 
 - exception with the default group empty => just remove the default group, annoying to fix...
 
-- exception while save session: can't pickle _tkinter.tkapp objects, when pickle.dump(listofanswer, open('listofanswer.pkl','wb'))
-
 - add HI group plot to autoanalysis
 
 - add reminder to save session when quit the window
@@ -5900,9 +5898,9 @@ class IVApp(Toplevel):
         pickle.dump(MPPlinestyle,open('MPPlinestyle.pkl','wb'), protocol=pickle.HIGHEST_PROTOCOL)
         pickle.dump(samplesgroups,open('samplesgroups.pkl','wb'), protocol=pickle.HIGHEST_PROTOCOL) 
         
-        pickle.dump(listofanswer,open('listofanswer.pkl','wb'), protocol=pickle.HIGHEST_PROTOCOL)
-        pickle.dump(listoflinestyle,open('listoflinestyle.pkl','wb'), protocol=pickle.HIGHEST_PROTOCOL)
-        pickle.dump(listofcolorstyle,open('listofcolorstyle.pkl','wb'), protocol=pickle.HIGHEST_PROTOCOL) 
+#        pickle.dump(listofanswer,open('listofanswer.pkl','wb'), protocol=pickle.HIGHEST_PROTOCOL)
+#        pickle.dump(listoflinestyle,open('listoflinestyle.pkl','wb'), protocol=pickle.HIGHEST_PROTOCOL)
+#        pickle.dump(listofcolorstyle,open('listofcolorstyle.pkl','wb'), protocol=pickle.HIGHEST_PROTOCOL) 
         pickle.dump(numbLightfiles,open('numbLightfiles.pkl','wb'), protocol=pickle.HIGHEST_PROTOCOL) 
         pickle.dump(numbDarkfiles,open('numbDarkfiles.pkl','wb'), protocol=pickle.HIGHEST_PROTOCOL) 
         pickle.dump(groupstoplot,open('groupstoplot.pkl','wb'), protocol=pickle.HIGHEST_PROTOCOL) 
@@ -5931,6 +5929,8 @@ class IVApp(Toplevel):
             os.chdir(path)
         except:
             print("there is an exception")
+            
+        
         
         DATA = pickle.load(open('DATA.pkl','rb'))
         DATAdark = pickle.load(open('DATAdark.pkl','rb'))
@@ -5948,9 +5948,9 @@ class IVApp(Toplevel):
         IVlinestyle = pickle.load(open('IVlinestyle.pkl','rb'))
         MPPlinestyle = pickle.load(open('MPPlinestyle.pkl','rb'))
         samplesgroups = pickle.load(open('samplesgroups.pkl','rb'))
-        listofanswer = pickle.load(open('listofanswer.pkl','rb'))
-        listoflinestyle = pickle.load(open('listoflinestyle.pkl','rb'))
-        listofcolorstyle = pickle.load(open('listofcolorstyle.pkl','rb'))
+#        listofanswer = pickle.load(open('listofanswer.pkl','rb'))
+#        listoflinestyle = pickle.load(open('listoflinestyle.pkl','rb'))
+#        listofcolorstyle = pickle.load(open('listofcolorstyle.pkl','rb'))
         groupstoplot = pickle.load(open('groupstoplot.pkl','rb'))
         numbDarkfiles = pickle.load(open('numbDarkfiles.pkl','rb'))
         numbLightfiles = pickle.load(open('numbLightfiles.pkl','rb'))

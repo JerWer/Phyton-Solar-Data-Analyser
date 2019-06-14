@@ -255,16 +255,17 @@ class SpectroApp(Toplevel):
                     
                     samplenames=readCSV[0]
                     dataWaveInt=readCSV[2:]
+                    print(len(dataWaveInt))
                     for item in range(len(samplenames)):
                         if samplenames[item]!='':
                             dataWave = []
                             dataInt = []
                             discard=1
 #                            print(samplenames[item])
-                            if '_T' in samplenames[item]:
+                            if '_TT' in samplenames[item]:
                                 curvetype="TT"
                                 samplenameshort = samplenames[item][:-2]
-                            elif '_R' in samplenames[item]:
+                            elif '_TR' in samplenames[item]:
                                 curvetype="TR"
                                 samplenameshort = samplenames[item][:-2]
                             elif "Baseline" in samplenames[item]:

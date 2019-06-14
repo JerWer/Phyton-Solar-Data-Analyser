@@ -82,6 +82,13 @@ add time plot to autoanalysis if span over 5hrs
 - add reminder to save session when quit the window
 
 
+Plottime graph:
+- normalization
+- export with txt files
+- change legend
+
+
+
 """
 #%%############# Global variable definition
 testdata = []
@@ -211,7 +218,7 @@ class IVApp(Toplevel):
         TimeChoiceList = ["Voc","Jsc","FF", "Eff", "Roc", "Rsc","Vmpp","Jmpp","HI"]
         self.TimeChoice=StringVar()
         self.TimeChoice.set("Eff") # default choice
-        self.dropMenuTime = OptionMenu(self.Frame3, self.TimeChoice, *TimeChoiceList, command=self.UpdateTimeGraph)
+        self.dropMenuTime = OptionMenu(self.Frame3, self.TimeChoice, *TimeChoiceList, command=lambda: self.UpdateTimeGraph(1))
         self.dropMenuTime.grid(row=0, column=7, columnspan=5)
         
         self.updateTimegraph = Button(self.Frame3, text="Update graph",command = lambda: self.UpdateTimeGraph(1))
@@ -220,24 +227,28 @@ class IVApp(Toplevel):
         self.changeTimelegend = Button(self.Frame3, text="change legend",command = self.ChangeLegendTimegraph)
         self.changeTimelegend.grid(row=1, column=7, columnspan=5)
         
-        self.timeminx = tk.DoubleVar()
-        entry=Entry(self.Frame3, textvariable=self.timeminx,width=5).grid(row=0,column=13,columnspan=1)
-        tk.Label(self.Frame3, text="Min X",fg='black',background='white').grid(row=1,column=13,columnspan=1)
-        self.timeminx.set(0)
-        self.timemaxx = tk.DoubleVar()
-        Entry(self.Frame3, textvariable=self.timemaxx,width=5).grid(row=0,column=14,columnspan=1)
-        tk.Label(self.Frame3, text="Max X",fg='black',background='white').grid(row=1,column=14,columnspan=1)
-        self.timemaxx.set(1) 
-        self.timeminy = tk.DoubleVar()
-        Entry(self.Frame3, textvariable=self.timeminy,width=5).grid(row=0,column=15,columnspan=1)
-        tk.Label(self.Frame3, text="Min Y",fg='black',background='white').grid(row=1,column=15,columnspan=1)
-        self.timeminy.set(0)
-        self.timemaxy = tk.DoubleVar()
-        Entry(self.Frame3, textvariable=self.timemaxy,width=5).grid(row=0,column=16,columnspan=1)
-        tk.Label(self.Frame3, text="Max Y",fg='black',background='white').grid(row=1,column=16,columnspan=1)
-        self.timemaxy.set(1)
+#        self.timeminx = tk.DoubleVar()
+#        entry=Entry(self.Frame3, textvariable=self.timeminx,width=5).grid(row=0,column=13,columnspan=1)
+#        tk.Label(self.Frame3, text="Min X",fg='black',background='white').grid(row=1,column=13,columnspan=1)
+#        self.timeminx.set(0)
+#        self.timemaxx = tk.DoubleVar()
+#        Entry(self.Frame3, textvariable=self.timemaxx,width=5).grid(row=0,column=14,columnspan=1)
+#        tk.Label(self.Frame3, text="Max X",fg='black',background='white').grid(row=1,column=14,columnspan=1)
+#        self.timemaxx.set(1) 
+#        self.timeminy = tk.DoubleVar()
+#        Entry(self.Frame3, textvariable=self.timeminy,width=5).grid(row=0,column=15,columnspan=1)
+#        tk.Label(self.Frame3, text="Min Y",fg='black',background='white').grid(row=1,column=15,columnspan=1)
+#        self.timeminy.set(0)
+#        self.timemaxy = tk.DoubleVar()
+#        Entry(self.Frame3, textvariable=self.timemaxy,width=5).grid(row=0,column=16,columnspan=1)
+#        tk.Label(self.Frame3, text="Max Y",fg='black',background='white').grid(row=1,column=16,columnspan=1)
+#        self.timemaxy.set(1)
         
-
+        self.LineornolineTimegraph = IntVar()
+        lineTime=Checkbutton(self.Frame3,text="Line?",variable=self.LineornolineTimegraph, 
+                           onvalue=1,offvalue=0,height=1, width=3, command = lambda: self.UpdateTimeGraph(1),fg='black',background='white')
+        lineTime.grid(row=3, column=0, columnspan=6)
+        self.LineornolineTimegraph.set(1)
         
         #### Group ####
         columnpos = 8
@@ -470,7 +481,7 @@ class IVApp(Toplevel):
         global DATA
         
         self.frame0 = Frame(self.superframe,bg='white')
-        self.frame0.grid(row=28,column=37,rowspan=25,columnspan=65) #,sticky='wens'
+        self.frame0.grid(row=28,column=40,rowspan=25,columnspan=65) #,sticky='wens'
         for r in range(25):
             self.frame0.rowconfigure(r, weight=1)    
         for c in range(65):
@@ -2316,12 +2327,26 @@ class IVApp(Toplevel):
                     maxx=max(TimeDatDict[key]['forward'][self.TimeChoice.get()][0]+TimeDatDict[key]['reverse'][self.TimeChoice.get()][0])
                 try:
                     xfor, yfor=zip(*sorted(zip(TimeDatDict[key]['forward'][self.TimeChoice.get()][0],TimeDatDict[key]['forward'][self.TimeChoice.get()][1]), key = lambda x: x[1]))
-                    self.TimeEvolfig.plot(xfor, yfor, linestyle='--', marker='o',color=colorstylelist[color1],label=key+'_For')
+                    xfor=list(xfor)
+                    yfor=list(yfor)
+                    yfor.sort(key=dict(zip(yfor, xfor)).get)
+                    xfor=sorted(xfor)
+                    if self.LineornolineTimegraph.get():
+                        self.TimeEvolfig.plot(xfor, yfor, linestyle='--', marker='o',color=colorstylelist[color1],label=key+'_For')
+                    else:
+                        self.TimeEvolfig.plot(xfor, yfor, linestyle='', marker='o',color=colorstylelist[color1],label=key+'_For')                       
                 except ValueError:
                     pass
                 try:
                     xrev, yrev=zip(*sorted(zip(TimeDatDict[key]['reverse'][self.TimeChoice.get()][0],TimeDatDict[key]['reverse'][self.TimeChoice.get()][1]), key = lambda x: x[1]))                
-                    self.TimeEvolfig.plot(xrev, yrev, linestyle='-', marker='o', color=colorstylelist[color1], alpha=0.5,label=key+'_Rev')
+                    xrev=list(xrev)
+                    yrev=list(yrev)
+                    yrev.sort(key=dict(zip(yrev, xrev)).get)
+                    xrev=sorted(xrev)
+                    if self.LineornolineTimegraph.get():
+                        self.TimeEvolfig.plot(xrev, yrev, linestyle='-', marker='o', color=colorstylelist[color1], alpha=0.5,label=key+'_Rev')
+                    else:
+                        self.TimeEvolfig.plot(xrev, yrev, linestyle='', marker='o', color=colorstylelist[color1], alpha=0.5,label=key+'_Rev')                        
                 except ValueError:
                     pass
                 color1=color1+1
@@ -3264,8 +3289,26 @@ class IVApp(Toplevel):
         
         for item in range(len(groupednames)):
             if len(groupednames[item])!=1:
-                for item0 in range(1,len(groupednames[item]),1):
-                    groupednames[item][item0]+= "_"+str(item0)
+                k=1
+                for item0 in range(1,len(groupednames[item])):
+                    
+#                    groupednames2=copy.deepcopy(groupednames)
+#                    groupednames[item][item0]+= "_"+str(k)
+#                    print(groupednames[item][item0])
+                    while(1):
+                        groupednames2=list(chain.from_iterable(groupednames))
+#                        print(groupednames2)
+                        
+                        if groupednames[item][item0]+"_"+str(k) in groupednames2:
+                            k+=1
+                            groupednames[item][item0]+= "_"+str(k)
+#                            print(groupednames[item][item0])
+#                            print('')
+                        else:
+                            groupednames[item][item0]+= "_"+str(k)
+#                            print('notin')
+                            break
+                        
         groupednames=list(chain.from_iterable(groupednames))
 #        print("")
 #        print(groupednames)
@@ -6569,9 +6612,9 @@ class IVApp(Toplevel):
         self.frame01.config(background="white")
                   
         for item in range(len(DATA)):
-            testdata.append([DATA[item]["Group"],DATA[item]["SampleName"],float('%.2f' % float(DATA[item]["CellSurface"])),DATA[item]["ScanDirection"],float('%.2f' % float(DATA[item]["Jsc"])),float('%.2f' % float(DATA[item]["Voc"])),float('%.2f' % float(DATA[item]["FF"])),float('%.2f' % float(DATA[item]["Eff"])),float('%.2f' % float(DATA[item]["Roc"])),float('%.2f' % float(DATA[item]["Rsc"])),float('%.2f' % float(DATA[item]["Vmpp"])),float('%.2f' % float(DATA[item]["Jmpp"]))])
+            testdata.append([DATA[item]["Group"],DATA[item]["SampleName"],DATA[item]["MeasDayTime2"],float('%.2f' % float(DATA[item]["CellSurface"])),DATA[item]["ScanDirection"],float('%.2f' % float(DATA[item]["Jsc"])),float('%.2f' % float(DATA[item]["Voc"])),float('%.2f' % float(DATA[item]["FF"])),float('%.2f' % float(DATA[item]["Eff"])),float('%.2f' % float(DATA[item]["Roc"])),float('%.2f' % float(DATA[item]["Rsc"])),float('%.2f' % float(DATA[item]["Vmpp"])),float('%.2f' % float(DATA[item]["Jmpp"]))])
             
-        self.tableheaders=('Group','Sample','Area','Scan direct.','Jsc','Voc','FF','Eff.','Roc','Rsc','Vmpp','Jmpp')
+        self.tableheaders=('Group','Sample','DateTime','Area','Scan direct.','Jsc','Voc','FF','Eff.','Roc','Rsc','Vmpp','Jmpp')
                     
         # Set the treeview
         self.tree = Treeview( self.frame01, columns=self.tableheaders, show="headings")

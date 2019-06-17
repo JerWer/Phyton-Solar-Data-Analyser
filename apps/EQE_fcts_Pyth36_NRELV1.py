@@ -31,6 +31,49 @@ TODOLIST
 - DB batch and samplename: might fail if user did not follow exactly the pattern. put some safety 
 when there are several tabs, numbers are added to the tab names => don't use that as batch and samplename
 
+- option to import transmittance data and multiply with EQE, for filtered cells, and calculate current
+prompt for spectro data
+import the filtered new data same as new sample that can be plotted with the rest
+
+
+
+Discussion about IQE (to answer Mike's comment):
+    
+- import Absorptance of active layer from simulations and compute the IQE=EQEmeas/AbsSim
+AbsSim is without parasitic losses: simulate TMM with supposed IQE=100%, get absorption of active layer
+Or:
+    measure experimentally the absorptance of the full device stack (precise)
+    simulate the parasitic absorption losses spectrum of the stack (small modelling error)
+    substract the Aparasimul to the Atotmeasured = Aactive
+    IQE=EQEmeasured/Aactive
+=> gui that:
+    - select the EQE data
+    - ask user which method to use: either with measured total absorptance or with the simulated one
+    mention to user that if use simulated one, then assume that Atotmeasured is exactly equal to Atotsimulated
+    if use Atotmeasured, then error is reduced. 
+    - ask to select TR and TT files measured at uv-vis spectro, or use the generated txt file from the spectro app
+    - select the simulated device rawdata txt file, extract the total parasitic losses (total absorptance - active layer absorptance)
+    - compute the IQE
+
+problem: 
+    the simulations don't take into account surface roughness
+    
+    n&k for absorber: estimate n, measure k by measuring absorptance of layer on glass and 
+
+Don't agree with that because:
+IQE is just without optical component, see electronic losses
+EQE is both electric and optic
+so it is correct for a device with T=0 to have IQE=EQE/(1-R)
+as 1-R is then indeed corresponding to the total absorbed light in the device (but not only in the absorber layer)
+
+if we want to then isolate the losses due to parasitic absorption losses or due to pure electronic, we can substract the Apara
+this would give a generation-collection efficiency in the active absorber layer only.
+
+
+https://www.osti.gov/pages/servlets/purl/1357744
+
+
+
 """
 #%%
 
@@ -40,7 +83,7 @@ echarge = 1.60218e-19
 planck = 6.62607e-34
 lightspeed = 299792458
 
-file = open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),'spectratxtfiles','AM15G.txt'))
+file = open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),'spectratxtfiles','AM15G.txt'), encoding='ISO-8859-1')
 am15g = file.readlines()
 file.close()
 dataWave = []
@@ -217,6 +260,9 @@ class EQEApp(Toplevel):
         self.EQEDBbut = Button(frame21315, text="SaveToDB",
                             command = self.WriteEQEtoDatabase)
         self.EQEDBbut.pack(side=tk.RIGHT)
+        self.IQEbut = Button(frame21315, text="CalculateIQE",
+                            command = self.CalculateIQE)
+        self.IQEbut.pack(side=tk.LEFT)
         
         
         frame2132=Frame(frame213,borderwidth=0,  bg="white")
@@ -1943,7 +1989,24 @@ class EQEApp(Toplevel):
         global takenforplot
         takenforplot=list(self.lstbox.curselection())
         self.UpdateEQEGraph()
-     
+        
+    def CalculateIQE(self):
+        print("IQE")
+        """
+        - check that a sample is selected, retrieve it or do nothing if no selected
+        if more than 1 is selected, will apply same procedure to all individually
+        - ask which procedure to follow: all simulation or mix? drop down list with 2 equations
+        put some info and explanation text
+        - when click next button, will close window and ask to find the required files
+        - reading file(s)
+        - computing IQE: need to interpolate all the data as they will certainly have different step sizes between spectro and simulation and EQEmeas
+        - importing the IQE data in the EQE app same as when import new data => samplename_IQEcomputed
+        
+        """
+        
+        
+        
+        
 #%%#############         
 ###############################################################################        
 if __name__ == '__main__':

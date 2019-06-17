@@ -16,17 +16,6 @@ still to be added:
     - E field in device
     - modifiable IQE
     
-- optimization: if have several layers with same material, it does not distinguise them => eg MgF2 front and middle in 4TT, or ITO front and recombination in 2TT...
-
-- IQE calculation?
-- absorption losses per layer?
-
-refractive index graph:
-    - if layer is larger than 1um, cut off
-
-graph with layer parasitic losses:
-- add current losses for reflectance and transmittance
-- add main absorber layer and current
 
 """
 #%%
@@ -40,6 +29,8 @@ import PIL.Image
 import tkinter as tk
 from tkinter import ttk, Entry,messagebox, Button, Checkbutton, IntVar, Toplevel, OptionMenu, Frame, StringVar, Scrollbar, Listbox
 from tkinter import filedialog
+from scipy.interpolate import interp1d, UnivariateSpline
+from scipy import integrate, stats
 import numpy as np
 from tkinter import *
 import copy
@@ -49,8 +40,20 @@ import pickle
 
 
 admittance0=2.6544E-3
+echarge = 1.60218e-19
+planck = 6.62607e-34
+lightspeed = 299792458
 
-
+file = open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),'spectratxtfiles','AM15G.txt'), encoding='ISO-8859-1')
+am15g = file.readlines()
+file.close()
+dataWave = []
+dataInt = []
+for i in range(len(am15g)):
+    pos = am15g[i].find('\t')
+    dataWave.append(float(am15g[i][:pos]))
+    dataInt.append(float(am15g[i][pos+1:-1]))
+SpectIntensFct = interp1d(dataWave,dataInt)
 #%%
 def eta(index,imaginary_angle,TEorTM):
     res=index*np.cos(imaginary_angle)
@@ -73,6 +76,15 @@ def getcurrent(spectrgen,EQE):
     for ii,wl in enumerate(EQE[0]):
         retval+=EQE[1][ii]*interp2w(wl,spectrgen[0],spectrgen[1])
     return retval
+
+def calcCurrent(x,y,xmin,xmax):
+    f = interp1d(x, y, kind='cubic')
+    x2 = lambda x: AM15GParticlesinnm(x)*f(x)
+    return echarge/10*integrate.quad(x2,xmin,xmax)[0]
+
+def AM15GParticlesinnm(x):
+    return (x*10**(-9))*SpectIntensFct(x)/(planck*lightspeed)
+
         
 def elta(index,imaginary_angle,dd,ll):
     res= index*np.cos(imaginary_angle)
@@ -256,7 +268,11 @@ class multilayer:
         pos=0
         for layer in self.structure:
             zpos.append(pos)
-            pos+=layer.thickness
+            if layer.thickness>1000:#limiting the thickness of layers for visual clarity on the graph
+                thick=1000
+            else:
+                thick=layer.thickness
+            pos+=thick
             zpos.append(pos)
             zn.append(layer.material.indexatWL(wavelength))
             zn.append(layer.material.indexatWL(wavelength))
@@ -676,11 +692,11 @@ class TMSimApp(Toplevel):
         tk.Label(frame2, text="StartWave",font=SMALL_FONT,  bg="white").pack(side=tk.LEFT,expand=1)
         self.StartWave = tk.DoubleVar()
         Entry(frame2, textvariable=self.StartWave,width=5).pack(side=tk.LEFT,expand=1)
-        self.StartWave.set(320)
+        self.StartWave.set(300)
         tk.Label(frame2, text="EndWave",font=SMALL_FONT,  bg="white").pack(side=tk.LEFT,expand=1) 
         self.EndWave = tk.DoubleVar()
         Entry(frame2, textvariable=self.EndWave,width=5).pack(side=tk.LEFT,expand=1) 
-        self.EndWave.set(1200)
+        self.EndWave.set(1100)
         
 #        self.frame3=Frame(self,borderwidth=0,  bg="white")
 #        self.frame3.pack(fill=tk.X,expand=0)           
@@ -1145,11 +1161,13 @@ class TMSimApp(Toplevel):
         specR=structure.calculateRTrange(specttotake[0],1,0,1,'s')
         currents=[]
         currentsnon=[]
+        totalcurrent=0
         for i in range(len(MatThickActList)):
             if MatThickActList[i][2]==1:
                 numbofactive+=1
                 spectofactivelayers.append(structure.absspectruminlay(i+1,specttotake[0],1,0,1,'s'))
                 Jsc=str(MatThickActList[i][0])+': '+"%.2f"%huss[i+1]+'\n'
+                totalcurrent+=huss[i+1]
                 currents.append(Jsc)
                 namesofactive.append(MatThickActList[i][0])
                 print(Jsc)
@@ -1193,11 +1211,17 @@ class TMSimApp(Toplevel):
             canvas._tkcanvas.pack(fill = tk.BOTH, expand = 1) 
             
             [x,y]=structure.plotnprofile(400)
-            self.fig1.plot(x,y,label='500nm')
+            self.fig1.plot(x,y,label='400nm')
             [x,y]=structure.plotnprofile(500)
             self.fig1.plot(x,y,label='500nm')
             [x,y]=structure.plotnprofile(600)
             self.fig1.plot(x,y,label='600nm')
+            [x,y]=structure.plotnprofile(700)
+            self.fig1.plot(x,y,label='700nm')
+            [x,y]=structure.plotnprofile(800)
+            self.fig1.plot(x,y,label='800nm')
+            [x,y]=structure.plotnprofile(900)
+            self.fig1.plot(x,y,label='900nm')
             self.fig1.set_xlabel("Distance in device (nm)")
             self.fig1.set_ylabel("Refractive index")
             self.fig1.legend(ncol=1)
@@ -1208,28 +1232,45 @@ class TMSimApp(Toplevel):
             datatoexport=[]
             headoffile1=""
             headoffile2=""
+            headoffile3=""
 #            plt.figure()
             k=0
             for item in spectofactivelayers:
                 self.fig1.plot(item[0],item[1],label=currents[k][:-1])
+                
                 datatoexport.append(item[0])
                 datatoexport.append(item[1])
                 headoffile1+="Wavelength\tIntensity\t"
-                headoffile2+=" \t"+namesofactive[k]+"\t"
+                headoffile2+="(nm)\t(-)\t"
+                headoffile3+=" \t"+namesofactive[k]+"\t"
                 k+=1
             if len(spectofactivelayers)>1:
-                self.fig1.plot(spectotal[0],spectotal[1],label="Total")
+                self.fig1.plot(spectotal[0],spectotal[1],label="Total: "+"%.2f"%totalcurrent)
                 datatoexport.append(spectotal[0])
                 datatoexport.append(spectotal[1])
                 headoffile1+="Wavelength\tIntensity\t"
-                headoffile2+=" \tTotal\t"
-                
+                headoffile2+="(nm)\t(-)\t"
+                headoffile3+=" \tTotal\t"
+
+            specRR=[specR[0],1-np.asarray(specR[1])-np.asarray(specR[2])]
+            datatoexport.append(specRR[0])
+            datatoexport.append(specRR[1])
+            headoffile1+="Wavelength\tIntensity\t"
+            headoffile2+="(nm)\t(-)\t"
+            headoffile3+=" \tTotal absorptance\t"
+            specRR=[specR[0],np.asarray(specR[2])]
+            datatoexport.append(specRR[0])
+            datatoexport.append(specRR[1])
+            headoffile1+="Wavelength\tIntensity\t"
+            headoffile2+="(nm)\t(-)\t"
+            headoffile3+=" \tTransmittance\t"
             specRR=[specR[0],1-np.asarray(specR[1])]#-np.asarray(specR[2])]
             datatoexport.append(specRR[0])
             datatoexport.append(specRR[1])
             headoffile1+="Wavelength\tIntensity\t"
-            headoffile2+=" \tReflectance\t"
-            self.fig1.plot(specRR[0],specRR[1],label="Reflectance")
+            headoffile2+="(nm)\t(-)\t"
+            headoffile3+=" \t1-Reflectance\t"
+            self.fig1.plot(specRR[0],specRR[1],label="1-Reflectance: "+"%.2f"%calcCurrent(specR[0],specR[1],specRR[0][0],specRR[0][-1]))
             self.fig1.set_xlabel("Wavelength (nm)")
             self.fig1.set_ylabel("Light Intensity Fraction")
             self.fig1.set_xlim([specRR[0][0],specRR[0][-1]])
@@ -1245,7 +1286,8 @@ class TMSimApp(Toplevel):
                     datatoexport.append(item[0])
                     datatoexport.append(item[1])
                     headoffile1+="Wavelength\tIntensity\t"
-                    headoffile2+=" \t"+namesofnonactive[k]+"\t"
+                    headoffile2+="(nm)\t(-)\t"
+                    headoffile3+=" \t"+namesofnonactive[k]+"\t"
                     k+=1
 #                self.fig1.set_xlabel("Wavelength (nm)")
 #                self.fig1.set_ylabel("Light Intensity Fraction")
@@ -1256,16 +1298,19 @@ class TMSimApp(Toplevel):
             
             headoffile1=headoffile1[:-1]+'\n'
             headoffile2=headoffile2[:-1]+'\n'
+            headoffile3=headoffile3[:-1]+'\n'
             
             self.fig.clear()
             self.fig1 = self.fig.add_subplot(111)  
             
             specRR=[specR[0],1-np.asarray(specR[1])-np.asarray(specR[2])]
-            self.fig1.plot(specRR[0],specRR[1],label="Absorptance of full stack")
+            self.fig1.plot(specRR[0],specRR[1],label="Absorptance of full stack: "+"%.2f"%calcCurrent(specRR[0],specRR[1],specRR[0][0],specRR[0][-1]))
             specRR=[specR[0],1-np.asarray(specR[1])]
-            self.fig1.plot(specRR[0],specRR[1],label="1-Reflectance")
+            Rloss=calcCurrent(specR[0],specR[1],specRR[0][0],specRR[0][-1])
+            self.fig1.plot(specRR[0],specRR[1],label="1-Reflectance: "+"%.2f"%Rloss)
             specRR=[specR[0],np.asarray(specR[2])]
-            self.fig1.plot(specRR[0],specRR[1],label="Transmittance")
+            Tloss=calcCurrent(specR[0],specR[2],specRR[0][0],specRR[0][-1])
+            self.fig1.plot(specRR[0],specRR[1],label="Transmittance: "+"%.2f"%Tloss)
             self.fig1.set_xlabel("Wavelength (nm)")
             self.fig1.set_ylabel("Light Intensity Fraction")
             self.fig1.set_xlim([specRR[0][0],specRR[0][-1]])
@@ -1283,9 +1328,9 @@ class TMSimApp(Toplevel):
             for i in range(len(spectofnonactivelayers)):   
                 names.append(currentsnon[i][:-1])
                 spectotalparas.append(spectotalparas[-1]+np.asarray(spectofnonactivelayers[i][1]))
-            names.append('Reflectance')
+            names.append('Reflectance: '+"%.2f"%Rloss)
             spectotalparas.append(spectotalparas[-1]+np.asarray(specR[1]))
-            names.append('Transmittance')
+            names.append('Transmittance: '+"%.2f"%Tloss)
             spectotalparas.append(spectotalparas[-1]+np.asarray(specR[2]))
             
             for i in range(1,len(spectotalparas)):
@@ -1313,6 +1358,7 @@ class TMSimApp(Toplevel):
             file = open(f[:-4]+"_rawdata.txt",'w', encoding='ISO-8859-1')
             file.writelines(headoffile1)
             file.writelines(headoffile2)
+            file.writelines(headoffile3)
             file.writelines(item for item in datatoexportINVtxt)
             file.close()
             plt.close("all")
@@ -1324,7 +1370,8 @@ class TMSimApp(Toplevel):
             self.simulatedialog.geometry("350x200")
             center(self.simulatedialog)
             
-            self.matlistfor2Dvar=[item[0] for item in MatThickActList]
+#            self.matlistfor2Dvar=[item[0] for item in MatThickActList]
+            self.matlistfor2Dvar=[MatThickActList[item][0]+'#'+str(item+1) for item in range(len(MatThickActList))]
             frame1=Frame(self.simulatedialog,borderwidth=0,  bg="white")
             frame1.pack(side=tk.LEFT,fill=tk.BOTH, expand=1)
             label = tk.Label(frame1, text="Material1", font=SMALL_FONT, bg="white",fg="black")
@@ -1369,7 +1416,8 @@ class TMSimApp(Toplevel):
             self.simulatedialog.geometry("350x200")
             center(self.simulatedialog)
             
-            self.matlistfor2Dvar=[item[0] for item in MatThickActList]
+#            self.matlistfor2Dvar=[item[0] for item in MatThickActList]
+            self.matlistfor2Dvar=[MatThickActList[item][0]+'#'+str(item+1) for item in range(len(MatThickActList))]
             frame1=Frame(self.simulatedialog,borderwidth=0,  bg="white")
             frame1.pack(side=tk.LEFT,fill=tk.BOTH, expand=1)
             label = tk.Label(frame1, text="Material1", font=SMALL_FONT, bg="white",fg="black")

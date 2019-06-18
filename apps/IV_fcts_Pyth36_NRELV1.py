@@ -86,6 +86,7 @@ Plottime graph:
 - normalization
 - export with txt files
 - change legend
+- export big4
 
 
 
@@ -218,7 +219,7 @@ class IVApp(Toplevel):
         TimeChoiceList = ["Voc","Jsc","FF", "Eff", "Roc", "Rsc","Vmpp","Jmpp","HI"]
         self.TimeChoice=StringVar()
         self.TimeChoice.set("Eff") # default choice
-        self.dropMenuTime = OptionMenu(self.Frame3, self.TimeChoice, *TimeChoiceList, command=lambda: self.UpdateTimeGraph(1))
+        self.dropMenuTime = OptionMenu(self.Frame3, self.TimeChoice, *TimeChoiceList, command=self.UpdateTimeGraph)
         self.dropMenuTime.grid(row=0, column=7, columnspan=5)
         
         self.updateTimegraph = Button(self.Frame3, text="Update graph",command = lambda: self.UpdateTimeGraph(1))
@@ -3952,7 +3953,7 @@ class IVApp(Toplevel):
         print("savingtimegraph")
         f = filedialog.asksaveasfilename(defaultextension=".png", filetypes = (("graph file", "*.png"),("All Files", "*.*")))
         extent = self.TimeEvolfig.get_window_extent().transformed(self.fig.dpi_scale_trans.inverted())
-        self.fig.savefig(f, dpi=300, bbox_inches=extent.expanded(1.5, 2), transparent=True)
+        self.fig.savefig(f, dpi=300, bbox_inches=extent.expanded(1.8, 2), transparent=True)
         
 #        DATAgroupforexport1=[]            
 #        for item in DATAgroupforexport:

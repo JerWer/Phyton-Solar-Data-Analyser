@@ -89,6 +89,7 @@ Plottime graph:
 - export big4
 
 
+- change initial linewidth in iv and mpp to 2
 
 """
 #%%############# Global variable definition

@@ -41,11 +41,9 @@ from scipy.optimize import curve_fit
 """
 TODOLIST
 
-- open/read .dac files
-- profile by summing each line
 - map: each column is one profile => contourplot or 3D profile with x=wavelength, y=time, z=intensity
 - profile fitting, decay time, other properties?
-
+- 
 
 
 """

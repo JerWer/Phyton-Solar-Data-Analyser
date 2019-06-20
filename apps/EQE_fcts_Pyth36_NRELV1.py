@@ -48,6 +48,7 @@ Or:
     IQE=EQEmeasured/Aactive
 => gui that:
     - select the EQE data
+    - ask user: IQEdevice (with parasitic absorption), IQEactive (wo parasitic absorption)
     - ask user which method to use: either with measured total absorptance or with the simulated one
     mention to user that if use simulated one, then assume that Atotmeasured is exactly equal to Atotsimulated
     if use Atotmeasured, then error is reduced. 
@@ -68,7 +69,7 @@ as 1-R is then indeed corresponding to the total absorbed light in the device (b
 
 if we want to then isolate the losses due to parasitic absorption losses or due to pure electronic, we can substract the Apara
 this would give a generation-collection efficiency in the active absorber layer only.
-
+=> implement both possibilities!
 
 https://www.osti.gov/pages/servlets/purl/1357744
 

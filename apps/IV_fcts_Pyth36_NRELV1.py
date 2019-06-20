@@ -87,9 +87,8 @@ Plottime graph:
 - export with txt files
 - change legend
 - export big4
+- time relative or absolute
 
-
-- change initial linewidth in iv and mpp to 2
 
 """
 #%%############# Global variable definition
@@ -251,6 +250,18 @@ class IVApp(Toplevel):
                            onvalue=1,offvalue=0,height=1, width=3, command = lambda: self.UpdateTimeGraph(1),fg='black',background='white')
         lineTime.grid(row=3, column=0, columnspan=6)
         self.LineornolineTimegraph.set(1)
+        
+        self.big4Timegraph = IntVar()
+        lineTime=Checkbutton(self.Frame3,text="big4?",variable=self.big4Timegraph, 
+                           onvalue=1,offvalue=0,height=1, width=3, command = lambda: self.UpdateTimeGraph(1),fg='black',background='white')
+        lineTime.grid(row=3, column=13, columnspan=5)
+        self.big4Timegraph.set(1)
+        
+        self.timerelativeTimegraph = IntVar()
+        lineTime=Checkbutton(self.Frame3,text="RelativeTime?",variable=self.timerelativeTimegraph, 
+                           onvalue=1,offvalue=0,height=1, width=10, command = lambda: self.UpdateTimeGraph(1),fg='black',background='white')
+        lineTime.grid(row=3, column=7, columnspan=5)
+        self.timerelativeTimegraph.set(0)
         
         #### Group ####
         columnpos = 8
@@ -2488,7 +2499,7 @@ class IVApp(Toplevel):
                             try:
                                 IVfig.semilogy(x,y,label=DATAx[item]["SampleName"],linestyle=IVlinestyle[item1][1],color=IVlinestyle[item1][2],linewidth=IVlinestyle[item1][3])
                                 IVlegendMod.append([DATAx[item]["SampleName"],DATAx[item]["SampleName"]])
-                                IVlinestyle.append([DATAx[item]["SampleName"],"-",colorstylelist[color1],1])
+                                IVlinestyle.append([DATAx[item]["SampleName"],"-",colorstylelist[color1],2])
                             except IndexError:
                                 print("some indexerror... but just continue...")
                     else:
@@ -2514,7 +2525,7 @@ class IVApp(Toplevel):
                         try:
                             IVfig.semilogy(x,y,label=DATAx[item]["SampleName"],color=colorstylelist[color1])
                             IVlegendMod.append([DATAx[item]["SampleName"],DATAx[item]["SampleName"]])
-                            IVlinestyle.append([DATAx[item]["SampleName"],"-",colorstylelist[color1],1])
+                            IVlinestyle.append([DATAx[item]["SampleName"],"-",colorstylelist[color1],2])
                         except IndexError:
                             print("some indexerror... but just continue...")
                     else:
@@ -2627,7 +2638,7 @@ class IVApp(Toplevel):
                     if newlegend:
                         mppfig.plot(x,y,label=DATAx[item]["SampleName"],linestyle=MPPlinestyle[item][1],color=MPPlinestyle[item][2],linewidth=MPPlinestyle[item1][3])
                         MPPlegendMod.append([DATAx[item]["SampleName"],DATAx[item]["SampleName"]])
-                        MPPlinestyle.append([DATAx[item]["SampleName"],"-",colorstylelist[color],1])
+                        MPPlinestyle.append([DATAx[item]["SampleName"],"-",colorstylelist[color],2])
                 else:
                     mppfig.plot(x,y)
                 color=color+1
@@ -2641,7 +2652,7 @@ class IVApp(Toplevel):
                 if self.CheckmppLegend.get()==1:
                     mppfig.plot(x,y,label=DATAx[sampletotake[i]]["SampleName"],color=colorstylelist[color])
                     MPPlegendMod.append([DATAx[sampletotake[i]]["SampleName"],DATAx[sampletotake[i]]["SampleName"]])
-                    MPPlinestyle.append([DATAx[sampletotake[i]]["SampleName"],"-",colorstylelist[color],1])
+                    MPPlinestyle.append([DATAx[sampletotake[i]]["SampleName"],"-",colorstylelist[color],2])
                 else:
                     mppfig.plot(x,y,color=colorstylelist[color])
                 color=color+1

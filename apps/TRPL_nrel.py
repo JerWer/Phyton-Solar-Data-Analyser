@@ -89,7 +89,7 @@ for file_path in file_paths:
 #    profile[2]=[(m-min(profile[1]))/(max(profile[1])-min(profile[1])) for m in profile[1]]
     profile[2]=[(m-mean(baselinelist))/(max(profile[1])-mean(baselinelist)) for m in profile[1]]
     
-    plt.plot(profile[0],profile[2],label=filename)
+    plt.semilogy(profile[0],profile[2],label=filename)
     
     xx=profile[0][indexofmax:]
     yy=profile[2][indexofmax:]
@@ -100,15 +100,18 @@ for file_path in file_paths:
     t1=list(popt)[3]
     t2=list(popt)[4]
     tottime=t1+t2
-    plt.plot(xx,fitydat,label='t1+t2: '+"%.2f"%t1+" + %.2f"%t2+" = %.2f"%tottime)
+    plt.semilogy(xx,fitydat,label='t1: '+"%.2f"%t1+"; t2: %.2f"%t2)
 
-    filetoexport=["time\tintensity\tnormalized\tfit\n","ns\t-\t-\t-\n"]+[str(profile[0][i])+'\t'+str(profile[1][i])+'\t'+str(profile[2][i])+'\t'+str(fitydat[i])+'\n' for i in range(len(profile[0]))]
+    filetoexport=["time\tintensity\tnormalized\tfit\n","ns\t-\t-\t-\n"]+[str(profile[0][i])+'\t'+str(profile[1][i])+'\t'+str(profile[2][i])+'\t'+' \n' for i in range(indexofmax)]+[str(profile[0][i])+'\t'+str(profile[1][i])+'\t'+str(profile[2][i])+'\t'+str(fitydat[i-indexofmax])+'\n' for i in range(indexofmax,len(profile[0]))]
     
     file = open(str(str(Path(file_path))[:-4]+"_data_"+"%.2f"%tottime+".txt"),'w', encoding='ISO-8859-1')
     file.writelines("%s" % item for item in filetoexport)
     file.close() 
 plt.title("fit func: y0 + A1*np.exp(-x/t1) + A2*np.exp(-x/t2)")
 plt.legend()
+plt.xlabel('Time (ns)')
+plt.ylabel('Normalized PL intensity')
+plt.axis([0,max(xx),0.01,1])
 plt.savefig(os.path.join(os.path.dirname(file_path),'graph.png'),dpi=300)
 plt.show()
 

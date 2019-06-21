@@ -27,6 +27,11 @@ from math import log, pow
 - export data in txt file with graph
 
 
+- table of sample similar to XRD app
+
+- add smoothening function, same as XRD
+
+
 """
 
 LARGE_FONT= ("Verdana", 16)
@@ -273,8 +278,18 @@ class SpectroApp(Toplevel):
                             if discard:    
 #                                print(samplenames[item])
                                 for item1 in range(len(dataWaveInt)):
-                                    if dataWaveInt[item1][0]=='':
-                                        break
+#                                    print(dataWaveInt[item1])
+#                                    if dataWaveInt[item1][0]=='':
+                                    try:
+                                        if dataWaveInt[item1]==[]:
+                                            break
+                                    except:
+                                        pass
+                                    try:
+                                        if dataWaveInt[item1][0]=='':
+                                            break
+                                    except:
+                                        pass
 #                                    print(dataWaveInt[item1][item])
                                     dataWave.append(dataWaveInt[item1][item])
                                     dataInt.append(dataWaveInt[item1][item+1])

@@ -90,6 +90,9 @@ Plottime graph:
 - time relative or absolute
 
 
+groupgraph:
+    - if select HI with box plot, it doesn't show the names of the group???
+
 """
 #%%############# Global variable definition
 testdata = []

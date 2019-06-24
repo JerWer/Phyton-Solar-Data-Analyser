@@ -20,11 +20,11 @@ from timeit import default_timer as timer
 from operator import truediv as div
 from math import log, pow 
 from XRD_NREL import savitzky_golay
-from tkcolorpicker import askcolor 
-from functools import partial
 
 
 """
+- update legend modification: colors, reorder...
+- fontsize
 
 
 
@@ -36,17 +36,10 @@ SMALL_FONT= ("Verdana", 10)
 echarge = 1.60218e-19
 planck = 6.62607e-34
 lightspeed = 299792458
-DATAspectro={}
+
 SpectlegendMod=[]
 titSpect=0
 Patternsamplenameslist=[]
-takenforplot=[]
-listofanswer=[]
-listoflinestyle=[]
-listofcolorstyle=[]
-listoflinewidthstyle=[]
-colorstylelist = ['black', 'red', 'blue', 'brown', 'green','cyan','magenta','olive','navy','orange','gray','aliceblue','antiquewhite','aqua','aquamarine','azure','beige','bisque','blanchedalmond','blue','blueviolet','brown','burlywood','cadetblue','chartreuse','chocolate','coral','cornflowerblue','cornsilk','crimson','darkblue','darkcyan','darkgoldenrod','darkgray','darkgreen','darkkhaki','darkmagenta','darkolivegreen','darkorange','darkorchid','darkred','darksalmon','darkseagreen','darkslateblue','darkslategray','darkturquoise','darkviolet','deeppink','deepskyblue','dimgray','dodgerblue','firebrick','floralwhite','forestgreen','fuchsia','gainsboro','ghostwhite','gold','goldenrod','greenyellow','honeydew','hotpink','indianred','indigo','ivory','khaki','lavender','lavenderblush','lawngreen','lemonchiffon','lightblue','lightcoral','lightcyan','lightgoldenrodyellow','lightgreen','lightgray','lightpink','lightsalmon','lightseagreen','lightskyblue','lightslategray','lightsteelblue','lightyellow','lime','limegreen','linen','magenta','maroon','mediumaquamarine','mediumblue','mediumorchid','mediumpurple','mediumseagreen','mediumslateblue','mediumspringgreen','mediumturquoise','mediumvioletred','midnightblue','mintcream','mistyrose','moccasin','navajowhite','navy','oldlace','olive','olivedrab','orange','orangered','orchid','palegoldenrod','palegreen','paleturquoise','palevioletred','papayawhip','peachpuff','peru','pink','plum','powderblue','purple','red','rosybrown','royalblue','saddlebrown','salmon','sandybrown','seagreen','seashell','sienna','silver','skyblue','slateblue','slategray','snow','springgreen','steelblue','tan','teal','thistle','tomato','turquoise','violet','wheat','white','whitesmoke','yellow','yellowgreen']
-
 
 def center(win):
     """
@@ -190,11 +183,11 @@ class SpectroApp(Toplevel):
 
         self.pos1 = IntVar()
         pos=Checkbutton(frame421,text=None,variable=self.pos1, 
-                           onvalue=2,offvalue=0,height=1, width=1,command=lambda: self.UpdateGraph(0), bg="white")
+                           onvalue=1,offvalue=0,height=1, width=1,command=lambda: self.UpdateGraph(0), bg="white")
         pos.pack(side=tk.LEFT,expand=1)
         self.pos2 = IntVar()
         pos=Checkbutton(frame421,text=None,variable=self.pos1, 
-                           onvalue=1,offvalue=0,height=1, width=1,command=lambda: self.UpdateGraph(0), bg="white")
+                           onvalue=2,offvalue=0,height=1, width=1,command=lambda: self.UpdateGraph(0), bg="white")
         pos.pack(side=tk.LEFT,expand=1)
         self.pos3 = IntVar()
         pos=Checkbutton(frame422,text=None,variable=self.pos1, 
@@ -211,7 +204,7 @@ class SpectroApp(Toplevel):
         self.frame51.pack(fill=tk.BOTH,expand=1)
         importedsamplenames = StringVar()
         self.listboxsamples=Listbox(self.frame51,listvariable=importedsamplenames, selectmode=tk.MULTIPLE,width=15, height=3, exportselection=0)
-        self.listboxsamples.bind('<<ListboxSelect>>', self.UpdateGraph0)
+        self.listboxsamples.bind('<<ListboxSelect>>', self.UpdateGraph)
         self.listboxsamples.pack(side="left", fill=tk.BOTH, expand=1)
         scrollbar = tk.Scrollbar(self.frame51, orient="vertical")
         scrollbar.config(command=self.listboxsamples.yview)
@@ -335,8 +328,8 @@ class SpectroApp(Toplevel):
                                     dataInt.append(dataWaveInt[item1][item+1])
                                 dataWave=list(map(float,dataWave))
                                 dataInt=list(map(float,dataInt))
-                                #[0 samplenameshort, 1 curvetype, 2 dataWave, 3 dataInt, 4 dataIntorig, 5 longnameorig, 6 longnamemod, 7 linestyle, 8 linecolor, 9 linewidth]
-                                DATA[samplenames[item]] = [samplenameshort, curvetype, dataWave, dataInt,dataInt,samplenames[item],samplenames[item],'-',colorstylelist[len(DATA.keys())],int(2)]
+                                datadict = [samplenameshort, curvetype, dataWave, dataInt,dataInt]
+                                DATA[samplenames[item]]=datadict
                                 Patternsamplenameslist.append(samplenames[item])
 #                                print(samplenameshort)
                             
@@ -463,7 +456,7 @@ class SpectroApp(Toplevel):
         self.frame51.pack(fill=tk.BOTH,expand=1)
         importedsamplenames = StringVar()
         self.listboxsamples=Listbox(self.frame51,listvariable=importedsamplenames, selectmode=tk.MULTIPLE,width=15, height=3, exportselection=0)
-        self.listboxsamples.bind('<<ListboxSelect>>', self.UpdateGraph0)
+        self.listboxsamples.bind('<<ListboxSelect>>', self.UpdateGraph)
         self.listboxsamples.pack(side="left", fill=tk.BOTH, expand=1)
         scrollbar = tk.Scrollbar(self.frame51, orient="vertical")
         scrollbar.config(command=self.listboxsamples.yview)
@@ -505,63 +498,65 @@ class SpectroApp(Toplevel):
             file.writelines("%s" % item for item in content1)
             file.close()
     
-    def UpdateGraph0(self,a):
-        global titSpect
-        global SpectlegendMod, takenforplot
-        
-        takenforplot = [self.listboxsamples.get(idx) for idx in self.listboxsamples.curselection()]
-        
-        self.UpdateGraph(0)
-        
     def UpdateGraph(self,a):
         global titSpect
-        global SpectlegendMod, takenforplot
-#        try:
-        if self.DATA!={}:        
+        global SpectlegendMod
+        try:        
             DATAx=self.DATA
-    #            sampletotake=[]
-    #            namelist=[self.listboxsamples.get(idx) for idx in self.listboxsamples.curselection()]
-    #            for name, var in namelist:
-    #                sampletotake.append(var.get())
-    #            sampletotake=[i for i,x in enumerate(sampletotake) if x == 1]
-            if takenforplot!=[]:
-                sampletotake=takenforplot
+#            sampletotake=[]
+#            namelist=[self.listboxsamples.get(idx) for idx in self.listboxsamples.curselection()]
+#            for name, var in namelist:
+#                sampletotake.append(var.get())
+#            sampletotake=[i for i,x in enumerate(sampletotake) if x == 1]
+            sampletotake = [self.listboxsamples.get(idx) for idx in self.listboxsamples.curselection()]
+
+            if SpectlegendMod!=[]:
+                self.Spectrograph.clear()
+                spectfig=self.Spectrograph
+                for i in sampletotake:
+                    x = DATAx[i][2]
+                    y = DATAx[i][3]
+                    if self.CheckLegend.get()==1:
+                        newlegend=1
+                        for item in range(len(SpectlegendMod)):
+                            if SpectlegendMod[item][0]==DATAx[i][0]+'_'+DATAx[i][1]:
+                                spectfig.plot(x,y,label=SpectlegendMod[item][1])
+                                newlegend=0
+                                break
+                        if newlegend:
+                            spectfig.plot(x,y,label=DATAx[i][0]+'_'+DATAx[i][1])
+                            SpectlegendMod.append([DATAx[i][0]+'_'+DATAx[i][1],DATAx[i][0]+'_'+DATAx[i][1]])
+                    else:
+                        spectfig.plot(x,y)
             else:
-                sampletotake=[]
-#            print('UpdateGraph')
-#            print(sampletotake)
-    #            else:
-    #            sampletotake = [self.listboxsamples.get(idx) for idx in self.listboxsamples.curselection()]
-    #            takenforplot=sampletotake
-    #            if takenforplot!=[]:
-    #                sampletotake=takenforplot
-            
-            self.Spectrograph.clear()
-            for i in sampletotake:
-                x = DATAx[i][2]
-                y = DATAx[i][3]
-                if self.CheckLegend.get()==1:
-                    self.Spectrograph.plot(x,y,label=DATAx[i][6],linestyle=DATAx[i][7],color=DATAx[i][8],linewidth=DATAx[i][9])
-                else:
-                    self.Spectrograph.plot(x,y,linestyle=DATAx[i][7],color=DATAx[i][8],linewidth=DATAx[i][9])        
+                self.Spectrograph.clear()
+                spectfig=self.Spectrograph
+                for i in sampletotake:
+                    x = DATAx[i][2]
+                    y = DATAx[i][3]
+                    if self.CheckLegend.get()==1:
+                        spectfig.plot(x,y,label=DATAx[i][0]+'_'+DATAx[i][1])
+                        SpectlegendMod.append([DATAx[i][0]+'_'+DATAx[i][1],DATAx[i][0]+'_'+DATAx[i][1]])
+                    else:
+                        spectfig.plot(x,y)        
             
             self.Spectrograph.set_ylabel('Intensity (%)')
             self.Spectrograph.set_xlabel('Wavelength (nm)')
             if self.CheckLegend.get()==1:
                 if self.pos1.get()!=0:
-                    self.leg=self.Spectrograph.legend(loc=self.pos1.get())
+                    self.leg=spectfig.legend(loc=self.pos1.get())
                 elif self.pos2.get()!=0:
-                    self.leg=self.Spectrograph.legend(loc=self.pos2.get())
+                    self.leg=spectfig.legend(loc=self.pos2.get())
                 elif self.pos3.get()!=0:
-                    self.leg=self.Spectrograph.legend(loc=self.pos3.get())
+                    self.leg=spectfig.legend(loc=self.pos3.get())
                 elif self.pos4.get()!=0:
-                    self.leg=self.Spectrograph.legend(loc=self.pos4.get())
+                    self.leg=spectfig.legend(loc=self.pos4.get())
                 else:
-                    self.leg=self.Spectrograph.legend(loc=0)
+                    self.leg=spectfig.legend(loc=0)
             self.Spectrograph.axis([self.minx.get(),self.maxx.get(),self.miny.get(),self.maxy.get()])
             plt.gcf().canvas.draw()
-    #        except AttributeError:
-    #            print("you need to import data first...")
+        except AttributeError:
+            print("you need to import data first...")
         
     def ExportGraph(self):
         try:
@@ -585,284 +580,33 @@ class SpectroApp(Toplevel):
         global titSpect
         titSpect=1
         self.UpdateGraph(0)
-    
-
-    class PopulateListofSampleStylingSpectro(tk.Frame):
-        def __init__(self, root):
-    
-            tk.Frame.__init__(self, root)
-            self.canvas0 = tk.Canvas(root, borderwidth=0, background="#ffffff")
-            self.frame = tk.Frame(self.canvas0, background="#ffffff")
-            self.vsb = tk.Scrollbar(root, orient="vertical", command=self.canvas0.yview)
-            self.canvas0.configure(yscrollcommand=self.vsb.set)
-    
-            self.vsb.pack(side="right", fill="y")
-            self.canvas0.pack(side="left", fill="both", expand=True)
-            self.canvas0.create_window((4,4), window=self.frame, anchor="nw", 
-                                      tags="self.frame")
-    
-            self.frame.bind("<Configure>", self.onFrameConfigure)
-    
-            self.populate()
-    
-        def populate(self):
-            global takenforplot, SpectlegendMod,DATAspectro
-            global colorstylelist
-            global listofanswer
-            global listoflinestyle
-            global listofcolorstyle, listoflinewidthstyle
             
-            
-            DATAx=DATAspectro
-            listofanswer=[]
-#            sampletotake=[]
-#            if takenforplot!=[]:
-#                for item in takenforplot:
-#                    sampletotake.append(DATAx[item][0])
-                    
-            listoflinestyle=[]
-            listofcolorstyle=[]
-            listoflinewidthstyle=[]
-            
-            
-            for item in takenforplot:
-                listoflinestyle.append(DATAx[item][7])
-                listofcolorstyle.append(DATAx[item][8])
-                listofanswer.append(DATAx[item][6])
-                listoflinewidthstyle.append(str(DATAx[item][9]))
-#            print(takenforplot)
-#            print(listofanswer)
-            rowpos=1
-            for item1 in range(len(takenforplot)): 
-                label=tk.Label(self.frame,text=DATAx[takenforplot[item1]][5],fg='black',background='white')
-                label.grid(row=rowpos,column=0, columnspan=1)
-                textinit = tk.StringVar()
-                #self.listofanswer.append(Entry(self.window,textvariable=textinit))
-                listofanswer[item1]=Entry(self.frame,textvariable=textinit)
-                listofanswer[item1].grid(row=rowpos,column=1, columnspan=2)
-                textinit.set(DATAx[takenforplot[item1]][6])
-    
-                linestylelist = ["-","--","-.",":"]
-                listoflinestyle[item1]=tk.StringVar()
-                listoflinestyle[item1].set(DATAx[takenforplot[item1]][7]) # default choice
-                OptionMenu(self.frame, listoflinestyle[item1], *linestylelist, command=()).grid(row=rowpos, column=4, columnspan=2)
-                 
-                """
-                listofcolorstyle[item1]=tk.StringVar()
-                listofcolorstyle[item1].set(DATAx[item1][10]) # default choice
-                OptionMenu(self.frame, listofcolorstyle[item1], *colorstylelist, command=()).grid(row=rowpos, column=6, columnspan=2)
-                """
-                self.positioncolor=item1
-                colstyle=Button(self.frame, text='Select Color', foreground=listofcolorstyle[item1], command=partial(self.getColor,item1))
-                colstyle.grid(row=rowpos, column=6, columnspan=2)
-                
-                
-                linewidth = tk.StringVar()
-                listoflinewidthstyle[item1]=Entry(self.frame,textvariable=linewidth)
-                listoflinewidthstyle[item1].grid(row=rowpos,column=8, columnspan=1)
-                linewidth.set(str(DATAx[takenforplot[item1]][9]))
-                
-                rowpos=rowpos+1
-                        
-#                    else:
-#                        listofanswer[item1]=str(DATAx[item1][5])
-#                        listoflinestyle.append(str(DATAx[item1][9]))
-#                        listofcolorstyle.append(str(DATAx[item1][10]))
-#                        listoflinewidthstyle.append(str(DATAx[item1][29]))
-            #print(listofanswer)
-            
-        def getColor(self,rowitem):
-            global listofcolorstyle
-            color = askcolor(color="red", parent=self.frame, title="Color Chooser", alpha=False)
-            listofcolorstyle[rowitem]=color[1]
-            
-            
-        def onFrameConfigure(self, event):
-            '''Reset the scroll region to encompass the inner frame'''
-            self.canvas0.configure(scrollregion=self.canvas0.bbox("all"))
-    
-    class Drag_and_Drop_Listbox(tk.Listbox):
-        #A tk listbox with drag'n'drop reordering of entries.
-        def __init__(self, master, **kw):
-            #kw['selectmode'] = tk.MULTIPLE
-            kw['selectmode'] = tk.SINGLE
-            kw['activestyle'] = 'none'
-            tk.Listbox.__init__(self, master, kw)
-            self.bind('<Button-1>', self.getState, add='+')
-            self.bind('<Button-1>', self.setCurrent, add='+')
-            self.bind('<B1-Motion>', self.shiftSelection)
-            self.curIndex = None
-            self.curState = None
-        def setCurrent(self, event):
-            ''' gets the current index of the clicked item in the listbox '''
-            self.curIndex = self.nearest(event.y)
-        def getState(self, event):
-            ''' checks if the clicked item in listbox is selected '''
-            #i = self.nearest(event.y)
-            #self.curState = self.selection_includes(i)
-            self.curState = 1
-        def shiftSelection(self, event):
-            ''' shifts item up or down in listbox '''
-            i = self.nearest(event.y)
-            if self.curState == 1:
-              self.selection_set(self.curIndex)
-            else:
-              self.selection_clear(self.curIndex)
-            if i < self.curIndex:
-              # Moves up
-              x = self.get(i)
-              selected = self.selection_includes(i)
-              self.delete(i)
-              self.insert(i+1, x)
-              if selected:
-                self.selection_set(i+1)
-              self.curIndex = i
-            elif i > self.curIndex:
-              # Moves down
-              x = self.get(i)
-              selected = self.selection_includes(i)
-              self.delete(i)
-              self.insert(i-1, x)
-              if selected:
-                self.selection_set(i-1)
-              self.curIndex = i
-              
-
-    def reorder(self): 
-        global takenforplot
-        
-#        DATAx=self.DATA
-#        sampletotake=[]
-#        if takenforplot!=[]:
-#            for item in takenforplot:
-#                sampletotake.append(DATAx[item][0])
-                    
-        self.reorderwindow = tk.Tk()
-        center(self.reorderwindow)
-        self.listbox = self.Drag_and_Drop_Listbox(self.reorderwindow)
-        for name in takenforplot:
-          self.listbox.insert(tk.END, name)
-          self.listbox.selection_set(0)
-        self.listbox.pack(fill=tk.BOTH, expand=True)
-        scrollbar = tk.Scrollbar(self.listbox, orient="vertical")
-        scrollbar.config(command=self.listbox.yview)
-        scrollbar.pack(side="right", fill="y")
-        
-        self.listbox.config(yscrollcommand=scrollbar.set)
-        
-        printbut = tk.Button(self.reorderwindow, text="reorder",
-                                    command = self.printlist)
-        printbut.pack()
-        self.reorderwindow.mainloop()    
-            
-    def printlist(self):
-        global takenforplot
-        global listofanswer
-        global listoflinestyle
-        global listofcolorstyle,listoflinewidthstyle
-        
-        #need to reorder at same time all other lists
-        newtakenforplot=[]
-        newlistofanswer=[]
-        newlistoflinestyle=[]
-        newlistofcolorstyle=[]
-        newlistoflinewidthstyle=[]
-        newlist=list(self.listbox.get(0,tk.END))
-        for item in newlist:
-            for i in range(len(takenforplot)):
-                if takenforplot[i]==item:
-                    newtakenforplot.append(takenforplot[i])
-                    newlistofanswer.append(listofanswer[i])
-                    newlistoflinestyle.append(listoflinestyle[i])
-                    newlistofcolorstyle.append(listofcolorstyle[i])
-                    newlistoflinewidthstyle.append(listoflinewidthstyle[i])
-        takenforplot=newtakenforplot
-        listofanswer=newlistofanswer
-        listoflinestyle=newlistoflinestyle
-        listofcolorstyle=newlistofcolorstyle
-        listoflinewidthstyle=newlistoflinewidthstyle
-        
-        self.UpdateSpectLegMod()
-        self.reorderwindow.destroy()
-        
-
-        
     def ChangeLegendSpectgraph(self):
-        global SpectlegendMod,DATAspectro
-        DATAspectro=self.DATA
-        if self.CheckLegend.get()==1:
-            self.window = tk.Toplevel()
-            self.window.wm_title("Change Legends")
-            center(self.window)
-            self.window.geometry("450x300")
-            
-            Button(self.window, text="Update",
-                                command = self.UpdateSpectLegMod).pack()
-            
-            Button(self.window, text="Reorder",
-                                command = self.reorder).pack()
-    
-            self.PopulateListofSampleStylingSpectro(self.window).pack(side="top", fill="both", expand=True)
-     
+        global SpectlegendMod
+        self.window = tk.Toplevel()
+        self.window.wm_title("Change Legends")
+        center(self.window)
+        self.window.geometry("280x300")
         
-#            self.changeSpectlegend = Button(self.window, text="Update",
-#                                command = self.UpdateSpectLegMod)
-#            self.changeSpectlegend.grid(row=0, column=0, columnspan=3)
-#    
-#            self.listofanswer=[]
-#            for rowitem in range(len(SpectlegendMod)):
-#                label=tk.Label(self.window,text=SpectlegendMod[rowitem][0])
-#                label.grid(row=rowitem+1,column=0, columnspan=1)
-#                textinit = tk.StringVar()
-#                self.listofanswer.append(Entry(self.window,textvariable=textinit))
-#                textinit.set(SpectlegendMod[rowitem][1])
-#                self.listofanswer[rowitem].grid(row=rowitem+1,column=1, columnspan=2)
+        self.changeSpectlegend = Button(self.window, text="Update",
+                            command = self.UpdateSpectLegMod)
+        self.changeSpectlegend.grid(row=0, column=0, columnspan=3)
+
+        self.listofanswer=[]
+        for rowitem in range(len(SpectlegendMod)):
+            label=tk.Label(self.window,text=SpectlegendMod[rowitem][0])
+            label.grid(row=rowitem+1,column=0, columnspan=1)
+            textinit = tk.StringVar()
+            self.listofanswer.append(Entry(self.window,textvariable=textinit))
+            textinit.set(SpectlegendMod[rowitem][1])
+            self.listofanswer[rowitem].grid(row=rowitem+1,column=1, columnspan=2)
             
     def UpdateSpectLegMod(self):
         global SpectlegendMod
-        global listofanswer, takenforplot
-        global listoflinestyle
-        global listofcolorstyle,listoflinewidthstyle
-
-        leglist=[]
-        for e in listofanswer:
-            if type(e)!=str:
-                leglist.append(e.get())
-            else:
-                leglist.append(e)
-        for item in range(len(takenforplot)):
-            self.DATA[takenforplot[item]][6]=leglist[item]
-        
-        leglist=[]
-        for e in listoflinestyle:
-            if type(e)!=str:
-                leglist.append(e.get())
-            else:
-                leglist.append(e)
-        for item in range(len(takenforplot)):
-            self.DATA[takenforplot[item]][7]=leglist[item]        
-        leglist=[]
-        for e in listofcolorstyle:
-            if type(e)!=str:
-                leglist.append(e.get())
-            else:
-                leglist.append(e) 
-        for item in range(len(takenforplot)):
-            self.DATA[takenforplot[item]][8]=leglist[item]  
-        leglist=[]
-        for e in listoflinewidthstyle:
-            if type(e)!=str:
-                leglist.append(e.get())
-            else:
-                leglist.append(e) 
-        for item in range(len(takenforplot)):
-            self.DATA[takenforplot[item]][9]=int(leglist[item]) 
-                
-#        print('UpdateSpectLegMod')
-#        print(takenforplot)
+        leglist=[e.get() for e in self.listofanswer]
+        for item in range(len(SpectlegendMod)):
+            SpectlegendMod[item][1]=leglist[item]
         self.UpdateGraph(0)
-        self.window.destroy()
-        self.ChangeLegendSpectgraph()
         
     def AbsCoeffAndTauc(self):
         self.AbsCoeffAndTaucWin = tk.Toplevel()

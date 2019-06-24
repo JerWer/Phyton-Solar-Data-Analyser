@@ -119,9 +119,15 @@ os.chdir(owd)
 #refsamplenameslist=["Si","pkcubic"]#to be replaced by reading the folder and putting all data in a list and getting the file names in this list
 Patternsamplenameslist=[]
 
-listofanswer={}
+listofanswer0={}
 samplestakenforplot=[]
 peaknamesforplot=[]
+
+takenforplot=[]
+listofanswer=[]
+listoflinestyle=[]
+listofcolorstyle=[]
+listoflinewidthstyle=[]
 
 lambdaXRD=1.5406
 
@@ -278,6 +284,9 @@ class XRDApp(Toplevel):
         Checkbutton(frame211,text="q?",variable=self.changetoQ, command = lambda: self.updateXRDgraph(0),
                            onvalue=1,offvalue=0,height=1, width=3, fg='black',background='lightgrey').pack(side=tk.LEFT,expand=1)
 
+        self.changeXRDlegend = Button(frame211, text="Legend",
+                            command = self.ChangeLegendXRDgraph)
+        self.changeXRDlegend.pack(side=tk.LEFT,expand=1)
                         
         frame212=Frame(frame21,borderwidth=0,  bg="lightgrey")
         frame212.pack(fill=tk.BOTH,expand=1)
@@ -624,7 +633,7 @@ class XRDApp(Toplevel):
             self.populate()
     
         def populate(self):
-            global DATA, listofanswer, samplestakenforplot
+            global DATA, listofanswer0, samplestakenforplot
                      
             rowpos=1
             if samplestakenforplot!=[]:
@@ -635,8 +644,8 @@ class XRDApp(Toplevel):
                         label=tk.Label(self.frame,text="%.2f"%DATA[item][4][item1]["Position"],fg='black',background='white')
                         label.grid(row=rowpos,column=1, columnspan=1)
                         textinit = tk.StringVar()
-                        listofanswer[str(DATA[item][4][item1]["Position"])]=Entry(self.frame,textvariable=textinit)
-                        listofanswer[str(DATA[item][4][item1]["Position"])].grid(row=rowpos,column=2, columnspan=2)
+                        listofanswer0[str(DATA[item][4][item1]["Position"])]=Entry(self.frame,textvariable=textinit)
+                        listofanswer0[str(DATA[item][4][item1]["Position"])].grid(row=rowpos,column=2, columnspan=2)
                         textinit.set(DATA[item][4][item1]["PeakName"])
         
                         rowpos=rowpos+1
@@ -660,13 +669,13 @@ class XRDApp(Toplevel):
         self.PopulateListofPeakNames(self.window).pack(side="top", fill="both", expand=True)
     
     def UpdatePeakNames(self):
-        global DATA, listofanswer, samplestakenforplot, peaknamesforplot
+        global DATA, listofanswer0, samplestakenforplot, peaknamesforplot
         
         peaknamesforplot=[]
        
         for item in samplestakenforplot:
             for item1 in range(len(DATA[item][4])):
-                DATA[item][4][item1]["PeakName"]=listofanswer[str(DATA[item][4][item1]["Position"])].get()
+                DATA[item][4][item1]["PeakName"]=listofanswer0[str(DATA[item][4][item1]["Position"])].get()
                 peaknamesforplot.append([DATA[item][4][item1]["Position"],DATA[item][4][item1]["Intensity"],DATA[item][4][item1]["PeakName"],tth_to_q(DATA[item][4][item1]["Position"])])
         
         self.window.destroy()
@@ -1217,7 +1226,269 @@ class XRDApp(Toplevel):
             tree.move(item[1], '', ix)
         # switch the heading so it will sort in the opposite direction
         tree.heading(col,text=col.capitalize(), command=lambda _col_=col: self.sortby(tree, _col_, int(not descending)))
+#%%############# 
         
+    def ChangeLegendXRDgraph(self):
+        global DATA, RefPattDATA, colorstylelist, samplestakenforplot
+
+
+        self.window = tk.Toplevel()
+        self.window.wm_title("Change Legends")
+        center(self.window)
+        self.window.geometry("450x300")
+        
+        Button(self.window, text="Update",
+                            command = self.UpdateXRDLegMod).pack()
+        
+        Button(self.window, text="Reorder",
+                            command = self.reorder).pack()
+
+        self.PopulateListofSampleStylingXRD(self.window).pack(side="top", fill="both", expand=True)
+    
+    def UpdateXRDLegMod(self):
+        global SpectlegendMod
+        global listofanswer, takenforplot
+        global listoflinestyle
+        global listofcolorstyle,listoflinewidthstyle
+
+        leglist=[]
+        for e in listofanswer:
+            if type(e)!=str:
+                leglist.append(e.get())
+            else:
+                leglist.append(e)
+        for item in range(len(takenforplot)):
+            self.DATA[takenforplot[item]][6]=leglist[item]
+        
+        leglist=[]
+        for e in listoflinestyle:
+            if type(e)!=str:
+                leglist.append(e.get())
+            else:
+                leglist.append(e)
+        for item in range(len(takenforplot)):
+            self.DATA[takenforplot[item]][7]=leglist[item]        
+        leglist=[]
+        for e in listofcolorstyle:
+            if type(e)!=str:
+                leglist.append(e.get())
+            else:
+                leglist.append(e) 
+        for item in range(len(takenforplot)):
+            self.DATA[takenforplot[item]][8]=leglist[item]  
+        leglist=[]
+        for e in listoflinewidthstyle:
+            if type(e)!=str:
+                leglist.append(e.get())
+            else:
+                leglist.append(e) 
+        for item in range(len(takenforplot)):
+            self.DATA[takenforplot[item]][9]=int(leglist[item]) 
+                
+#        print('UpdateSpectLegMod')
+#        print(takenforplot)
+        self.UpdateGraph(0)
+        self.window.destroy()
+        self.ChangeLegendSpectgraph()
+
+    class PopulateListofSampleStylingXRD(tk.Frame):
+        def __init__(self, root):
+    
+            tk.Frame.__init__(self, root)
+            self.canvas0 = tk.Canvas(root, borderwidth=0, background="#ffffff")
+            self.frame = tk.Frame(self.canvas0, background="#ffffff")
+            self.vsb = tk.Scrollbar(root, orient="vertical", command=self.canvas0.yview)
+            self.canvas0.configure(yscrollcommand=self.vsb.set)
+    
+            self.vsb.pack(side="right", fill="y")
+            self.canvas0.pack(side="left", fill="both", expand=True)
+            self.canvas0.create_window((4,4), window=self.frame, anchor="nw", 
+                                      tags="self.frame")
+    
+            self.frame.bind("<Configure>", self.onFrameConfigure)
+    
+            self.populate()
+    
+        def populate(self):
+            global takenforplot, SpectlegendMod,DATAspectro
+            global colorstylelist
+            global listofanswer
+            global listoflinestyle
+            global listofcolorstyle, listoflinewidthstyle
+            
+            
+            DATAx=DATAspectro
+            listofanswer=[]
+#            sampletotake=[]
+#            if takenforplot!=[]:
+#                for item in takenforplot:
+#                    sampletotake.append(DATAx[item][0])
+                    
+            listoflinestyle=[]
+            listofcolorstyle=[]
+            listoflinewidthstyle=[]
+            
+            
+            for item in takenforplot:
+                listoflinestyle.append(DATAx[item][7])
+                listofcolorstyle.append(DATAx[item][8])
+                listofanswer.append(DATAx[item][6])
+                listoflinewidthstyle.append(str(DATAx[item][9]))
+#            print(takenforplot)
+#            print(listofanswer)
+            rowpos=1
+            for item1 in range(len(takenforplot)): 
+                label=tk.Label(self.frame,text=DATAx[takenforplot[item1]][5],fg='black',background='white')
+                label.grid(row=rowpos,column=0, columnspan=1)
+                textinit = tk.StringVar()
+                #self.listofanswer.append(Entry(self.window,textvariable=textinit))
+                listofanswer[item1]=Entry(self.frame,textvariable=textinit)
+                listofanswer[item1].grid(row=rowpos,column=1, columnspan=2)
+                textinit.set(DATAx[takenforplot[item1]][6])
+    
+                linestylelist = ["-","--","-.",":"]
+                listoflinestyle[item1]=tk.StringVar()
+                listoflinestyle[item1].set(DATAx[takenforplot[item1]][7]) # default choice
+                OptionMenu(self.frame, listoflinestyle[item1], *linestylelist, command=()).grid(row=rowpos, column=4, columnspan=2)
+                 
+                """
+                listofcolorstyle[item1]=tk.StringVar()
+                listofcolorstyle[item1].set(DATAx[item1][10]) # default choice
+                OptionMenu(self.frame, listofcolorstyle[item1], *colorstylelist, command=()).grid(row=rowpos, column=6, columnspan=2)
+                """
+                self.positioncolor=item1
+                colstyle=Button(self.frame, text='Select Color', foreground=listofcolorstyle[item1], command=partial(self.getColor,item1))
+                colstyle.grid(row=rowpos, column=6, columnspan=2)
+                
+                
+                linewidth = tk.StringVar()
+                listoflinewidthstyle[item1]=Entry(self.frame,textvariable=linewidth)
+                listoflinewidthstyle[item1].grid(row=rowpos,column=8, columnspan=1)
+                linewidth.set(str(DATAx[takenforplot[item1]][9]))
+                
+                rowpos=rowpos+1
+                        
+#                    else:
+#                        listofanswer[item1]=str(DATAx[item1][5])
+#                        listoflinestyle.append(str(DATAx[item1][9]))
+#                        listofcolorstyle.append(str(DATAx[item1][10]))
+#                        listoflinewidthstyle.append(str(DATAx[item1][29]))
+            #print(listofanswer)
+            
+        def getColor(self,rowitem):
+            global listofcolorstyle
+            color = askcolor(color="red", parent=self.frame, title="Color Chooser", alpha=False)
+            listofcolorstyle[rowitem]=color[1]
+            
+            
+        def onFrameConfigure(self, event):
+            '''Reset the scroll region to encompass the inner frame'''
+            self.canvas0.configure(scrollregion=self.canvas0.bbox("all"))
+    
+    class Drag_and_Drop_Listbox(tk.Listbox):
+        #A tk listbox with drag'n'drop reordering of entries.
+        def __init__(self, master, **kw):
+            #kw['selectmode'] = tk.MULTIPLE
+            kw['selectmode'] = tk.SINGLE
+            kw['activestyle'] = 'none'
+            tk.Listbox.__init__(self, master, kw)
+            self.bind('<Button-1>', self.getState, add='+')
+            self.bind('<Button-1>', self.setCurrent, add='+')
+            self.bind('<B1-Motion>', self.shiftSelection)
+            self.curIndex = None
+            self.curState = None
+        def setCurrent(self, event):
+            ''' gets the current index of the clicked item in the listbox '''
+            self.curIndex = self.nearest(event.y)
+        def getState(self, event):
+            ''' checks if the clicked item in listbox is selected '''
+            #i = self.nearest(event.y)
+            #self.curState = self.selection_includes(i)
+            self.curState = 1
+        def shiftSelection(self, event):
+            ''' shifts item up or down in listbox '''
+            i = self.nearest(event.y)
+            if self.curState == 1:
+              self.selection_set(self.curIndex)
+            else:
+              self.selection_clear(self.curIndex)
+            if i < self.curIndex:
+              # Moves up
+              x = self.get(i)
+              selected = self.selection_includes(i)
+              self.delete(i)
+              self.insert(i+1, x)
+              if selected:
+                self.selection_set(i+1)
+              self.curIndex = i
+            elif i > self.curIndex:
+              # Moves down
+              x = self.get(i)
+              selected = self.selection_includes(i)
+              self.delete(i)
+              self.insert(i-1, x)
+              if selected:
+                self.selection_set(i-1)
+              self.curIndex = i
+              
+
+    def reorder(self): 
+        global takenforplot
+        
+#        DATAx=self.DATA
+#        sampletotake=[]
+#        if takenforplot!=[]:
+#            for item in takenforplot:
+#                sampletotake.append(DATAx[item][0])
+                    
+        self.reorderwindow = tk.Tk()
+        center(self.reorderwindow)
+        self.listbox = self.Drag_and_Drop_Listbox(self.reorderwindow)
+        for name in takenforplot:
+          self.listbox.insert(tk.END, name)
+          self.listbox.selection_set(0)
+        self.listbox.pack(fill=tk.BOTH, expand=True)
+        scrollbar = tk.Scrollbar(self.listbox, orient="vertical")
+        scrollbar.config(command=self.listbox.yview)
+        scrollbar.pack(side="right", fill="y")
+        
+        self.listbox.config(yscrollcommand=scrollbar.set)
+        
+        printbut = tk.Button(self.reorderwindow, text="reorder",
+                                    command = self.printlist)
+        printbut.pack()
+        self.reorderwindow.mainloop()    
+            
+    def printlist(self):
+        global takenforplot
+        global listofanswer
+        global listoflinestyle
+        global listofcolorstyle,listoflinewidthstyle
+        
+        #need to reorder at same time all other lists
+        newtakenforplot=[]
+        newlistofanswer=[]
+        newlistoflinestyle=[]
+        newlistofcolorstyle=[]
+        newlistoflinewidthstyle=[]
+        newlist=list(self.listbox.get(0,tk.END))
+        for item in newlist:
+            for i in range(len(takenforplot)):
+                if takenforplot[i]==item:
+                    newtakenforplot.append(takenforplot[i])
+                    newlistofanswer.append(listofanswer[i])
+                    newlistoflinestyle.append(listoflinestyle[i])
+                    newlistofcolorstyle.append(listofcolorstyle[i])
+                    newlistoflinewidthstyle.append(listoflinewidthstyle[i])
+        takenforplot=newtakenforplot
+        listofanswer=newlistofanswer
+        listoflinestyle=newlistoflinestyle
+        listofcolorstyle=newlistofcolorstyle
+        listoflinewidthstyle=newlistoflinewidthstyle
+        
+        self.UpdateSpectLegMod()
+        self.reorderwindow.destroy()
+
             
 #%%#############         
 ###############################################################################        

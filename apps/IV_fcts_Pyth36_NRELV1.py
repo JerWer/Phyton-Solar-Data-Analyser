@@ -92,6 +92,11 @@ Plottime graph:
 
 groupgraph:
     - if select HI with box plot, it doesn't show the names of the group???
+    
+
+mpp graph:
+    problem with legend modif after importing on loaded session: invalid command name toplevel3.!canvas.!frame.!entry2
+    
 
 """
 #%%############# Global variable definition

@@ -97,6 +97,8 @@ groupgraph:
 mpp graph:
     problem with legend modif after importing on loaded session: invalid command name toplevel3.!canvas.!frame.!entry2
     
+stat JV graph:
+    color is wrong: circles and filled rounds are not same color for same pixel...
 
 """
 #%%############# Global variable definition

@@ -2282,11 +2282,11 @@ class IVApp(Toplevel):
                             x=np.random.normal(i+1,0.04,size=len(y))
                             Rscsubfig.scatter(x,y,s=15,color='red', alpha=0.5)
                     
-                    if self.boxplot.get()==0:
-                        span=range(1,len(namelist)+1)
-                        Rscsubfig.set_xticks(span)
-                        Rscsubfig.set_xticklabels(namelist)
-                        Rscsubfig.set_xlim([0.5,span[-1]+0.5])
+#                    if self.boxplot.get()==0:
+                    span=range(1,len(namelist)+1)
+                    Rscsubfig.set_xticks(span)
+                    Rscsubfig.set_xticklabels(namelist)
+                    Rscsubfig.set_xlim([0.5,span[-1]+0.5])
                     if self.minmaxgroupgraphcheck.get()==1:
                         Rscsubfig.set_ylim([self.minYgroupgraph.get(),self.maxYgroupgraph.get()])
 

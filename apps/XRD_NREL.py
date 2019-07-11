@@ -47,8 +47,6 @@ TODOLIST
 
 - delete entry from list of samples
 
-- legend, change color of plots... similar to IVapp
-
 - add a "cancel last operation" button, that would be a back button if do a mistake and don't want to but complitely back to original
 
 - export with peak fitting visible
@@ -85,7 +83,12 @@ def center(win):
     win.geometry('{}x{}+{}+{}'.format(width, height, x, y))
     win.deiconify()
 
-DATA={}# {"name":[[x original...],[y original...],[x corrected...],[y corrected...],[{"Position":1,"PeakName":'(005)',"Intensity":1,"FWHM":1},...]],"name2":[]}
+DATA={}# {"name":[[x original...],[y original...],[x corrected...],[y corrected...],[{"Position":1,"PeakName":'(005)',"Intensity":1,"FWHM":1},...],[linestyle, colorstyle, answer, linewidthstyle]],"name2":[]}
+takenforplot=[]
+listofanswer=[]
+listoflinestyle=[]
+listofcolorstyle=[]
+listoflinewidthstyle=[]
 
 colorstylelist = ['black', 'red', 'blue', 'brown', 'green','cyan','magenta','olive','navy','orange','gray','aliceblue','antiquewhite','aqua','aquamarine','azure','beige','bisque','blanchedalmond','blue','blueviolet','brown','burlywood','cadetblue','chartreuse','chocolate','coral','cornflowerblue','cornsilk','crimson','darkblue','darkcyan','darkgoldenrod','darkgray','darkgreen','darkkhaki','darkmagenta','darkolivegreen','darkorange','darkorchid','darkred','darksalmon','darkseagreen','darkslateblue','darkslategray','darkturquoise','darkviolet','deeppink','deepskyblue','dimgray','dodgerblue','firebrick','floralwhite','forestgreen','fuchsia','gainsboro','ghostwhite','gold','goldenrod','greenyellow','honeydew','hotpink','indianred','indigo','ivory','khaki','lavender','lavenderblush','lawngreen','lemonchiffon','lightblue','lightcoral','lightcyan','lightgoldenrodyellow','lightgreen','lightgray','lightpink','lightsalmon','lightseagreen','lightskyblue','lightslategray','lightsteelblue','lightyellow','lime','limegreen','linen','magenta','maroon','mediumaquamarine','mediumblue','mediumorchid','mediumpurple','mediumseagreen','mediumslateblue','mediumspringgreen','mediumturquoise','mediumvioletred','midnightblue','mintcream','mistyrose','moccasin','navajowhite','navy','oldlace','olive','olivedrab','orange','orangered','orchid','palegoldenrod','palegreen','paleturquoise','palevioletred','papayawhip','peachpuff','peru','pink','plum','powderblue','purple','red','rosybrown','royalblue','saddlebrown','salmon','sandybrown','seagreen','seashell','sienna','silver','skyblue','slateblue','slategray','snow','springgreen','steelblue','tan','teal','thistle','tomato','turquoise','violet','wheat','white','whitesmoke','yellow','yellowgreen']
 owd = os.getcwd()
@@ -282,6 +285,9 @@ class XRDApp(Toplevel):
 
         self.changetoQ = IntVar()
         Checkbutton(frame211,text="q?",variable=self.changetoQ, command = lambda: self.updateXRDgraph(0),
+                           onvalue=1,offvalue=0,height=1, width=1, fg='black',background='lightgrey').pack(side=tk.LEFT,expand=1)
+        self.CheckLegend = IntVar()
+        Checkbutton(frame211,text="",variable=self.CheckLegend, command = lambda: self.updateXRDgraph(0),
                            onvalue=1,offvalue=0,height=1, width=3, fg='black',background='lightgrey').pack(side=tk.LEFT,expand=1)
 
         self.changeXRDlegend = Button(frame211, text="Legend",
@@ -389,7 +395,7 @@ class XRDApp(Toplevel):
         self.frame3221.pack(fill=tk.BOTH,expand=1)
         importedsamplenames = StringVar()
         self.listboxsamples=Listbox(self.frame3221,listvariable=importedsamplenames, selectmode=tk.MULTIPLE,width=15, height=3, exportselection=0)
-        self.listboxsamples.bind('<<ListboxSelect>>', self.updateXRDgraph)
+        self.listboxsamples.bind('<<ListboxSelect>>', self.UpdateGraph0)
         self.listboxsamples.pack(side="left", fill=tk.BOTH, expand=1)
         scrollbar = tk.Scrollbar(self.frame3221, orient="vertical")
         scrollbar.config(command=self.listboxsamples.yview)
@@ -452,16 +458,33 @@ class XRDApp(Toplevel):
         self.canvas0.configure(scrollregion=(0,0,500,500))
             
 #%%    
+    def UpdateGraph0(self,a):
+        global takenforplot
+        
+        takenforplot = [self.listboxsamples.get(idx) for idx in self.listboxsamples.curselection()]
+#        print(takenforplot)
+        self.updateXRDgraph(0)
+        
     def updateXRDgraph(self,a):
         global DATA, RefPattDATA, colorstylelist, samplestakenforplot
-          
+        global listofanswer, takenforplot
+        global listoflinestyle
+        global listofcolorstyle,listoflinewidthstyle
+
+#        print(len(DATA.keys()))
+#        print(takenforplot)
+#        if DATA!={}:
         self.XRDgraph.clear()
 #        self.XRDgraphtwin.clear()
 
         
         coloridx=0
         #plot patterns from DATA
-        samplestakenforplot = [self.listboxsamples.get(idx) for idx in self.listboxsamples.curselection()]
+#            samplestakenforplot = [self.listboxsamples.get(idx) for idx in self.listboxsamples.curselection()]
+        if takenforplot!=[]:
+            samplestakenforplot=takenforplot
+        else:
+            samplestakenforplot=[]
         if samplestakenforplot!=[]:
             if self.showOriginal.get():
                 if self.changetoQ.get():
@@ -493,13 +516,20 @@ class XRDApp(Toplevel):
                     minY=min(y)
                 if max(y)>maxY:
                     maxY=max(y)
-                
-                if self.ylog.get():
-                    self.XRDgraph.semilogy(x,y, color=colorstylelist[coloridx], label=item)
-#                    coloridx+=1
+                if self.CheckLegend.get()==1:
+                    if self.ylog.get():
+                        self.XRDgraph.semilogy(x,y, label=DATA[item][5][2],linestyle=DATA[item][5][0],color=DATA[item][5][1],linewidth=DATA[item][5][3])
+    #                    coloridx+=1
+                    else:
+                        self.XRDgraph.plot(x,y, label=DATA[item][5][2],linestyle=DATA[item][5][0],color=DATA[item][5][1],linewidth=DATA[item][5][3])
+    #                    coloridx+=1
                 else:
-                    self.XRDgraph.plot(x,y, color=colorstylelist[coloridx], label=item)
-#                    coloridx+=1
+                    if self.ylog.get():
+                        self.XRDgraph.semilogy(x,y,linestyle=DATA[item][5][0],color=DATA[item][5][1],linewidth=DATA[item][5][3])
+    #                    coloridx+=1
+                    else:
+                        self.XRDgraph.plot(x,y,linestyle=DATA[item][5][0],color=DATA[item][5][1],linewidth=DATA[item][5][3])
+    #                    coloridx+=1
                 
                 if self.showOriginal.get():
                     if self.changetoQ.get():
@@ -515,13 +545,20 @@ class XRDApp(Toplevel):
                         minY=min(y)
                     if max(y)>maxY:
                         maxY=max(y)
-                    
-                    if self.ylog.get():
-                        self.XRDgraph.semilogy(x,y, color=colorstylelist[coloridx],linestyle='--', label=item+'_original')
-                        coloridx+=1
+                    if self.CheckLegend.get()==1:
+                        if self.ylog.get():
+                            self.XRDgraph.semilogy(x,y, label=DATA[item][5][2]+'_original',linestyle=DATA[item][5][0],color=DATA[item][5][1],linewidth=DATA[item][5][3])
+                            coloridx+=1
+                        else:
+                            self.XRDgraph.plot(x,y, label=DATA[item][5][2]+'_original',linestyle=DATA[item][5][0],color=DATA[item][5][1],linewidth=DATA[item][5][3])
+                            coloridx+=1
                     else:
-                        self.XRDgraph.plot(x,y, color=colorstylelist[coloridx],linestyle='--', label=item+'_original')
-                        coloridx+=1
+                        if self.ylog.get():
+                            self.XRDgraph.semilogy(x,y, linestyle=DATA[item][5][0],color=DATA[item][5][1],linewidth=DATA[item][5][3])
+                            coloridx+=1
+                        else:
+                            self.XRDgraph.plot(x,y, linestyle=DATA[item][5][0],color=DATA[item][5][1],linewidth=DATA[item][5][3])
+                            coloridx+=1
                 else:
                     coloridx+=1
                 
@@ -587,8 +624,9 @@ class XRDApp(Toplevel):
 
         
         #legends and graph styles
-        if samplestakenforplot!=[] or  reftakenforplot!=[]:
-            self.XRDgraph.legend()
+        if self.CheckLegend.get()==1:
+            if samplestakenforplot!=[] or  reftakenforplot!=[]:
+                self.XRDgraph.legend()
         self.XRDgraph.set_ylabel("Intensity (a.u.)")
         if self.changetoQ.get():
             self.XRDgraph.set_xlabel('q (A$^{-1}$)')
@@ -1012,8 +1050,8 @@ class XRDApp(Toplevel):
                 tempdat.append(x)#corrected x, set as the original on first importation 2theta
                 tempdat.append(y)#corrected y, set as the original on first importation 
                 tempdat.append([])#peak data, list of dictionaries
-                tempdat.append([])#
-                
+                tempdat.append(['-',colorstylelist[len(DATA.keys())],samplename,int(2)])
+
                 DATA[samplename]=tempdat
                 Patternsamplenameslist.append(samplename)
             
@@ -1026,8 +1064,8 @@ class XRDApp(Toplevel):
                 tempdat.append(x)#corrected x, set as the original on first importation 2theta
                 tempdat.append(y)#corrected y, set as the original on first importation 
                 tempdat.append([])#peak data, list of dictionaries
-                tempdat.append([])#
-                
+                tempdat.append(['-',colorstylelist[len(DATA.keys())],samplename,int(2)])
+
                 DATA[samplename]=tempdat
                 Patternsamplenameslist.append(samplename)
                 
@@ -1045,7 +1083,7 @@ class XRDApp(Toplevel):
                 tempdat.append(x)#corrected x, set as the original on first importation 2theta
                 tempdat.append(y)#corrected y, set as the original on first importation 
                 tempdat.append([])#peak data, list of dictionaries
-                tempdat.append([])#
+                tempdat.append(['-',colorstylelist[len(DATA.keys())],samplename,int(2)])
                 
                 DATA[samplename]=tempdat
                 Patternsamplenameslist.append(samplename)
@@ -1059,8 +1097,8 @@ class XRDApp(Toplevel):
                 tempdat.append(x)#corrected x, set as the original on first importation 2theta
                 tempdat.append(y)#corrected y, set as the original on first importation 
                 tempdat.append([])#peak data, list of dictionaries
-                tempdat.append([])#
-#                print(tempdat[0][0])
+                tempdat.append(['-',colorstylelist[len(DATA.keys())],samplename,int(2)])
+
                 DATA[samplename]=tempdat
                 Patternsamplenameslist.append(samplename)
                 
@@ -1076,7 +1114,7 @@ class XRDApp(Toplevel):
                         tempdat.append(x)#corrected x, set as the original on first importation
                         tempdat.append(y)#corrected y, set as the original on first importation 
                         tempdat.append([])#peak data, list of dictionaries
-                        tempdat.append([])#
+                        tempdat.append(['-',colorstylelist[len(DATA.keys())],samplename+str(i),int(2)])
                         
                         DATA[samplename+str(i)]=tempdat
                         Patternsamplenameslist.append(samplename+str(i))
@@ -1091,7 +1129,7 @@ class XRDApp(Toplevel):
         self.frame3221.pack(fill=tk.BOTH,expand=1)
         importedsamplenames = StringVar()
         self.listboxsamples=Listbox(self.frame3221,listvariable=importedsamplenames, selectmode=tk.MULTIPLE,width=15, height=3, exportselection=0)
-        self.listboxsamples.bind('<<ListboxSelect>>', self.updateXRDgraph)
+        self.listboxsamples.bind('<<ListboxSelect>>', self.UpdateGraph0)
         self.listboxsamples.pack(side="left", fill=tk.BOTH, expand=1)
         scrollbar = tk.Scrollbar(self.frame3221, orient="vertical")
         scrollbar.config(command=self.listboxsamples.yview)
@@ -1246,9 +1284,8 @@ class XRDApp(Toplevel):
         self.PopulateListofSampleStylingXRD(self.window).pack(side="top", fill="both", expand=True)
     
     def UpdateXRDLegMod(self):
-        global SpectlegendMod
         global listofanswer, takenforplot
-        global listoflinestyle
+        global listoflinestyle,DATA
         global listofcolorstyle,listoflinewidthstyle
 
         leglist=[]
@@ -1258,7 +1295,7 @@ class XRDApp(Toplevel):
             else:
                 leglist.append(e)
         for item in range(len(takenforplot)):
-            self.DATA[takenforplot[item]][6]=leglist[item]
+            DATA[takenforplot[item]][5][2]=leglist[item]
         
         leglist=[]
         for e in listoflinestyle:
@@ -1267,7 +1304,7 @@ class XRDApp(Toplevel):
             else:
                 leglist.append(e)
         for item in range(len(takenforplot)):
-            self.DATA[takenforplot[item]][7]=leglist[item]        
+            DATA[takenforplot[item]][5][0]=leglist[item]        
         leglist=[]
         for e in listofcolorstyle:
             if type(e)!=str:
@@ -1275,7 +1312,7 @@ class XRDApp(Toplevel):
             else:
                 leglist.append(e) 
         for item in range(len(takenforplot)):
-            self.DATA[takenforplot[item]][8]=leglist[item]  
+            DATA[takenforplot[item]][5][1]=leglist[item]  
         leglist=[]
         for e in listoflinewidthstyle:
             if type(e)!=str:
@@ -1283,13 +1320,13 @@ class XRDApp(Toplevel):
             else:
                 leglist.append(e) 
         for item in range(len(takenforplot)):
-            self.DATA[takenforplot[item]][9]=int(leglist[item]) 
+            DATA[takenforplot[item]][5][3]=int(leglist[item]) 
                 
 #        print('UpdateSpectLegMod')
 #        print(takenforplot)
-        self.UpdateGraph(0)
+        self.updateXRDgraph(0)
         self.window.destroy()
-        self.ChangeLegendSpectgraph()
+        self.ChangeLegendXRDgraph()
 
     class PopulateListofSampleStylingXRD(tk.Frame):
         def __init__(self, root):
@@ -1310,14 +1347,14 @@ class XRDApp(Toplevel):
             self.populate()
     
         def populate(self):
-            global takenforplot, SpectlegendMod,DATAspectro
+            global takenforplot,DATA
             global colorstylelist
             global listofanswer
             global listoflinestyle
             global listofcolorstyle, listoflinewidthstyle
             
             
-            DATAx=DATAspectro
+            DATAx=DATA
             listofanswer=[]
 #            sampletotake=[]
 #            if takenforplot!=[]:
@@ -1330,25 +1367,25 @@ class XRDApp(Toplevel):
             
             
             for item in takenforplot:
-                listoflinestyle.append(DATAx[item][7])
-                listofcolorstyle.append(DATAx[item][8])
-                listofanswer.append(DATAx[item][6])
-                listoflinewidthstyle.append(str(DATAx[item][9]))
+                listoflinestyle.append(DATAx[item][5][0])
+                listofcolorstyle.append(DATAx[item][5][1])
+                listofanswer.append(DATAx[item][5][2])
+                listoflinewidthstyle.append(str(DATAx[item][5][3]))
 #            print(takenforplot)
 #            print(listofanswer)
             rowpos=1
             for item1 in range(len(takenforplot)): 
-                label=tk.Label(self.frame,text=DATAx[takenforplot[item1]][5],fg='black',background='white')
+                label=tk.Label(self.frame,text=takenforplot[item1],fg='black',background='white')
                 label.grid(row=rowpos,column=0, columnspan=1)
                 textinit = tk.StringVar()
                 #self.listofanswer.append(Entry(self.window,textvariable=textinit))
                 listofanswer[item1]=Entry(self.frame,textvariable=textinit)
                 listofanswer[item1].grid(row=rowpos,column=1, columnspan=2)
-                textinit.set(DATAx[takenforplot[item1]][6])
+                textinit.set(DATAx[takenforplot[item1]][5][2])
     
                 linestylelist = ["-","--","-.",":"]
                 listoflinestyle[item1]=tk.StringVar()
-                listoflinestyle[item1].set(DATAx[takenforplot[item1]][7]) # default choice
+                listoflinestyle[item1].set(DATAx[takenforplot[item1]][5][0]) # default choice
                 OptionMenu(self.frame, listoflinestyle[item1], *linestylelist, command=()).grid(row=rowpos, column=4, columnspan=2)
                  
                 """
@@ -1364,7 +1401,7 @@ class XRDApp(Toplevel):
                 linewidth = tk.StringVar()
                 listoflinewidthstyle[item1]=Entry(self.frame,textvariable=linewidth)
                 listoflinewidthstyle[item1].grid(row=rowpos,column=8, columnspan=1)
-                linewidth.set(str(DATAx[takenforplot[item1]][9]))
+                linewidth.set(str(DATAx[takenforplot[item1]][5][3]))
                 
                 rowpos=rowpos+1
                         
@@ -1486,7 +1523,7 @@ class XRDApp(Toplevel):
         listofcolorstyle=newlistofcolorstyle
         listoflinewidthstyle=newlistoflinewidthstyle
         
-        self.UpdateSpectLegMod()
+        self.UpdateXRDLegMod()
         self.reorderwindow.destroy()
 
             

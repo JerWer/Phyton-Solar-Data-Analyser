@@ -99,6 +99,9 @@ mpp graph:
     
 stat JV graph:
     color is wrong: circles and filled rounds are not same color for same pixel...
+    
+mpp data in auto export: creates graphs for multiple scans for same cell but generate only 1 txt data file: problem in filenames? overwritting?
+
 
 """
 #%%############# Global variable definition

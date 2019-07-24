@@ -66,6 +66,58 @@ theta= peak position/2 in radians
 - export williamson-hall plot with linear regression, and fit to find the strain component
 
 
+update for Eli:
+    
+The inputs for this plot are...
+- n samples (each sample is aged at 1 temperature)
+- m scans per sample (different samples may have different total scans)
+- p scan locations per sample (most samples have 5 scan locations, although i will only probably care about plotting 1 at a time)
+- k time between each scan (normally there is an 11 minutes and 30 second gap between each scan to move from one spot to another, then after each location is scanned, it repeats)
+
+Options:
+It would be nice to choose...
+- which crystallographic peak to plot (100,110,200,211, etc.)
+- choose which peak parameter to plot over time (position, intensity, FWHM, Area, or Intbreadth)
+
+Output:
+- parameter over time for multiple samples
+- legend should show the temperature the sample was aged at
+
+Attached are three samples for three different temperatures. 
+Each sample has five scan locations. 03 has 16 scans per location and 04 has 33 scans per location. 
+They all have 690 seconds between each scan, 
+so the time between scans for a specific location is 3450 seconds (57.5 minutes).
+
+
+button: plottimeEvol
+popupwindow:
+    dropdown: which peak (select several)
+    dropdown (yaxis): which parameter
+    dropdown (xaxis): which parameter (default is time) 
+    name of sample: text to enter by user (assume all selected are from same sample)
+    temperature text entry
+    when click next: should ask to open the file with times&temperatures
+    
+generates:
+    graph for each location: param1 vs param2
+    put (time;temp) text next to point on graph
+    .png and .txt data
+    
+
+
+sample 0315:
+    EW_1717_190603_000_001_001_T2T
+    .._.._.._scan#_pos#_.._..
+sample 0406:
+    EW_1717_190628_000_001_001_T2T
+    .._.._.._scan#_pos#_.._..    
+sample 0308:
+    EW_1717_190603_center_000_T2T
+    
+would be useful to have:
+    sample name/number in the file name
+    sample name/number in the "begintempvtime" file name
+
 """
 #%%
 LARGE_FONT= ("Verdana", 12)

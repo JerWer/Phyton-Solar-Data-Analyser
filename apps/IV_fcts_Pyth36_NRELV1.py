@@ -103,6 +103,10 @@ stat JV graph:
 mpp data in auto export: creates graphs for multiple scans for same cell but generate only 1 txt data file: problem in filenames? overwritting?
 
 
+
+bestVocFF graph: it should not take the dark data!!!
+
+
 """
 #%%############# Global variable definition
 testdata = []

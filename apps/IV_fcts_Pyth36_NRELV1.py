@@ -557,7 +557,7 @@ class IVApp(Toplevel):
         """
         global testdata, DATA, DATAJVforexport, DATAJVtabforexport
         global DATAmppforexport, DATAgroupforexport, takenforplot
-        global takenforplotmpp, DATAMPP, DATAdark, DATAFV, IVlegendMod
+        global takenforplotmpp, DATAMPP, DATAdark, DATAFV, IVlegendMod,groupstoplot
         global IVlinestyle, colorstylelist, MPPlegendMod, MPPlinestyle
         global titIV, titmpp, titStat, samplesgroups, listofanswer, listoflinestyle, listofcolorstyle,listoflinewidthstyle
         
@@ -586,6 +586,7 @@ class IVApp(Toplevel):
             titmpp=0
             titStat=0
             samplesgroups=["Default group"]
+            groupstoplot=["Default group"]
             
             listofanswer=[]
             listoflinestyle=[]

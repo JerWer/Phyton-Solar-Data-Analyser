@@ -16,6 +16,7 @@ still to be added:
     - E field in device
     - modifiable IQE
     
+add current of absorber on graph after simulation
 
 """
 #%%

@@ -107,6 +107,11 @@ mpp data in auto export: creates graphs for multiple scans for same cell but gen
 bestVocFF graph: it should not take the dark data!!!
 
 
+button in groupgraph for transparent or not transparent background
+
+
+
+
 """
 #%%############# Global variable definition
 testdata = []

@@ -88,28 +88,11 @@ Plottime graph:
 - change legend
 - export big4
 - time relative or absolute
-
-
-groupgraph:
-    - if select HI with box plot, it doesn't show the names of the group???
     
 
 mpp graph:
     problem with legend modif after importing on loaded session: invalid command name toplevel3.!canvas.!frame.!entry2
     
-stat JV graph:
-    color is wrong: circles and filled rounds are not same color for same pixel...
-    
-mpp data in auto export: creates graphs for multiple scans for same cell but generate only 1 txt data file: problem in filenames? overwritting?
-
-
-
-bestVocFF graph: it should not take the dark data!!!
-
-
-button in groupgraph for transparent or not transparent background
-
-
 
 
 """
@@ -355,6 +338,12 @@ class IVApp(Toplevel):
         aftermppcheck=Checkbutton(self.Frame4,text="Yscale",variable=self.minmaxgroupgraphcheck, 
                            onvalue=1,offvalue=0,height=1, width=6, command = lambda: self.UpdateGroupGraph(1),fg='black',background='white')
         aftermppcheck.grid(row=1, column=22, columnspan=3)
+        
+        self.transparentbkg = IntVar()
+        transparentbkgcheck=Checkbutton(self.Frame4,text="transparentbkg",variable=self.transparentbkg, 
+                           onvalue=1,offvalue=0,height=1, width=10, command = lambda: self.UpdateGroupGraph(1),fg='black',background='white')
+        transparentbkgcheck.grid(row=2, column=0, columnspan=10)
+        self.transparentbkg.set(1)
         
         #### JV ####
 
@@ -2287,7 +2276,9 @@ class IVApp(Toplevel):
                             Rev.append(valsRev[i][0])
                             valstot.append(valsRev[i][0])
                             namelist.append(names[i])
-
+                    
+                    if self.boxplot.get()==1:
+                        Rscsubfig.boxplot(valstot,0,'',labels=namelist)
 #                    print(namelist)
                     for i in range(len(namelist)):
                         y=Rev[i]
@@ -2295,11 +2286,11 @@ class IVApp(Toplevel):
                             x=np.random.normal(i+1,0.04,size=len(y))
                             Rscsubfig.scatter(x,y,s=15,color='red', alpha=0.5)
                     
-#                    if self.boxplot.get()==0:
-                    span=range(1,len(namelist)+1)
-                    Rscsubfig.set_xticks(span)
-                    Rscsubfig.set_xticklabels(namelist)
-                    Rscsubfig.set_xlim([0.5,span[-1]+0.5])
+                    if self.boxplot.get()==0:
+                        span=range(1,len(namelist)+1)
+                        Rscsubfig.set_xticks(span)
+                        Rscsubfig.set_xticklabels(namelist)
+                        Rscsubfig.set_xlim([0.5,span[-1]+0.5])
                     if self.minmaxgroupgraphcheck.get()==1:
                         Rscsubfig.set_ylim([self.minYgroupgraph.get(),self.maxYgroupgraph.get()])
 
@@ -4009,8 +4000,11 @@ class IVApp(Toplevel):
             if self.Big4.get()==0:
                 f = filedialog.asksaveasfilename(defaultextension=".png", filetypes = (("graph file", "*.png"),("All Files", "*.*")))
                 extent = self.GroupStatfig.get_window_extent().transformed(self.fig.dpi_scale_trans.inverted())
-                self.fig.savefig(f, dpi=300, bbox_inches=extent.expanded(1.5, 2), transparent=True)
-                
+                if self.transparentbkg.get():
+                    self.fig.savefig(f, dpi=300, bbox_inches=extent.expanded(1.5, 2), transparent=True)
+                else:
+                    self.fig.savefig(f, dpi=300, bbox_inches=extent.expanded(1.5, 2), transparent=False)
+                    
                 DATAgroupforexport1=[]            
                 for item in DATAgroupforexport:
                     line=""
@@ -4028,8 +4022,11 @@ class IVApp(Toplevel):
                 self.GroupChoice.set("Eff")
                 self.UpdateGroupGraph(1)
                 extent = self.GroupStatfig.get_window_extent().transformed(self.fig.dpi_scale_trans.inverted())
-                self.fig.savefig(f[:-4]+"_"+self.GroupChoice.get()+f[-4:], dpi=300, bbox_inches=extent.expanded(1.5, 1.5), transparent=True)
-                
+                if self.transparentbkg.get():
+                    self.fig.savefig(f[:-4]+"_"+self.GroupChoice.get()+f[-4:], dpi=300, bbox_inches=extent.expanded(1.5, 1.5), transparent=True)
+                else:
+                    self.fig.savefig(f[:-4]+"_"+self.GroupChoice.get()+f[-4:], dpi=300, bbox_inches=extent.expanded(1.5, 1.5), transparent=False)
+                    
                 DATAgroupforexport1=[]            
                 for item in DATAgroupforexport:
                     line=""
@@ -4045,7 +4042,10 @@ class IVApp(Toplevel):
                 self.UpdateGroupGraph(1)
                 
                 extent = self.GroupStatfig.get_window_extent().transformed(self.fig.dpi_scale_trans.inverted())
-                self.fig.savefig(f[:-4]+"_"+self.GroupChoice.get()+f[-4:], dpi=300, bbox_inches=extent.expanded(1.5, 1.5), transparent=True)
+                if self.transparentbkg.get():
+                    self.fig.savefig(f[:-4]+"_"+self.GroupChoice.get()+f[-4:], dpi=300, bbox_inches=extent.expanded(1.5, 1.5), transparent=True)
+                else:
+                    self.fig.savefig(f[:-4]+"_"+self.GroupChoice.get()+f[-4:], dpi=300, bbox_inches=extent.expanded(1.5, 1.5), transparent=False)
                 
                 DATAgroupforexport1=[]            
                 for item in DATAgroupforexport:
@@ -4062,7 +4062,10 @@ class IVApp(Toplevel):
                 self.UpdateGroupGraph(1)
                 
                 extent = self.GroupStatfig.get_window_extent().transformed(self.fig.dpi_scale_trans.inverted())
-                self.fig.savefig(f[:-4]+"_"+self.GroupChoice.get()+f[-4:], dpi=300, bbox_inches=extent.expanded(1.5, 1.5), transparent=True)
+                if self.transparentbkg.get():
+                    self.fig.savefig(f[:-4]+"_"+self.GroupChoice.get()+f[-4:], dpi=300, bbox_inches=extent.expanded(1.5, 1.5), transparent=True)
+                else:
+                    self.fig.savefig(f[:-4]+"_"+self.GroupChoice.get()+f[-4:], dpi=300, bbox_inches=extent.expanded(1.5, 1.5), transparent=False)
                 
                 DATAgroupforexport1=[]            
                 for item in DATAgroupforexport:
@@ -4079,7 +4082,10 @@ class IVApp(Toplevel):
                 self.UpdateGroupGraph(1)
                 
                 extent = self.GroupStatfig.get_window_extent().transformed(self.fig.dpi_scale_trans.inverted())
-                self.fig.savefig(f[:-4]+"_"+self.GroupChoice.get()+f[-4:], dpi=300, bbox_inches=extent.expanded(1.5, 1.5), transparent=True)
+                if self.transparentbkg.get():
+                    self.fig.savefig(f[:-4]+"_"+self.GroupChoice.get()+f[-4:], dpi=300, bbox_inches=extent.expanded(1.5, 1.5), transparent=True)
+                else:
+                    self.fig.savefig(f[:-4]+"_"+self.GroupChoice.get()+f[-4:], dpi=300, bbox_inches=extent.expanded(1.5, 1.5), transparent=False)
                 
                 DATAgroupforexport1=[]            
                 for item in DATAgroupforexport:
@@ -4493,7 +4499,8 @@ class IVApp(Toplevel):
                 #graph with all best efficient cells from all substrates
                 fig=plt.figure()
                 ax=fig.add_subplot(111)
-                bestEffsorted = sorted(bestEff, key=itemgetter('Eff'), reverse=True) 
+                bestEff2=[item for item in bestEff if item["Illumination"]=="Light"]
+                bestEffsorted = sorted(bestEff2, key=itemgetter('Eff'), reverse=True) 
                 tabledata=[]
                 rowlabel=[]
                 minJscfind=[]
@@ -4550,7 +4557,8 @@ class IVApp(Toplevel):
                 #graph with all best voc*FF cells from all substrates  
                 fig=plt.figure()
                 ax=fig.add_subplot(111)
-                bestvocffsorted = sorted(bestvocff, key=itemgetter('VocFF'), reverse=True) 
+                bestvocff2=[item for item in bestvocff if item["Illumination"]=="Light"]
+                bestvocffsorted = sorted(bestvocff2, key=itemgetter('VocFF'), reverse=True) 
                 tabledata=[]
                 rowlabel=[]
                 minJscfind=[]
@@ -5349,15 +5357,15 @@ class IVApp(Toplevel):
                     Vocsubfig.scatter(VocAFx, VocAFy, s=5, facecolors='none', edgecolors='r', lw=0.5)
                     Vocsubfig.scatter(VocBFx, VocBFy, s=5, facecolors='none', edgecolors='g', lw=0.5)
                     Vocsubfig.scatter(VocCFx, VocCFy, s=5, facecolors='none', edgecolors='b', lw=0.5)
-                    Vocsubfig.scatter(VocARx, VocARy, s=5, edgecolors='r', lw=0.5)
-                    Vocsubfig.scatter(VocBRx, VocBRy, s=5, edgecolors='g', lw=0.5)
-                    Vocsubfig.scatter(VocCRx, VocCRy, s=5, edgecolors='b', lw=0.5)
+                    Vocsubfig.scatter(VocARx, VocARy, s=5, facecolors='r', edgecolors='r', lw=0.5)
+                    Vocsubfig.scatter(VocBRx, VocBRy, s=5, facecolors='g', edgecolors='g', lw=0.5)
+                    Vocsubfig.scatter(VocCRx, VocCRy, s=5, facecolors='b', edgecolors='b', lw=0.5)
                     Vocsubfig.scatter(VocDFx, VocDFy, s=5, facecolors='none', edgecolors='c', lw=0.5)
                     Vocsubfig.scatter(VocEFx, VocEFy, s=5, facecolors='none', edgecolors='m', lw=0.5)
                     Vocsubfig.scatter(VocFFx, VocFFy, s=5, facecolors='none', edgecolors='k', lw=0.5)
-                    Vocsubfig.scatter(VocDRx, VocDRy, s=5, edgecolors='c', lw=0.5)
-                    Vocsubfig.scatter(VocERx, VocERy, s=5, edgecolors='m', lw=0.5)
-                    Vocsubfig.scatter(VocFRx, VocFRy, s=5, edgecolors='k', lw=0.5)
+                    Vocsubfig.scatter(VocDRx, VocDRy, s=5, facecolors='c', edgecolors='c', lw=0.5)
+                    Vocsubfig.scatter(VocERx, VocERy, s=5, facecolors='m', edgecolors='m', lw=0.5)
+                    Vocsubfig.scatter(VocFRx, VocFRy, s=5, facecolors='k', edgecolors='k', lw=0.5)
                     
 #                    Vocsubfig.scatter(VocSFx, VocSFy, s=5, facecolors='none', edgecolors='k', lw=0.5)
 #                    Vocsubfig.scatter(VocSRx, VocSRy, s=5, edgecolors='k', lw=0.5)
@@ -5420,15 +5428,15 @@ class IVApp(Toplevel):
                     Jscsubfig.scatter(JscAFx, JscAFy, s=5, facecolors='none', edgecolors='r', lw=0.5)
                     Jscsubfig.scatter(JscBFx, JscBFy, s=5, facecolors='none', edgecolors='g', lw=0.5)
                     Jscsubfig.scatter(JscCFx, JscCFy, s=5, facecolors='none', edgecolors='b', lw=0.5)
-                    Jscsubfig.scatter(JscARx, JscARy, s=5, edgecolors='r', lw=0.5)
-                    Jscsubfig.scatter(JscBRx, JscBRy, s=5, edgecolors='g', lw=0.5)
-                    Jscsubfig.scatter(JscCRx, JscCRy, s=5, edgecolors='b', lw=0.5)
+                    Jscsubfig.scatter(JscARx, JscARy, s=5, facecolors='r', edgecolors='r', lw=0.5)
+                    Jscsubfig.scatter(JscBRx, JscBRy, s=5, facecolors='g', edgecolors='g', lw=0.5)
+                    Jscsubfig.scatter(JscCRx, JscCRy, s=5, facecolors='b', edgecolors='b', lw=0.5)
                     Jscsubfig.scatter(JscDFx, JscDFy, s=5, facecolors='none', edgecolors='c', lw=0.5)
                     Jscsubfig.scatter(JscEFx, JscEFy, s=5, facecolors='none', edgecolors='m', lw=0.5)
                     Jscsubfig.scatter(JscFFx, JscFFy, s=5, facecolors='none', edgecolors='k', lw=0.5)
-                    Jscsubfig.scatter(JscDRx, JscDRy, s=5, edgecolors='c', lw=0.5)
-                    Jscsubfig.scatter(JscERx, JscERy, s=5, edgecolors='m', lw=0.5)
-                    Jscsubfig.scatter(JscFRx, JscFRy, s=5, edgecolors='k', lw=0.5)
+                    Jscsubfig.scatter(JscDRx, JscDRy, s=5, facecolors='c', edgecolors='c', lw=0.5)
+                    Jscsubfig.scatter(JscERx, JscERy, s=5, facecolors='m', edgecolors='m', lw=0.5)
+                    Jscsubfig.scatter(JscFRx, JscFRy, s=5, facecolors='k', edgecolors='k', lw=0.5)
                     
                     Jscsubfig.set_ylabel('Jsc (mA/cm'+'\xb2'+')')
                     Jscsubfig.set_xlabel("Sample #")
@@ -5490,15 +5498,15 @@ class IVApp(Toplevel):
                     FFsubfig.scatter(FFAFx, FFAFy, s=5, facecolors='none', edgecolors='r', lw=0.5)
                     FFsubfig.scatter(FFBFx, FFBFy, s=5, facecolors='none', edgecolors='g', lw=0.5)
                     FFsubfig.scatter(FFCFx, FFCFy, s=5, facecolors='none', edgecolors='b', lw=0.5)
-                    FFsubfig.scatter(FFARx, FFARy, s=5, edgecolors='r', lw=0.5)
-                    FFsubfig.scatter(FFBRx, FFBRy, s=5, edgecolors='g', lw=0.5)
-                    FFsubfig.scatter(FFCRx, FFCRy, s=5, edgecolors='b', lw=0.5)
+                    FFsubfig.scatter(FFARx, FFARy, s=5, facecolors='r', edgecolors='r', lw=0.5)
+                    FFsubfig.scatter(FFBRx, FFBRy, s=5, facecolors='g', edgecolors='g', lw=0.5)
+                    FFsubfig.scatter(FFCRx, FFCRy, s=5, facecolors='b', edgecolors='b', lw=0.5)
                     FFsubfig.scatter(FFDFx, FFDFy, s=5, facecolors='none', edgecolors='c', lw=0.5)
                     FFsubfig.scatter(FFEFx, FFEFy, s=5, facecolors='none', edgecolors='m', lw=0.5)
                     FFsubfig.scatter(FFFFx, FFFFy, s=5, facecolors='none', edgecolors='k', lw=0.5)
-                    FFsubfig.scatter(FFDRx, FFDRy, s=5, edgecolors='c', lw=0.5)
-                    FFsubfig.scatter(FFERx, FFERy, s=5, edgecolors='m', lw=0.5)
-                    FFsubfig.scatter(FFFRx, FFFRy, s=5, edgecolors='k', lw=0.5)
+                    FFsubfig.scatter(FFDRx, FFDRy, s=5, facecolors='c', edgecolors='c', lw=0.5)
+                    FFsubfig.scatter(FFERx, FFERy, s=5, facecolors='m', edgecolors='m', lw=0.5)
+                    FFsubfig.scatter(FFFRx, FFFRy, s=5, facecolors='k', edgecolors='k', lw=0.5)
                     
                     FFsubfig.set_ylabel('FF (%)')
                     FFsubfig.set_xlabel("Sample #")
@@ -5559,15 +5567,15 @@ class IVApp(Toplevel):
                     Effsubfig.scatter(EffAFx, EffAFy, s=5, facecolors='none', edgecolors='r', lw=0.5)
                     Effsubfig.scatter(EffBFx, EffBFy, s=5, facecolors='none', edgecolors='g', lw=0.5)
                     Effsubfig.scatter(EffCFx, EffCFy, s=5, facecolors='none', edgecolors='b', lw=0.5)
-                    Effsubfig.scatter(EffARx, EffARy, s=5, edgecolors='r', lw=0.5)
-                    Effsubfig.scatter(EffBRx, EffBRy, s=5, edgecolors='g', lw=0.5)
-                    Effsubfig.scatter(EffCRx, EffCRy, s=5, edgecolors='b', lw=0.5)
+                    Effsubfig.scatter(EffARx, EffARy, s=5, facecolors='r', edgecolors='r', lw=0.5)
+                    Effsubfig.scatter(EffBRx, EffBRy, s=5, facecolors='g', edgecolors='g', lw=0.5)
+                    Effsubfig.scatter(EffCRx, EffCRy, s=5, facecolors='b', edgecolors='b', lw=0.5)
                     Effsubfig.scatter(EffDFx, EffDFy, s=5, facecolors='none', edgecolors='c', lw=0.5)
                     Effsubfig.scatter(EffEFx, EffEFy, s=5, facecolors='none', edgecolors='m', lw=0.5)
                     Effsubfig.scatter(EffFFx, EffFFy, s=5, facecolors='none', edgecolors='k', lw=0.5)
-                    Effsubfig.scatter(EffDRx, EffDRy, s=5, edgecolors='c', lw=0.5)
-                    Effsubfig.scatter(EffERx, EffERy, s=5, edgecolors='m', lw=0.5)
-                    Effsubfig.scatter(EffFRx, EffFRy, s=5, edgecolors='k', lw=0.5)
+                    Effsubfig.scatter(EffDRx, EffDRy, s=5, facecolors='c', edgecolors='c', lw=0.5)
+                    Effsubfig.scatter(EffERx, EffERy, s=5, facecolors='m', edgecolors='m', lw=0.5)
+                    Effsubfig.scatter(EffFRx, EffFRy, s=5, facecolors='k', edgecolors='k', lw=0.5)
                     Effsubfig.set_ylabel('Eff (%)')
                     Effsubfig.set_xlabel("Sample #")
                     for item in ([Effsubfig.title, Effsubfig.xaxis.label, Effsubfig.yaxis.label] +

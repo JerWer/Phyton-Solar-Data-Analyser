@@ -93,6 +93,8 @@ Plottime graph:
 mpp graph:
     problem with legend modif after importing on loaded session: invalid command name toplevel3.!canvas.!frame.!entry2
     
+bestvocffsorted gives an exception during autoanalysis
+
 
 
 """

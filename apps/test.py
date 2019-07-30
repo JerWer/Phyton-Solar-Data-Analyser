@@ -328,4 +328,16 @@
 ##ax3.set_ylabel('between y1 and y2')
 ##ax3.set_xlabel('x')
 
-print(10/2*3)
+import tkinter as tk
+
+app = tk.Tk()
+
+lift_type = tk.StringVar()
+lift_type.set('Lift Type')
+files = ['Arm', 'Arm (Food Grade)', 'Rail', 'Drive']
+
+lift_dropdown = tk.OptionMenu(app, lift_type, *files, command=())
+lift_dropdown.pack()
+
+
+app.mainloop()

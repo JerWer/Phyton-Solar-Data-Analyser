@@ -94,6 +94,9 @@ so the time between scans for a specific location is 3450 seconds (57.5 minutes)
 
 - add horizontal slide bar to sample table
 
+- when peak analysis ongoing, need something to show the user it's still doing something, print some numbers?
+
+
 """
 #%%
 LARGE_FONT= ("Verdana", 12)
@@ -112,11 +115,11 @@ def center(win):
     win.deiconify()
 
 DATA={}# {"name":[[x original...],[y original...],[x corrected...],[y corrected...],[{"Position":1,"PeakName":'(005)',"Intensity":1,"FWHM":1},...],[linestyle, colorstyle, answer, linewidthstyle]],"name2":[]}
-takenforplot=[]
-listofanswer=[]
-listoflinestyle=[]
-listofcolorstyle=[]
-listoflinewidthstyle=[]
+#takenforplot=[]
+#listofanswer=[]
+#listoflinestyle=[]
+#listofcolorstyle=[]
+#listoflinewidthstyle=[]
 
 colorstylelist = ['black', 'red', 'blue', 'brown', 'green','cyan','magenta','olive','navy','orange','gray','aliceblue','antiquewhite','aqua','aquamarine','azure','beige','bisque','blanchedalmond','blue','blueviolet','brown','burlywood','cadetblue','chartreuse','chocolate','coral','cornflowerblue','cornsilk','crimson','darkblue','darkcyan','darkgoldenrod','darkgray','darkgreen','darkkhaki','darkmagenta','darkolivegreen','darkorange','darkorchid','darkred','darksalmon','darkseagreen','darkslateblue','darkslategray','darkturquoise','darkviolet','deeppink','deepskyblue','dimgray','dodgerblue','firebrick','floralwhite','forestgreen','fuchsia','gainsboro','ghostwhite','gold','goldenrod','greenyellow','honeydew','hotpink','indianred','indigo','ivory','khaki','lavender','lavenderblush','lawngreen','lemonchiffon','lightblue','lightcoral','lightcyan','lightgoldenrodyellow','lightgreen','lightgray','lightpink','lightsalmon','lightseagreen','lightskyblue','lightslategray','lightsteelblue','lightyellow','lime','limegreen','linen','magenta','maroon','mediumaquamarine','mediumblue','mediumorchid','mediumpurple','mediumseagreen','mediumslateblue','mediumspringgreen','mediumturquoise','mediumvioletred','midnightblue','mintcream','mistyrose','moccasin','navajowhite','navy','oldlace','olive','olivedrab','orange','orangered','orchid','palegoldenrod','palegreen','paleturquoise','palevioletred','papayawhip','peachpuff','peru','pink','plum','powderblue','purple','red','rosybrown','royalblue','saddlebrown','salmon','sandybrown','seagreen','seashell','sienna','silver','skyblue','slateblue','slategray','snow','springgreen','steelblue','tan','teal','thistle','tomato','turquoise','violet','wheat','white','whitesmoke','yellow','yellowgreen']
 owd = os.getcwd()
@@ -277,15 +280,17 @@ class XRDApp(Toplevel):
         label.pack(fill=tk.X,expand=0)
 
         
-        frame1=Frame(self.canvas0,borderwidth=0,  bg="white")
-        frame1.pack(fill=tk.BOTH,expand=1)
-        frame1.bind("<Configure>", self.onFrameConfigure)
+        self.frame1=Frame(self.canvas0,borderwidth=0,  bg="white")
+        self.frame1.pack(fill=tk.BOTH,expand=1)
+        self.frame1.bind("<Configure>", self.onFrameConfigure)
+        self.frame11=Frame(self.frame1,borderwidth=0,  bg="white")
+        self.frame11.pack(fill=tk.BOTH,expand=1)
         self.fig1 = plt.figure(figsize=(1, 3))
-        canvas = FigureCanvasTkAgg(self.fig1, frame1)
+        canvas = FigureCanvasTkAgg(self.fig1, self.frame11)
         canvas.get_tk_widget().pack(fill=tk.BOTH,expand=1)
         self.XRDgraph = plt.subplot2grid((1, 1), (0, 0), colspan=3)
 #        self.XRDgraphtwin=self.XRDgraph.twiny()
-        self.toolbar = NavigationToolbar2TkAgg(canvas, frame1)
+        self.toolbar = NavigationToolbar2TkAgg(canvas, self.frame11)
         self.toolbar.update()
         canvas._tkcanvas.pack(fill=tk.BOTH,expand=1) 
         
@@ -425,7 +430,7 @@ class XRDApp(Toplevel):
         self.frame3221=Frame(self.frame322,borderwidth=0,  bg="white")
         self.frame3221.pack(fill=tk.BOTH,expand=1)
         importedsamplenames = StringVar()
-        self.listboxsamples=Listbox(self.frame3221,listvariable=importedsamplenames, selectmode=tk.MULTIPLE,width=30, height=3, exportselection=0)
+        self.listboxsamples=Listbox(self.frame3221,listvariable=importedsamplenames, selectmode=tk.EXTENDED,width=30, height=3, exportselection=0)
         self.listboxsamples.bind('<<ListboxSelect>>', self.UpdateGraph0)
         self.listboxsamples.pack(side="left", fill=tk.BOTH, expand=1)
         scrollbar = tk.Scrollbar(self.frame3221, orient="vertical")
@@ -506,22 +511,181 @@ class XRDApp(Toplevel):
         
         #check first if there are indeed data that was analysed, so with peak data to use
         
-        self.listbox = Listbox(self.TimeGraphwindow,selectmode=tk.EXTENDED)
+        self.timeevollistbox = Listbox(self.TimeGraphwindow,selectmode=tk.EXTENDED)
         for name in listofsamplenames:
-          self.listbox.insert(tk.END, name)
-          self.listbox.selection_set(0)
-        self.listbox.pack(fill=tk.BOTH, expand=True)
-        scrollbar = tk.Scrollbar(self.listbox, orient="vertical")
-        scrollbar.config(command=self.listbox.yview)
+          self.timeevollistbox.insert(tk.END, name)
+          self.timeevollistbox.selection_set(0)
+        self.timeevollistbox.pack(fill=tk.BOTH, expand=True)
+        scrollbar = tk.Scrollbar(self.timeevollistbox, orient="vertical")
+        scrollbar.config(command=self.timeevollistbox.yview)
         scrollbar.pack(side="right", fill="y")
         
-        self.listbox.config(yscrollcommand=scrollbar.set)
+        self.timeevollistbox.config(yscrollcommand=scrollbar.set)
 
-        printbut = tk.Button(self.TimeGraphwindow, text="GenerateGraph",
-                                    command = ())
-        printbut.pack()
+        frame1=Frame(self.TimeGraphwindow,borderwidth=0,  bg="white")
+        frame1.pack(fill=tk.BOTH,expand=0)
+        
+        tk.Button(frame1, text="Select those samples",
+                                    command = self.TimeEvolGraphInterm).pack(fill=tk.X,expand=1)
         self.TimeGraphwindow.mainloop()
-            
+    
+    def TimeEvolGraphInterm(self):
+        global DATA
+        #determining list of peaks 
+        takensamples = [self.timeevollistbox.get(idx) for idx in self.timeevollistbox.curselection()]
+#        print(takensamples)
+        self.TimeEvollistofsamplenames=[]
+        for key in DATA.keys():
+            if len(DATA[key])>6:
+                if DATA[key][6]=='itsatimeevoldata':
+                    if DATA[key][7][6] in takensamples:
+                        self.TimeEvollistofsamplenames.append(key)
+#        print(listofsamplenames)
+        peakslist=[]
+        for key in self.TimeEvollistofsamplenames:
+            if DATA[key][4]==[]:
+                messagebox.showinfo("Information","You must analysed the peaks first")
+                self.TimeGraphwindow.destroy()
+                break
+            else:
+                for item in DATA[key][4]:
+                    peakslist.append(round(item["Position"],0))
+#        print(peakslist)
+        self.peakslist=sorted(list(set(peakslist)))
+#        print(self.peakslist)
+        self.TimeEvolGraph2()
+    
+    def TimeEvolGraph2(self):
+        global DATA        
+        self.TimeGraphwindow.destroy()
+        self.TimeGraphwindow2=tk.Toplevel()
+        self.TimeGraphwindow2.wm_title("TimeEvolGraph")
+        center(self.TimeGraphwindow2)
+        self.TimeGraphwindow2.geometry("300x100")
+        self.TimeGraphwindow2.protocol("WM_DELETE_WINDOW", self.on_closingtimeevol)
+        
+        frame1=Frame(self.TimeGraphwindow2,borderwidth=0,  bg="white")
+        frame1.pack(fill=tk.X,expand=1)
+        
+        
+        self.PeakChoice=StringVar()
+        self.PeakChoice.set("Peaks positions")
+        PeakChoiceList = self.peakslist
+        self.dropMenuPeak = OptionMenu(frame1, self.PeakChoice, *PeakChoiceList, command=()).pack(side="left",fill=tk.X,expand=1)
+
+        ParamChoiceList = ["FWHM","Intensity","PeakArea","IntBreadth","CrystSize"]
+        self.ParamChoice=StringVar()
+        self.ParamChoice.set("Parameters") # default choice
+        self.dropMenuParam = OptionMenu(frame1, self.ParamChoice, *ParamChoiceList, command=()).pack(side="left",fill=tk.X,expand=1)
+
+        frame2=Frame(self.TimeGraphwindow2,borderwidth=0,  bg="white")
+        frame2.pack(fill=tk.BOTH,expand=1)
+        
+        self.ynormalTimeEvol = IntVar()
+        Checkbutton(frame2,text="Normalize y",variable=self.ynormalTimeEvol, command = (),
+                           onvalue=1,offvalue=0,height=1, width=10, fg='black',background='white').pack(side=tk.LEFT,expand=1)
+        self.ynormalTimeEvol.set(0)
+        self.xnormalTimeEvol = IntVar()
+        Checkbutton(frame2,text="start all x at 0",variable=self.xnormalTimeEvol, command = (),
+                           onvalue=1,offvalue=0,height=1, width=10, fg='black',background='white').pack(side=tk.LEFT,expand=1)
+        self.xnormalTimeEvol.set(0)
+        frame3=Frame(self.TimeGraphwindow2,borderwidth=0,  bg="white")
+        frame3.pack(fill=tk.BOTH,expand=1)
+        tk.Button(frame3, text="Back to samples selection", command = self.backtoTimeEvolGraph).pack(side=tk.LEFT,fill=tk.BOTH,expand=1) 
+        tk.Button(frame3, text="Generate graph", command = self.GenerationTimeEvolGraph).pack(side=tk.LEFT,fill=tk.BOTH,expand=1) 
+
+    def on_closingtimeevol(self):
+        self.TimeGraphwindow2.destroy()
+        
+        self.frame11.destroy()
+        
+        self.frame11=Frame(self.frame1,borderwidth=0,  bg="white")
+        self.frame11.pack(fill=tk.BOTH,expand=1)
+        self.fig1 = plt.figure(figsize=(1, 3))
+        canvas = FigureCanvasTkAgg(self.fig1, self.frame11)
+        canvas.get_tk_widget().pack(fill=tk.BOTH,expand=1)
+        self.XRDgraph = plt.subplot2grid((1, 1), (0, 0), colspan=3)
+#        self.XRDgraphtwin=self.XRDgraph.twiny()
+        self.toolbar = NavigationToolbar2TkAgg(canvas, self.frame11)
+        self.toolbar.update()
+        canvas._tkcanvas.pack(fill=tk.BOTH,expand=1)
+        
+        self.updateXRDgraph(0)
+        
+    def backtoTimeEvolGraph(self):
+        self.TimeGraphwindow2.destroy()
+        self.TimeEvolGraph()
+    
+    def GenerationTimeEvolGraph(self):
+        global DATA
+        
+        timeevolgraphDATA={}
+        for samplename in self.TimeEvollistofsamplenames:
+            newkey=samplename.split('_')[2]+'_'+samplename.split('_')[3]+'_'+samplename.split('_')[4]+'_'+samplename.split('_')[6]
+            if newkey not in timeevolgraphDATA.keys():
+                timeevolgraphDATA[newkey]=[[],[]]
+                
+            for peak in DATA[samplename][4]:
+                if round(peak["Position"],0)==float(self.PeakChoice.get()):
+                    timeevolgraphDATA[newkey][1].append(peak[self.ParamChoice.get()])
+                    timeevolgraphDATA[newkey][0].append(float(samplename.split('_')[5]))
+                    break
+        
+        f = filedialog.asksaveasfilename(defaultextension=".png", filetypes = (("graph file", "*.png"),("All Files", "*.*")))
+        
+        self.timeEvolfig = plt.figure(figsize=(6, 4))
+        self.timeEvolfig1 = self.timeEvolfig.add_subplot(111)  
+        datafortxtexport=[]
+        headings=["",""]
+        for key in timeevolgraphDATA:
+            if self.ynormalTimeEvol.get()==0:
+                if self.xnormalTimeEvol.get()==0:#original data
+                    self.timeEvolfig1.plot(timeevolgraphDATA[key][0],timeevolgraphDATA[key][1],label=key)
+                    self.timeEvolfig1.set_ylabel(self.ParamChoice.get())
+                    datafortxtexport.append(timeevolgraphDATA[key][0])
+                    datafortxtexport.append(timeevolgraphDATA[key][1])
+                else:#time is starting at zero for all curves
+                    x=[item-timeevolgraphDATA[key][0][0] for item in timeevolgraphDATA[key][0]]
+                    self.timeEvolfig1.plot(x,timeevolgraphDATA[key][1],label=key)
+                    self.timeEvolfig1.set_ylabel(self.ParamChoice.get())
+                    datafortxtexport.append(x)
+                    datafortxtexport.append(timeevolgraphDATA[key][1])
+            else:
+                if self.xnormalTimeEvol.get()==0:#y is normalized
+                    y=[(m-min(timeevolgraphDATA[key][1]))/(max(timeevolgraphDATA[key][1])-min(timeevolgraphDATA[key][1])) for m in timeevolgraphDATA[key][1]]
+                    self.timeEvolfig1.plot(timeevolgraphDATA[key][0],y,label=key)
+                    self.timeEvolfig1.set_ylabel(self.ParamChoice.get()+" Normalized")
+                    datafortxtexport.append(timeevolgraphDATA[key][0])
+                    datafortxtexport.append(y)
+                else:#y is normalized and time is starting at zero
+                    x=[item-timeevolgraphDATA[key][0][0] for item in timeevolgraphDATA[key][0]]
+                    y=[(m-min(timeevolgraphDATA[key][1]))/(max(timeevolgraphDATA[key][1])-min(timeevolgraphDATA[key][1])) for m in timeevolgraphDATA[key][1]]
+                    self.timeEvolfig1.plot(x,y,label=key)
+                    self.timeEvolfig1.set_ylabel(self.ParamChoice.get()+" Normalized")
+                    datafortxtexport.append(x)
+                    datafortxtexport.append(y)
+            headings[0]+="Time\t"+self.ParamChoice.get()+"\t"
+            headings[1]+="\t"+key+"\t"
+        headings[0]=headings[0][:-1]+'\n'
+        headings[1]=headings[1][:-1]+'\n'
+        self.timeEvolfig1.set_xlabel("Time (minutes)")
+        self.timeEvolfig1.legend(ncol=1)
+        self.timeEvolfig1.set_title("Peak: ~"+str(self.PeakChoice.get()))
+        self.timeEvolfig.savefig(f[:-4]+'.png', dpi=300, transparent=False) 
+        
+        #export txt files
+        datafortxtexport=map(list, six.moves.zip_longest(*datafortxtexport, fillvalue=' '))
+        DATAforexport1=headings
+        for item in datafortxtexport:
+            line=""
+            for item1 in item:
+                line=line+str(item1)+"\t"
+            line=line[:-1]+"\n"
+            DATAforexport1.append(line)
+        file = open(str(f[:-4]+"_dat.txt"),'w', encoding='ISO-8859-1')
+        file.writelines("%s" % item for item in DATAforexport1)
+        file.close() 
+        
 #%%    
     def UpdateGraph0(self,a):
         global takenforplot
@@ -911,6 +1075,7 @@ class XRDApp(Toplevel):
 #            fwhmlist=[]
 #            print("")
             for item in samplestakenforplot:
+                print(item)
                 #reinitialize list of dict
                 DATA[item][4]=[]
                 x=np.array(DATA[item][2])
@@ -1198,7 +1363,7 @@ class XRDApp(Toplevel):
         self.frame3221=Frame(self.frame322,borderwidth=0,  bg="white")
         self.frame3221.pack(fill=tk.BOTH,expand=1)
         importedsamplenames = StringVar()
-        self.listboxsamples=Listbox(self.frame3221,listvariable=importedsamplenames, selectmode=tk.MULTIPLE,width=15, height=3, exportselection=0)
+        self.listboxsamples=Listbox(self.frame3221,listvariable=importedsamplenames, selectmode=tk.EXTENDED,width=15, height=3, exportselection=0)
         self.listboxsamples.bind('<<ListboxSelect>>', self.UpdateGraph0)
         self.listboxsamples.pack(side="left", fill=tk.BOTH, expand=1)
         scrollbar = tk.Scrollbar(self.frame3221, orient="vertical")

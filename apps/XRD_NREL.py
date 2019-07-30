@@ -39,6 +39,8 @@ from math import factorial,radians, sin, cos
 """
 TODOLIST
 
+- make user manual
+
 - (shift to ref auto)
 
 - show peak fitting

@@ -91,34 +91,8 @@ They all have 690 seconds between each scan,
 so the time between scans for a specific location is 3450 seconds (57.5 minutes).
 
 
-button: plottimeEvol
-popupwindow:
-    dropdown: which peak (select several)
-    dropdown (yaxis): which parameter
-    dropdown (xaxis): which parameter (default is time) 
-    name of sample: text to enter by user (assume all selected are from same sample)
-    temperature text entry
-    when click next: should ask to open the file with times&temperatures
-    
-generates:
-    graph for each location: param1 vs param2
-    put (time;temp) text next to point on graph
-    .png and .txt data
-    
 
-
-sample 0315:
-    EW_1717_190603_000_001_001_T2T
-    .._.._.._scan#_pos#_.._..
-sample 0406:
-    EW_1717_190628_000_001_001_T2T
-    .._.._.._scan#_pos#_.._..    
-sample 0308:
-    EW_1717_190603_center_000_T2T
-    
-would be useful to have:
-    sample name/number in the file name
-    sample name/number in the "begintempvtime" file name
+- add horizontal slide bar to sample table
 
 """
 #%%
@@ -425,7 +399,10 @@ class XRDApp(Toplevel):
 #        frame231.pack(fill=tk.BOTH,expand=1)
         self.ExportBut = Button(frame221, text="Export",command =self.Export).pack(side="left",expand=1)
         self.ExportWHBut = Button(frame221, text="ExportWillHall",command =self.ExportWH).pack(side="left",expand=1)
-        self.ExportRefFileBut = Button(frame221, text="ExportasRefFile",command = ()).pack(side="left",expand=1)
+#        self.ExportRefFileBut = Button(frame221, text="ExportasRefFile",command = ()).pack(side="left",expand=1)
+
+        self.TimeEvolBut = Button(frame221, text="TimeEvolGraph",command = self.TimeEvolGraph).pack(side="left",expand=1)
+
 #        self.GraphCheck = IntVar()
 #        legend=Checkbutton(frame23,text='Graph',variable=self.GraphCheck, 
 #                           onvalue=1,offvalue=0,height=1, width=10, command = (), bg="lightgrey")
@@ -448,7 +425,7 @@ class XRDApp(Toplevel):
         self.frame3221=Frame(self.frame322,borderwidth=0,  bg="white")
         self.frame3221.pack(fill=tk.BOTH,expand=1)
         importedsamplenames = StringVar()
-        self.listboxsamples=Listbox(self.frame3221,listvariable=importedsamplenames, selectmode=tk.MULTIPLE,width=15, height=3, exportselection=0)
+        self.listboxsamples=Listbox(self.frame3221,listvariable=importedsamplenames, selectmode=tk.MULTIPLE,width=30, height=3, exportselection=0)
         self.listboxsamples.bind('<<ListboxSelect>>', self.UpdateGraph0)
         self.listboxsamples.pack(side="left", fill=tk.BOTH, expand=1)
         scrollbar = tk.Scrollbar(self.frame3221, orient="vertical")
@@ -465,7 +442,7 @@ class XRDApp(Toplevel):
         self.frame3231=Frame(self.frame323,borderwidth=0,  bg="white")
         self.frame3231.pack(fill=tk.BOTH,expand=1)
         refsamplenames = StringVar()
-        self.listboxref=Listbox(self.frame3231,listvariable=refsamplenames, selectmode=tk.MULTIPLE,width=15, height=3, exportselection=0)
+        self.listboxref=Listbox(self.frame3231,listvariable=refsamplenames, selectmode=tk.MULTIPLE,width=30, height=3, exportselection=0)
         self.listboxref.bind('<<ListboxSelect>>', self.updateXRDgraph)
         self.listboxref.pack(side="left", fill=tk.BOTH, expand=1)
         scrollbar = tk.Scrollbar(self.frame3231, orient="vertical")
@@ -510,6 +487,40 @@ class XRDApp(Toplevel):
     def onFrameConfigure(self, event):
         #self.canvas0.configure(scrollregion=self.canvas0.bbox("all"))
         self.canvas0.configure(scrollregion=(0,0,500,500))
+
+            
+#%% Time graph
+
+    def TimeEvolGraph(self):
+        global DATA
+        
+        listofsamplenames=[]
+        for key in DATA.keys():
+            if len(DATA[key])>6:
+                if DATA[key][6]=='itsatimeevoldata':
+                    listofsamplenames.append(DATA[key][7][6])
+        listofsamplenames=list(set(listofsamplenames))
+        
+        self.TimeGraphwindow=tk.Tk()
+        center(self.TimeGraphwindow)
+        
+        #check first if there are indeed data that was analysed, so with peak data to use
+        
+        self.listbox = Listbox(self.TimeGraphwindow,selectmode=tk.EXTENDED)
+        for name in listofsamplenames:
+          self.listbox.insert(tk.END, name)
+          self.listbox.selection_set(0)
+        self.listbox.pack(fill=tk.BOTH, expand=True)
+        scrollbar = tk.Scrollbar(self.listbox, orient="vertical")
+        scrollbar.config(command=self.listbox.yview)
+        scrollbar.pack(side="right", fill="y")
+        
+        self.listbox.config(yscrollcommand=scrollbar.set)
+
+        printbut = tk.Button(self.TimeGraphwindow, text="GenerateGraph",
+                                    command = ())
+        printbut.pack()
+        self.TimeGraphwindow.mainloop()
             
 #%%    
     def UpdateGraph0(self,a):
@@ -1042,7 +1053,7 @@ class XRDApp(Toplevel):
         
     
     def importDATA(self):
-        global DATA, Patternsamplenameslist
+        global DATA, Patternsamplenameslist, istheretimedata
         
         #ask for the files
         file_path =filedialog.askopenfilenames(title="Please select the XRD files")
@@ -1151,7 +1162,12 @@ class XRDApp(Toplevel):
                 tempdat.append(x)#corrected x, set as the original on first importation 2theta
                 tempdat.append(y)#corrected y, set as the original on first importation 
                 tempdat.append([])#peak data, list of dictionaries
+#                print(len(DATA.keys()))
                 tempdat.append(['-',colorstylelist[len(DATA.keys())],samplename,int(2)])
+                if len(samplename.split('_'))==7:
+                    tempdat.append('itsatimeevoldata')
+                    #[batch#,sample#,temperature,time,position,nametemp,nametemppos]
+                    tempdat.append([samplename.split('_')[2],samplename.split('_')[3],samplename.split('_')[4],float(samplename.split('_')[5]),samplename.split('_')[6],samplename.split('_')[2]+'_'+samplename.split('_')[3]+'_'+samplename.split('_')[4],samplename.split('_')[2]+'_'+samplename.split('_')[3]+'_'+samplename.split('_')[4]+'_'+samplename.split('_')[6]])
 
                 DATA[samplename]=tempdat
                 Patternsamplenameslist.append(samplename)

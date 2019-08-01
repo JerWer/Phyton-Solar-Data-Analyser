@@ -4567,8 +4567,10 @@ class IVApp(Toplevel):
                 maxcurrentfind=[]
                 minVfind=[]
                 maxVfind=[]
-                for item in range(len(bestEffsorted)):
-                    ax.plot(bestvocffsorted[item]["IVData"][0],bestvocffsorted[item]["IVData"][1], label=bestvocffsorted[item]["SampleName"]) 
+                for item in range(len(bestvocffsorted)):
+                    x=bestvocffsorted[item]["IVData"][0]
+                    y=bestvocffsorted[item]["IVData"][1]
+                    ax.plot(x,y, label=bestvocffsorted[item]["SampleName"]) 
                     rowlabel.append(bestvocffsorted[item]["SampleName"])
                     tabledata.append(['%.f' % float(bestvocffsorted[item]["Voc"]),'%.2f' % float(bestvocffsorted[item]["Jsc"]),'%.2f' % float(bestvocffsorted[item]["FF"]),'%.2f' % float(bestvocffsorted[item]["Eff"]),'%.2f' % float(bestvocffsorted[item]["Roc"]),'%.2f' % float(bestvocffsorted[item]["Rsc"]),'%.2f' % float(bestvocffsorted[item]["Vstart"]),'%.2f' % float(bestvocffsorted[item]["Vend"]),'%.2f' % float(bestvocffsorted[item]["CellSurface"])])
                     minJscfind.append(min(bestvocffsorted[item]["IVData"][1]))

@@ -43,7 +43,7 @@ TODOLIST
 
 - (shift to ref auto)
 
-- show peak fitting
+- !!!show peak fitting!!!
 
 - export as ref file function
 
@@ -90,11 +90,6 @@ Each sample has five scan locations. 03 has 16 scans per location and 04 has 33 
 They all have 690 seconds between each scan, 
 so the time between scans for a specific location is 3450 seconds (57.5 minutes).
 
-
-
-- add horizontal slide bar to sample table
-
-- when peak analysis ongoing, need something to show the user it's still doing something, print some numbers?
 
 
 """
@@ -425,7 +420,9 @@ class XRDApp(Toplevel):
         frame32.pack(fill=tk.BOTH,expand=1)
         
         #listbox for imported samples
-        self.frame322=Frame(frame32,borderwidth=0,  bg="white")
+        self.frame3220=Frame(frame32,borderwidth=0,  bg="white")
+        self.frame3220.pack(fill=tk.BOTH,expand=1)
+        self.frame322=Frame(self.frame3220,borderwidth=0,  bg="white")
         self.frame322.pack(fill=tk.BOTH,expand=1)
         self.frame3221=Frame(self.frame322,borderwidth=0,  bg="white")
         self.frame3221.pack(fill=tk.BOTH,expand=1)
@@ -436,7 +433,11 @@ class XRDApp(Toplevel):
         scrollbar = tk.Scrollbar(self.frame3221, orient="vertical")
         scrollbar.config(command=self.listboxsamples.yview)
         scrollbar.pack(side="right", fill="y")
+        xscrollbar = tk.Scrollbar(self.frame322, orient="horizontal")
+        xscrollbar.config(command=self.listboxsamples.xview)
+        xscrollbar.pack(side="bottom", fill="x")
         self.listboxsamples.config(yscrollcommand=scrollbar.set)
+        self.listboxsamples.config(xscrollcommand=xscrollbar.set)
         
         for item in Patternsamplenameslist:
             self.listboxsamples.insert(tk.END,item)
@@ -1359,7 +1360,10 @@ class XRDApp(Toplevel):
                         tempdat=[]
         
         #update the listbox
+        self.frame322.destroy()
         self.frame3221.destroy()
+        self.frame322=Frame(self.frame3220,borderwidth=0,  bg="white")
+        self.frame322.pack(fill=tk.BOTH,expand=1)
         self.frame3221=Frame(self.frame322,borderwidth=0,  bg="white")
         self.frame3221.pack(fill=tk.BOTH,expand=1)
         importedsamplenames = StringVar()
@@ -1369,7 +1373,11 @@ class XRDApp(Toplevel):
         scrollbar = tk.Scrollbar(self.frame3221, orient="vertical")
         scrollbar.config(command=self.listboxsamples.yview)
         scrollbar.pack(side="right", fill="y")
+        xscrollbar = tk.Scrollbar(self.frame322, orient="horizontal")
+        xscrollbar.config(command=self.listboxsamples.xview)
+        xscrollbar.pack(side="bottom", fill="x")
         self.listboxsamples.config(yscrollcommand=scrollbar.set)
+        self.listboxsamples.config(xscrollcommand=xscrollbar.set)
         
         for item in Patternsamplenameslist:
             self.listboxsamples.insert(tk.END,item)

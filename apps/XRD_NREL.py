@@ -140,6 +140,8 @@ listoflinewidthstyle=[]
 
 lambdaXRD=1.5406
 
+colormapname="jet"
+
 def q_to_tth(Q):
     "convert q to tth, lam is wavelength in angstrom"
     return 360/np.pi * np.arcsin(Q * lambdaXRD / (4 * np.pi))
@@ -1199,7 +1201,7 @@ class XRDApp(Toplevel):
         
     
     def importDATA(self):
-        global DATA, Patternsamplenameslist, istheretimedata
+        global DATA, Patternsamplenameslist, istheretimedata,colormapname
         
         #ask for the files
         file_path =filedialog.askopenfilenames(title="Please select the XRD files")
@@ -1209,7 +1211,7 @@ class XRDApp(Toplevel):
         num_plots=len(DATA)+len(file_path)
 #        plt.gca().set_prop_cycle(plt.cycler('color', plt.cm.tab20(np.linspace(0, 1, num_plots))))
 
-        cmap = plt.get_cmap('rainbow')
+        cmap = plt.get_cmap(colormapname)
         colors = cmap(np.linspace(0, 1.0, num_plots))
 #        print(colors)
                 

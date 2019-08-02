@@ -67,29 +67,9 @@ theta= peak position/2 in radians
 
 - export williamson-hall plot with linear regression, and fit to find the strain component
 
+- colorlist to short
 
-update for Eli:
-    
-The inputs for this plot are...
-- n samples (each sample is aged at 1 temperature)
-- m scans per sample (different samples may have different total scans)
-- p scan locations per sample (most samples have 5 scan locations, although i will only probably care about plotting 1 at a time)
-- k time between each scan (normally there is an 11 minutes and 30 second gap between each scan to move from one spot to another, then after each location is scanned, it repeats)
-
-Options:
-It would be nice to choose...
-- which crystallographic peak to plot (100,110,200,211, etc.)
-- choose which peak parameter to plot over time (position, intensity, FWHM, Area, or Intbreadth)
-
-Output:
-- parameter over time for multiple samples
-- legend should show the temperature the sample was aged at
-
-Attached are three samples for three different temperatures. 
-Each sample has five scan locations. 03 has 16 scans per location and 04 has 33 scans per location. 
-They all have 690 seconds between each scan, 
-so the time between scans for a specific location is 3450 seconds (57.5 minutes).
-
+- make preview graph for timeevol
 
 
 """
@@ -1224,6 +1204,15 @@ class XRDApp(Toplevel):
         #ask for the files
         file_path =filedialog.askopenfilenames(title="Please select the XRD files")
         
+        print(len(DATA))
+        print(len(file_path))
+        num_plots=len(DATA)+len(file_path)
+#        plt.gca().set_prop_cycle(plt.cycler('color', plt.cm.tab20(np.linspace(0, 1, num_plots))))
+
+        cmap = plt.get_cmap('rainbow')
+        colors = cmap(np.linspace(0, 1.0, num_plots))
+#        print(colors)
+                
         #read the files and fill the DATA dictionary 
         for filename in file_path:
             tempdat=[]
@@ -1329,7 +1318,8 @@ class XRDApp(Toplevel):
                 tempdat.append(y)#corrected y, set as the original on first importation 
                 tempdat.append([])#peak data, list of dictionaries
 #                print(len(DATA.keys()))
-                tempdat.append(['-',colorstylelist[len(DATA.keys())],samplename,int(2)])
+#                tempdat.append(['-',colorstylelist[len(DATA.keys())],samplename,int(2)])
+                tempdat.append(['-',colors[len(DATA.keys())],samplename,int(2)])
                 if len(samplename.split('_'))==7:
                     tempdat.append('itsatimeevoldata')
                     #[batch#,sample#,temperature,time,position,nametemp,nametemppos]

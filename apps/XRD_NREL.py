@@ -71,6 +71,8 @@ theta= peak position/2 in radians
 
 - make preview graph for timeevol
 
+- problem of selecting the wrong peak data: use 130C 14deg, it takes 12deg
+
 
 """
 #%%

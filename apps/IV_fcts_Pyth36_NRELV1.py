@@ -91,11 +91,10 @@ Plottime graph:
     
 
 mpp graph:
-    problem with legend modif after importing on loaded session: invalid command name toplevel3.!canvas.!frame.!entry2
+    problem with legend mod if after importing on loaded session: invalid command name toplevel3.!canvas.!frame.!entry2
     
-bestvocffsorted gives an exception during autoanalysis
 
-
+problem with plotting dark data
 
 """
 #%%############# Global variable definition
@@ -2528,7 +2527,7 @@ class IVApp(Toplevel):
                 for item in sampletotake:
                     x = DATAx[item]["IVData"][0]
                     y = DATAx[item]["IVData"][1]
-                    y=[abs(item) for item in y]
+                    y=[abs(item2) for item2 in y]
                     
                     colx=["Voltage","mV",""]+x
                     coly=["Current density","ma/cm^2",DATAx[item]["SampleName"]]+y

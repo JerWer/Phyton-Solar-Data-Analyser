@@ -423,7 +423,9 @@ class SpectroApp(Toplevel):
 #                    dataInt=list(map(float,dataInt[1:]))
 #                datadict = [samplenameshort, curvetype, dataWave, dataInt]
 #                DATA.append(datadict)    
-#        
+
+#DATA[samplenames[item]] = [samplenameshort, curvetype, dataWave, dataInt,dataInt,samplenames[item],samplenames[item],'-',colorstylelist[len(DATA.keys())],int(2)]
+        
         DATADICTtot = []
         DATA2 = copy.deepcopy(DATA)
         while DATA != {}:
@@ -449,7 +451,7 @@ class SpectroApp(Toplevel):
                 trans = [float(i) for i in datadict['TT']]
                 absorpt = [float(i) for i in [100 - (x + y) for x, y in zip(refl, trans)]]
                 datadict['A']=absorpt
-                DATA2[name+'_A']=[name,'A',DATA[names[0]][2],absorpt]
+                DATA2[name+'_A']=[name,'A',DATA[names[0]][2],absorpt,absorpt,name+'_A',name+'_A','-',colorstylelist[len(DATA2.keys())],int(2)]
                 Patternsamplenameslist.append(name+'_A')
             DATADICTtot.append(datadict)
             for index in sorted(listpositions, reverse=True):
@@ -543,7 +545,10 @@ class SpectroApp(Toplevel):
                 if self.CheckLegend.get()==1:
                     self.Spectrograph.plot(x,y,label=DATAx[i][6],linestyle=DATAx[i][7],color=DATAx[i][8],linewidth=DATAx[i][9])
                 else:
-                    self.Spectrograph.plot(x,y,linestyle=DATAx[i][7],color=DATAx[i][8],linewidth=DATAx[i][9])        
+                    m=DATAx[i][7]
+                    mm=DATAx[i][8]
+                    mmm=DATAx[i][9]
+                    self.Spectrograph.plot(x,y,linestyle=m,color=mm,linewidth=mmm)        
             
             self.Spectrograph.set_ylabel('Intensity (%)')
             self.Spectrograph.set_xlabel('Wavelength (nm)')

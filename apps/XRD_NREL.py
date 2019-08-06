@@ -67,7 +67,9 @@ theta= peak position/2 in radians
 
 - export williamson-hall plot with linear regression, and fit to find the strain component
 
-- colorlist to short
+https://matplotlib.org/3.1.0/tutorials/colors/colormaps.html
+make colormap choice an option for the user: text field
+
 
 - make preview graph for timeevol
 
@@ -1208,14 +1210,16 @@ class XRDApp(Toplevel):
         #ask for the files
         file_path =filedialog.askopenfilenames(title="Please select the XRD files")
         
-        print(len(DATA))
-        print(len(file_path))
+#        print(len(DATA))
+#        print(len(file_path))
         num_plots=len(DATA)+len(file_path)
 #        plt.gca().set_prop_cycle(plt.cycler('color', plt.cm.tab20(np.linspace(0, 1, num_plots))))
 
         cmap = plt.get_cmap(colormapname)
         colors = cmap(np.linspace(0, 1.0, num_plots))
-#        print(colors)
+        colors=[tuple(item) for item in colors]
+        
+#        print(colors[0])
                 
         #read the files and fill the DATA dictionary 
         for filename in file_path:
@@ -1510,7 +1514,7 @@ class XRDApp(Toplevel):
         self.window = tk.Toplevel()
         self.window.wm_title("Change Legends")
         center(self.window)
-        self.window.geometry("450x300")
+        self.window.geometry("550x300")
         
         Button(self.window, text="Update",
                             command = self.UpdateXRDLegMod).pack()
@@ -1544,10 +1548,13 @@ class XRDApp(Toplevel):
             DATA[takenforplot[item]][5][0]=leglist[item]        
         leglist=[]
         for e in listofcolorstyle:
-            if type(e)!=str:
-                leglist.append(e.get())
-            else:
+            if type(e)==tuple:
+                leglist.append(mpl.colors.to_hex(e, keep_alpha=False))
+            elif type(e)==str:
                 leglist.append(e) 
+            elif type(e)!=str:
+                leglist.append(e.get())
+                
         for item in range(len(takenforplot)):
             DATA[takenforplot[item]][5][1]=leglist[item]  
         leglist=[]
@@ -1630,10 +1637,21 @@ class XRDApp(Toplevel):
                 listofcolorstyle[item1].set(DATAx[item1][10]) # default choice
                 OptionMenu(self.frame, listofcolorstyle[item1], *colorstylelist, command=()).grid(row=rowpos, column=6, columnspan=2)
                 """
+#                print(listofcolorstyle[item1])
+#                print(tuple(listofcolorstyle[item1]))
                 self.positioncolor=item1
-                colstyle=Button(self.frame, text='Select Color', foreground=listofcolorstyle[item1], command=partial(self.getColor,item1))
-                colstyle.grid(row=rowpos, column=6, columnspan=2)
+#                rgb=list(listofcolorstyle[item1])[0:3]
+#                print(listofcolorstyle[item1])
+#                print(rgb)
                 
+#                print('#{:02x}{:02x}{:02x}'.format(*rgb)) 
+#                colstyle=Button(self.frame, text='Select Color', foreground=tuple(listofcolorstyle[item1]), command=partial(self.getColor,item1))
+                if type(listofcolorstyle[item1])==tuple:
+                    colstyle=Button(self.frame, text='Select Color', foreground=mpl.colors.to_hex(list(listofcolorstyle[item1]), keep_alpha=False), command=partial(self.getColor,item1))
+                    colstyle.grid(row=rowpos, column=6, columnspan=2)
+                else:
+                    colstyle=Button(self.frame, text='Select Color', foreground=listofcolorstyle[item1], command=partial(self.getColor,item1))
+                    colstyle.grid(row=rowpos, column=6, columnspan=2)
                 
                 linewidth = tk.StringVar()
                 listoflinewidthstyle[item1]=Entry(self.frame,textvariable=linewidth)

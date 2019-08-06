@@ -328,16 +328,27 @@
 ##ax3.set_ylabel('between y1 and y2')
 ##ax3.set_xlabel('x')
 
-import tkinter as tk
+import webcolors
 
-app = tk.Tk()
+def closest_colour(requested_colour):
+    min_colours = {}
+    for key, name in webcolors.css3_hex_to_names.items():
+        r_c, g_c, b_c = webcolors.hex_to_rgb(key)
+        rd = (r_c - requested_colour[0]) ** 2
+        gd = (g_c - requested_colour[1]) ** 2
+        bd = (b_c - requested_colour[2]) ** 2
+        min_colours[(rd + gd + bd)] = name
+    return min_colours[min(min_colours.keys())]
 
-lift_type = tk.StringVar()
-lift_type.set('Lift Type')
-files = ['Arm', 'Arm (Food Grade)', 'Rail', 'Drive']
+def get_colour_name(requested_colour):
+    try:
+        closest_name = actual_name = webcolors.rgb_to_name(requested_colour)
+    except ValueError:
+        closest_name = closest_colour(requested_colour)
+        actual_name = None
+    return actual_name, closest_name
 
-lift_dropdown = tk.OptionMenu(app, lift_type, *files, command=())
-lift_dropdown.pack()
+requested_colour = (1, 0, 0)
+actual_name, closest_name = get_colour_name(requested_colour)
 
-
-app.mainloop()
+print("Actual colour name:", actual_name, ", closest colour name:", closest_name)

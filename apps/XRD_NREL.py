@@ -75,6 +75,8 @@ make colormap choice an option for the user: text field
 
 - problem of selecting the wrong peak data: use 130C 14deg, it takes 12deg
 
+- what if no peak at beginning: what do we assume? =>0
+
 
 """
 #%%

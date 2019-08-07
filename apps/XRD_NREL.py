@@ -75,8 +75,8 @@ make colormap choice an option for the user: text field
 
 - problem of selecting the wrong peak data: use 130C 14deg, it takes 12deg
 
-- what if no peak at beginning: what do we assume? =>0
-
+- load file parameters that sets all entry text to some user-defined values, 
+save param and load param buttons
 
 """
 #%%
@@ -370,12 +370,21 @@ class XRDApp(Toplevel):
                            onvalue=1,offvalue=0,height=1, width=3, fg='black',background='grey').pack(side=tk.LEFT,expand=1)
         self.thresholdPeakDet = tk.DoubleVar()
         Entry(frame223, textvariable=self.thresholdPeakDet,width=5).pack(side=tk.LEFT,expand=1)
-        self.thresholdPeakDet.set(0.05)
+        self.thresholdPeakDet.set(0.08)
         tk.Label(frame223, text="Threshold", bg="grey").pack(side=tk.LEFT,expand=1)
         self.MinDistPeakDet = tk.DoubleVar()
         Entry(frame223, textvariable=self.MinDistPeakDet,width=3).pack(side=tk.LEFT,expand=1)
-        self.MinDistPeakDet.set(40)
+        self.MinDistPeakDet.set(20)
         tk.Label(frame223, text="MinDist", bg="grey").pack(side=tk.LEFT,expand=1)
+        self.nbofpoints = tk.IntVar()
+        Entry(frame223, textvariable=self.nbofpoints,width=5).pack(side=tk.LEFT,expand=1)
+        self.nbofpoints.set(35)
+        self.basepoints = tk.IntVar()
+        Entry(frame223, textvariable=self.basepoints,width=5).pack(side=tk.LEFT,expand=1)
+        self.basepoints.set(10)
+        self.diffleftright = tk.IntVar()
+        Entry(frame223, textvariable=self.diffleftright,width=5).pack(side=tk.LEFT,expand=1)
+        self.diffleftright.set(80)
         self.CheckPeakDetec = IntVar()
         Checkbutton(frame223,text="Show",variable=self.CheckPeakDetec, 
                            onvalue=1,offvalue=0,height=1, width=3, command = lambda: self.updateXRDgraph(0),fg='black',background='grey').pack(side=tk.LEFT,expand=1)
@@ -613,12 +622,16 @@ class XRDApp(Toplevel):
             newkey=samplename.split('_')[2]+'_'+samplename.split('_')[3]+'_'+samplename.split('_')[4]+'_'+samplename.split('_')[6]
             if newkey not in timeevolgraphDATA.keys():
                 timeevolgraphDATA[newkey]=[[],[]]
-                
+            nopeakfound=1
             for peak in DATA[samplename][4]:
                 if round(peak["Position"],0)==float(self.PeakChoice.get()):
                     timeevolgraphDATA[newkey][1].append(peak[self.ParamChoice.get()])
                     timeevolgraphDATA[newkey][0].append(float(samplename.split('_')[5]))
+                    nopeakfound=0
                     break
+            if nopeakfound:
+                timeevolgraphDATA[newkey][1].append(0)
+                timeevolgraphDATA[newkey][0].append(float(samplename.split('_')[5]))
         
         f = filedialog.asksaveasfilename(defaultextension=".png", filetypes = (("graph file", "*.png"),("All Files", "*.*")))
         
@@ -840,6 +853,16 @@ class XRDApp(Toplevel):
                     else:
                         plt.text(RefPattDATA[item][0][item1],RefPattDATA[item][1][item1],RefPattDATA[item][2][item1],rotation=90,verticalalignment='bottom',horizontalalignment='left',multialignment='center')
 
+        #plot the fits if show is ticked
+        if self.CheckPeakDetec.get():
+#            print("show")
+            if samplestakenforplot!=[]:
+                for item in samplestakenforplot:
+                    if DATA[item][4]!=[]:
+                        for item2 in DATA[item][4]:
+                            self.XRDgraph.plot(item2["xydata"][0],item2["xydata"][1],color='black',linewidth=3)
+                            self.XRDgraph.plot(item2["xydata"][0],item2["xydata"][2],color='black',linewidth=3)
+                            self.XRDgraph.plot(item2["xydata"][3],item2["xydata"][4],color='black',linewidth=3)
         
         #legends and graph styles
         if self.CheckLegend.get()==1:
@@ -1088,7 +1111,7 @@ class XRDApp(Toplevel):
 #                print(len(y))
                 for item1 in range(len(indexes)):
                     tempdat={}
-                    nbofpoints=80#on each side of max position
+                    nbofpoints=self.nbofpoints.get()#on each side of max position
                     appendcheck=0
 #                    print(indexes[item1])
                     if indexes[item1]>nbofpoints:
@@ -1099,14 +1122,14 @@ class XRDApp(Toplevel):
 #                                print(len(y0))
                                 base=list(peakutils.baseline(y0,1))
                                 #baseline height
-                                bhleft=np.mean(y0[:15])
-                                bhright=np.mean(y0[-15:])
+                                bhleft=np.mean(y0[:self.basepoints.get()])
+                                bhright=np.mean(y0[-self.basepoints.get():])
 #                                baselineheightatmaxpeak=(bhleft+bhright)/2
                                 baselineheightatmaxpeak=base[nbofpoints]
     #                            print(baselineheightatmaxpeak)
     #                            print("")
     #                            print(abs(bhleft-bhright))
-                                if abs(bhleft-bhright)<100:#arbitrary choice of criteria...
+                                if abs(bhleft-bhright)<self.diffleftright.get():#arbitrary choice of criteria...
                                     #find FWHM
                                     d=y0-((max(y0)-bhright)/2)
                                     ind=np.where(d>bhright)[0]
@@ -1137,19 +1160,20 @@ class XRDApp(Toplevel):
                                     tempdat["IntBreadth"]=peakarea/Peakheight
                                     tempdat["PeakName"]=''
                                     tempdat["CrystSize"]=self.ScherrerCst.get()*0.1*lambdaXRD/(radians(tempdat["IntBreadth"])*cos(radians(tempdat["Position"]/2)))
+                                    tempdat["xydata"]=[x0,y0, base,[xleftfwhm,xrightfwhm],[yfwhm,yfwhm]]
                                     
                                     appendcheck=1
                                     break
                                 else:
-                                    if nbofpoints>=15:
-                                        nbofpoints-=10
+                                    if nbofpoints>=self.basepoints.get():
+                                        nbofpoints-=5
                                     else:
                                         print("indexerror unsolvable")
                                         print(y[indexes[item1]])
                                         break
                             except IndexError:
-                                if nbofpoints>=15:
-                                    nbofpoints-=10
+                                if nbofpoints>=self.basepoints.get():
+                                    nbofpoints-=5
                                 else:
                                     print("indexerror unsolvable")
                                     break
@@ -1280,7 +1304,7 @@ class XRDApp(Toplevel):
                 tempdat.append(x)#corrected x, set as the original on first importation 2theta
                 tempdat.append(y)#corrected y, set as the original on first importation 
                 tempdat.append([])#peak data, list of dictionaries
-                tempdat.append(['-',colorstylelist[len(DATA.keys())],samplename,int(2)])
+                tempdat.append(['-',colors[len(DATA.keys())],samplename,int(2)])
 
                 DATA[samplename]=tempdat
                 Patternsamplenameslist.append(samplename)
@@ -1294,7 +1318,7 @@ class XRDApp(Toplevel):
                 tempdat.append(x)#corrected x, set as the original on first importation 2theta
                 tempdat.append(y)#corrected y, set as the original on first importation 
                 tempdat.append([])#peak data, list of dictionaries
-                tempdat.append(['-',colorstylelist[len(DATA.keys())],samplename,int(2)])
+                tempdat.append(['-',colors[len(DATA.keys())],samplename,int(2)])
 
                 DATA[samplename]=tempdat
                 Patternsamplenameslist.append(samplename)
@@ -1313,7 +1337,7 @@ class XRDApp(Toplevel):
                 tempdat.append(x)#corrected x, set as the original on first importation 2theta
                 tempdat.append(y)#corrected y, set as the original on first importation 
                 tempdat.append([])#peak data, list of dictionaries
-                tempdat.append(['-',colorstylelist[len(DATA.keys())],samplename,int(2)])
+                tempdat.append(['-',colors[len(DATA.keys())],samplename,int(2)])
                 
                 DATA[samplename]=tempdat
                 Patternsamplenameslist.append(samplename)
@@ -1350,7 +1374,7 @@ class XRDApp(Toplevel):
                         tempdat.append(x)#corrected x, set as the original on first importation
                         tempdat.append(y)#corrected y, set as the original on first importation 
                         tempdat.append([])#peak data, list of dictionaries
-                        tempdat.append(['-',colorstylelist[len(DATA.keys())],samplename+str(i),int(2)])
+                        tempdat.append(['-',colors[len(DATA.keys())],samplename+str(i),int(2)])
                         
                         DATA[samplename+str(i)]=tempdat
                         Patternsamplenameslist.append(samplename+str(i))

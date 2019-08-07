@@ -43,15 +43,11 @@ TODOLIST
 
 - (shift to ref auto)
 
-- !!!show peak fitting!!!
-
 - export as ref file function
 
 - delete entry from list of samples
 
 - add a "cancel last operation" button, that would be a back button if do a mistake and don't want to but complitely back to original
-
-- export with peak fitting visible
 
 - FWHM left and right
 
@@ -70,10 +66,7 @@ theta= peak position/2 in radians
 https://matplotlib.org/3.1.0/tutorials/colors/colormaps.html
 make colormap choice an option for the user: text field
 
-
 - make preview graph for timeevol
-
-- problem of selecting the wrong peak data: use 130C 14deg, it takes 12deg
 
 - load file parameters that sets all entry text to some user-defined values, 
 save param and load param buttons

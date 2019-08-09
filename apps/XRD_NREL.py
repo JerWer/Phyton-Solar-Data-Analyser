@@ -71,6 +71,12 @@ make colormap choice an option for the user: text field
 - load file parameters that sets all entry text to some user-defined values, 
 save param and load param buttons
 
+
+- add square root, log or linear
+
+
+
+
 """
 #%%
 LARGE_FONT= ("Verdana", 12)

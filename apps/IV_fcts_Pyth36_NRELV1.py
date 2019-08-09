@@ -94,7 +94,6 @@ mpp graph:
     problem with legend mod if after importing on loaded session: invalid command name toplevel3.!canvas.!frame.!entry2
     
 
-problem with plotting dark data
 
 """
 #%%############# Global variable definition
@@ -2443,7 +2442,7 @@ class IVApp(Toplevel):
                             try:
                                 IVfig.plot(x,y,label=DATAx[item]["SampleName"],linestyle=IVlinestyle[item1][1],color=IVlinestyle[item1][2],linewidth=IVlinestyle[item1][3])
                                 IVlegendMod.append([DATAx[item]["SampleName"],DATAx[item]["SampleName"]])
-                                IVlinestyle.append([DATAx[item]["SampleName"],"-",colorstylelist[color1],1])
+                                IVlinestyle.append([DATAx[item]["SampleName"],"-",colorstylelist[color1],2])
                             except IndexError:
                                 print("some indexerror... but just continue...")
                     else:
@@ -2468,7 +2467,7 @@ class IVApp(Toplevel):
                         try:
                             IVfig.plot(x,y,label=DATAx[item]["SampleName"],color=colorstylelist[color1])
                             IVlegendMod.append([DATAx[item]["SampleName"],DATAx[item]["SampleName"]])
-                            IVlinestyle.append([DATAx[item]["SampleName"],"-",colorstylelist[color1],1])
+                            IVlinestyle.append([DATAx[item]["SampleName"],"-",colorstylelist[color1],2])
                         except IndexError:
                             print("some indexerror... but just continue...")
                     else:

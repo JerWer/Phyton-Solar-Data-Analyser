@@ -651,20 +651,38 @@ class XRDApp(Toplevel):
                     self.timeEvolfig1.set_ylabel(self.ParamChoice.get())
                     datafortxtexport.append(x)
                     datafortxtexport.append(timeevolgraphDATA[key][1])
+#            else:
+#                if self.xnormalTimeEvol.get()==0:#y is normalized
+#                    y=[(m-min(timeevolgraphDATA[key][1]))/(max(timeevolgraphDATA[key][1])-min(timeevolgraphDATA[key][1])) for m in timeevolgraphDATA[key][1]]
+#                    self.timeEvolfig1.plot(timeevolgraphDATA[key][0],y,label=key)
+#                    self.timeEvolfig1.set_ylabel(self.ParamChoice.get()+" Normalized")
+#                    datafortxtexport.append(timeevolgraphDATA[key][0])
+#                    datafortxtexport.append(y)
+#                else:#y is normalized and time is starting at zero
+#                    x=[item-timeevolgraphDATA[key][0][0] for item in timeevolgraphDATA[key][0]]
+#                    y=[(m-min(timeevolgraphDATA[key][1]))/(max(timeevolgraphDATA[key][1])-min(timeevolgraphDATA[key][1])) for m in timeevolgraphDATA[key][1]]
+#                    self.timeEvolfig1.plot(x,y,label=key)
+#                    self.timeEvolfig1.set_ylabel(self.ParamChoice.get()+" Normalized")
+#                    datafortxtexport.append(x)
+#                    datafortxtexport.append(y)
             else:
                 if self.xnormalTimeEvol.get()==0:#y is normalized
-                    y=[(m-min(timeevolgraphDATA[key][1]))/(max(timeevolgraphDATA[key][1])-min(timeevolgraphDATA[key][1])) for m in timeevolgraphDATA[key][1]]
+                    y=[m/timeevolgraphDATA[key][1][0] for m in timeevolgraphDATA[key][1]]
                     self.timeEvolfig1.plot(timeevolgraphDATA[key][0],y,label=key)
                     self.timeEvolfig1.set_ylabel(self.ParamChoice.get()+" Normalized")
                     datafortxtexport.append(timeevolgraphDATA[key][0])
                     datafortxtexport.append(y)
-                else:#y is normalized and time is starting at zero
-                    x=[item-timeevolgraphDATA[key][0][0] for item in timeevolgraphDATA[key][0]]
-                    y=[(m-min(timeevolgraphDATA[key][1]))/(max(timeevolgraphDATA[key][1])-min(timeevolgraphDATA[key][1])) for m in timeevolgraphDATA[key][1]]
-                    self.timeEvolfig1.plot(x,y,label=key)
-                    self.timeEvolfig1.set_ylabel(self.ParamChoice.get()+" Normalized")
-                    datafortxtexport.append(x)
-                    datafortxtexport.append(y)
+                else:#y is normalized and time is starting at zero 
+                    try:
+                        x=[item-timeevolgraphDATA[key][0][0] for item in timeevolgraphDATA[key][0]]
+                        y=[m/timeevolgraphDATA[key][1][0] for m in timeevolgraphDATA[key][1]]
+                        self.timeEvolfig1.plot(x,y,label=key)
+                        self.timeEvolfig1.set_ylabel(self.ParamChoice.get()+" Normalized")
+                        datafortxtexport.append(x)
+                        datafortxtexport.append(y)
+                    except ZeroDivisionError:
+                        print("ZeroDivisionError")
+                        
             headings[0]+="Time\t"+self.ParamChoice.get()+"\t"
             headings[1]+="\t"+key+"\t"
         headings[0]=headings[0][:-1]+'\n'

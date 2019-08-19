@@ -66,8 +66,6 @@ theta= peak position/2 in radians
 https://matplotlib.org/3.1.0/tutorials/colors/colormaps.html
 make colormap choice an option for the user: text field
 
-- make preview graph for timeevol
-
 - load file parameters that sets all entry text to some user-defined values, 
 save param and load param buttons
 
@@ -336,7 +334,7 @@ class XRDApp(Toplevel):
         self.rescale = tk.DoubleVar()
         Entry(frame213, textvariable=self.rescale,width=3).pack(side=tk.LEFT,fill=tk.X,expand=1)
         self.rescale.set(1000)
-        self.rescaleBut = Button(frame213, text="Rescale to ref",command = self.scaleYtoRef).pack(side=tk.LEFT,expand=1)
+        self.rescaleBut = Button(frame213, text="Rescale",command = self.scaleYtoRef).pack(side=tk.LEFT,expand=1)
         self.backtoOriginalBut = Button(frame213, text="BackToOriginal",command = self.backtoOriginal).pack(side=tk.LEFT,expand=1)
 
         self.showOriginal = IntVar()
@@ -558,11 +556,18 @@ class XRDApp(Toplevel):
         self.TimeGraphwindow2=tk.Toplevel()
         self.TimeGraphwindow2.wm_title("TimeEvolGraph")
         center(self.TimeGraphwindow2)
-        self.TimeGraphwindow2.geometry("300x100")
+        self.TimeGraphwindow2.geometry("500x300")
         self.TimeGraphwindow2.protocol("WM_DELETE_WINDOW", self.on_closingtimeevol)
         
+        frame0=Frame(self.TimeGraphwindow2,borderwidth=0,  bg="white")
+        frame0.pack(fill=tk.BOTH,expand=1)
+        self.timeEvolfig = plt.figure(figsize=(3, 2))
+        canvas = FigureCanvasTkAgg(self.timeEvolfig, frame0)
+        canvas.get_tk_widget().pack(fill=tk.BOTH,expand=1)
+        self.timeEvolfig1 = self.timeEvolfig.add_subplot(111)
+        
         frame1=Frame(self.TimeGraphwindow2,borderwidth=0,  bg="white")
-        frame1.pack(fill=tk.X,expand=1)
+        frame1.pack(fill=tk.X,expand=0)
         
         
         self.PeakChoice=StringVar()
@@ -572,11 +577,11 @@ class XRDApp(Toplevel):
 
         ParamChoiceList = ["FWHM","Intensity","PeakArea","IntBreadth","CrystSize"]
         self.ParamChoice=StringVar()
-        self.ParamChoice.set("Parameters") # default choice
+        self.ParamChoice.set("Intensity") # default choice
         self.dropMenuParam = OptionMenu(frame1, self.ParamChoice, *ParamChoiceList, command=()).pack(side="left",fill=tk.X,expand=1)
 
         frame2=Frame(self.TimeGraphwindow2,borderwidth=0,  bg="white")
-        frame2.pack(fill=tk.BOTH,expand=1)
+        frame2.pack(fill=tk.BOTH,expand=0)
         
         self.ynormalTimeEvol = IntVar()
         Checkbutton(frame2,text="Normalize y",variable=self.ynormalTimeEvol, command = (),
@@ -587,9 +592,10 @@ class XRDApp(Toplevel):
                            onvalue=1,offvalue=0,height=1, width=10, fg='black',background='white').pack(side=tk.LEFT,expand=1)
         self.xnormalTimeEvol.set(0)
         frame3=Frame(self.TimeGraphwindow2,borderwidth=0,  bg="white")
-        frame3.pack(fill=tk.BOTH,expand=1)
+        frame3.pack(fill=tk.BOTH,expand=0)
         tk.Button(frame3, text="Back to samples selection", command = self.backtoTimeEvolGraph).pack(side=tk.LEFT,fill=tk.BOTH,expand=1) 
-        tk.Button(frame3, text="Generate graph", command = self.GenerationTimeEvolGraph).pack(side=tk.LEFT,fill=tk.BOTH,expand=1) 
+        tk.Button(frame3, text="Preview graph", command = self.GenerationTimeEvolGraph).pack(side=tk.LEFT,fill=tk.BOTH,expand=1) 
+        tk.Button(frame3, text="Export", command = self.ExportTimeEvolGraph).pack(side=tk.LEFT,fill=tk.BOTH,expand=1) 
 
     def on_closingtimeevol(self):
         self.TimeGraphwindow2.destroy()
@@ -613,8 +619,16 @@ class XRDApp(Toplevel):
         self.TimeGraphwindow2.destroy()
         self.TimeEvolGraph()
     
+    def ExportTimeEvolGraph(self):
+        f = filedialog.asksaveasfilename(defaultextension=".png", filetypes = (("graph file", "*.png"),("All Files", "*.*")))
+        self.timeEvolfig.savefig(f[:-4]+'.png', dpi=300, transparent=False) 
+        file = open(str(f[:-4]+"_dat.txt"),'w', encoding='ISO-8859-1')
+        file.writelines("%s" % item for item in self.DATAforexport1)
+        file.close()
+    
     def GenerationTimeEvolGraph(self):
         global DATA
+        self.timeEvolfig1.clear()
         
         timeevolgraphDATA={}
         for samplename in self.TimeEvollistofsamplenames:
@@ -632,10 +646,10 @@ class XRDApp(Toplevel):
                 timeevolgraphDATA[newkey][1].append(0)
                 timeevolgraphDATA[newkey][0].append(float(samplename.split('_')[5]))
         
-        f = filedialog.asksaveasfilename(defaultextension=".png", filetypes = (("graph file", "*.png"),("All Files", "*.*")))
+#        f = filedialog.asksaveasfilename(defaultextension=".png", filetypes = (("graph file", "*.png"),("All Files", "*.*")))
         
-        self.timeEvolfig = plt.figure(figsize=(6, 4))
-        self.timeEvolfig1 = self.timeEvolfig.add_subplot(111)  
+#        self.timeEvolfig = plt.figure(figsize=(6, 4))
+#        self.timeEvolfig1 = self.timeEvolfig.add_subplot(111)  
         datafortxtexport=[]
         headings=["",""]
         for key in timeevolgraphDATA:
@@ -690,20 +704,21 @@ class XRDApp(Toplevel):
         self.timeEvolfig1.set_xlabel("Time (minutes)")
         self.timeEvolfig1.legend(ncol=1)
         self.timeEvolfig1.set_title("Peak: ~"+str(self.PeakChoice.get()))
-        self.timeEvolfig.savefig(f[:-4]+'.png', dpi=300, transparent=False) 
+#        self.timeEvolfig.savefig(f[:-4]+'.png', dpi=300, transparent=False) 
         
         #export txt files
         datafortxtexport=map(list, six.moves.zip_longest(*datafortxtexport, fillvalue=' '))
-        DATAforexport1=headings
+        self.DATAforexport1=headings
         for item in datafortxtexport:
             line=""
             for item1 in item:
                 line=line+str(item1)+"\t"
             line=line[:-1]+"\n"
-            DATAforexport1.append(line)
-        file = open(str(f[:-4]+"_dat.txt"),'w', encoding='ISO-8859-1')
-        file.writelines("%s" % item for item in DATAforexport1)
-        file.close() 
+            self.DATAforexport1.append(line)
+#        file = open(str(f[:-4]+"_dat.txt"),'w', encoding='ISO-8859-1')
+#        file.writelines("%s" % item for item in self.DATAforexport1)
+#        file.close() 
+        plt.gcf().canvas.draw()
         
 #%%    
     def UpdateGraph0(self,a):
@@ -1245,6 +1260,9 @@ class XRDApp(Toplevel):
         
         for item in refsamplenameslist:
             self.listboxref.insert(tk.END,item)
+            
+        #should also export this text file in the crystalloData folder, so it's loaded the next time
+        #and ask user to share it with me!
         
     
     def importDATA(self):

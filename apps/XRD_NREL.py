@@ -583,10 +583,20 @@ class XRDApp(Toplevel):
         frame2=Frame(self.TimeGraphwindow2,borderwidth=0,  bg="white")
         frame2.pack(fill=tk.BOTH,expand=0)
         
-        self.ynormalTimeEvol = IntVar()
-        Checkbutton(frame2,text="Normalize y",variable=self.ynormalTimeEvol, command = (),
-                           onvalue=1,offvalue=0,height=1, width=10, fg='black',background='white').pack(side=tk.LEFT,expand=1)
-        self.ynormalTimeEvol.set(0)
+        ynormalChoiceList = ["Original","Normalize y, first","Normalize y, max"]
+        self.ynormalTimeEvol=StringVar()
+        self.ynormalTimeEvol.set("Normalization") # default choice
+        self.dropMenuParam = OptionMenu(frame1, self.ynormalTimeEvol, *ynormalChoiceList, command=()).pack(side="left",fill=tk.X,expand=1)
+
+        
+#        self.ynormalTimeEvol = IntVar()
+#        Checkbutton(frame2,text="Normalize y, first",variable=self.ynormalTimeEvol, command = (),
+#                           onvalue=1,offvalue=0,height=1, width=10, fg='black',background='white').pack(side=tk.LEFT,expand=1)
+#        self.ynormalTimeEvol.set(0)
+#        self.ynormalMaxTimeEvol = IntVar()
+#        Checkbutton(frame2,text="Normalize y, max",variable=self.ynormalMaxTimeEvol, command = (),
+#                           onvalue=1,offvalue=0,height=1, width=10, fg='black',background='white').pack(side=tk.LEFT,expand=1)
+#        self.ynormalMaxTimeEvol.set(0)
         self.xnormalTimeEvol = IntVar()
         Checkbutton(frame2,text="start all x at 0",variable=self.xnormalTimeEvol, command = (),
                            onvalue=1,offvalue=0,height=1, width=10, fg='black',background='white').pack(side=tk.LEFT,expand=1)
@@ -632,19 +642,19 @@ class XRDApp(Toplevel):
         
         timeevolgraphDATA={}
         for samplename in self.TimeEvollistofsamplenames:
-            newkey=samplename.split('_')[2]+'_'+samplename.split('_')[3]+'_'+samplename.split('_')[4]+'_'+samplename.split('_')[6]
+            newkey=samplename.split('_')[2]+'_'+samplename.split('_')[3]+'_'+samplename.split('_')[4]+'_'+samplename.split('_')[5]
             if newkey not in timeevolgraphDATA.keys():
                 timeevolgraphDATA[newkey]=[[],[]]
             nopeakfound=1
             for peak in DATA[samplename][4]:
                 if round(peak["Position"],0)==float(self.PeakChoice.get()):
                     timeevolgraphDATA[newkey][1].append(peak[self.ParamChoice.get()])
-                    timeevolgraphDATA[newkey][0].append(float(samplename.split('_')[5]))
+                    timeevolgraphDATA[newkey][0].append(float(samplename.split('_')[6]))
                     nopeakfound=0
                     break
             if nopeakfound:
                 timeevolgraphDATA[newkey][1].append(0)
-                timeevolgraphDATA[newkey][0].append(float(samplename.split('_')[5]))
+                timeevolgraphDATA[newkey][0].append(float(samplename.split('_')[6]))
         
 #        f = filedialog.asksaveasfilename(defaultextension=".png", filetypes = (("graph file", "*.png"),("All Files", "*.*")))
         
@@ -653,7 +663,7 @@ class XRDApp(Toplevel):
         datafortxtexport=[]
         headings=["",""]
         for key in timeevolgraphDATA:
-            if self.ynormalTimeEvol.get()==0:
+            if self.ynormalTimeEvol.get()=="Original":
                 if self.xnormalTimeEvol.get()==0:#original data
                     self.timeEvolfig1.plot(timeevolgraphDATA[key][0],timeevolgraphDATA[key][1],label=key)
                     self.timeEvolfig1.set_ylabel(self.ParamChoice.get())
@@ -665,25 +675,11 @@ class XRDApp(Toplevel):
                     self.timeEvolfig1.set_ylabel(self.ParamChoice.get())
                     datafortxtexport.append(x)
                     datafortxtexport.append(timeevolgraphDATA[key][1])
-#            else:
-#                if self.xnormalTimeEvol.get()==0:#y is normalized
-#                    y=[(m-min(timeevolgraphDATA[key][1]))/(max(timeevolgraphDATA[key][1])-min(timeevolgraphDATA[key][1])) for m in timeevolgraphDATA[key][1]]
-#                    self.timeEvolfig1.plot(timeevolgraphDATA[key][0],y,label=key)
-#                    self.timeEvolfig1.set_ylabel(self.ParamChoice.get()+" Normalized")
-#                    datafortxtexport.append(timeevolgraphDATA[key][0])
-#                    datafortxtexport.append(y)
-#                else:#y is normalized and time is starting at zero
-#                    x=[item-timeevolgraphDATA[key][0][0] for item in timeevolgraphDATA[key][0]]
-#                    y=[(m-min(timeevolgraphDATA[key][1]))/(max(timeevolgraphDATA[key][1])-min(timeevolgraphDATA[key][1])) for m in timeevolgraphDATA[key][1]]
-#                    self.timeEvolfig1.plot(x,y,label=key)
-#                    self.timeEvolfig1.set_ylabel(self.ParamChoice.get()+" Normalized")
-#                    datafortxtexport.append(x)
-#                    datafortxtexport.append(y)
-            else:
+            elif self.ynormalTimeEvol.get()=="Normalize y, first":
                 if self.xnormalTimeEvol.get()==0:#y is normalized
                     y=[m/timeevolgraphDATA[key][1][0] for m in timeevolgraphDATA[key][1]]
                     self.timeEvolfig1.plot(timeevolgraphDATA[key][0],y,label=key)
-                    self.timeEvolfig1.set_ylabel(self.ParamChoice.get()+" Normalized")
+                    self.timeEvolfig1.set_ylabel(self.ParamChoice.get()+" NormalizedFirst")
                     datafortxtexport.append(timeevolgraphDATA[key][0])
                     datafortxtexport.append(y)
                 else:#y is normalized and time is starting at zero 
@@ -691,11 +687,26 @@ class XRDApp(Toplevel):
                         x=[item-timeevolgraphDATA[key][0][0] for item in timeevolgraphDATA[key][0]]
                         y=[m/timeevolgraphDATA[key][1][0] for m in timeevolgraphDATA[key][1]]
                         self.timeEvolfig1.plot(x,y,label=key)
-                        self.timeEvolfig1.set_ylabel(self.ParamChoice.get()+" Normalized")
+                        self.timeEvolfig1.set_ylabel(self.ParamChoice.get()+" NormalizedFirst")
                         datafortxtexport.append(x)
                         datafortxtexport.append(y)
                     except ZeroDivisionError:
                         print("ZeroDivisionError")
+            elif self.ynormalTimeEvol.get()=="Normalize y, max":
+                if self.xnormalTimeEvol.get()==0:#y is normalized
+                    y=[m/max(timeevolgraphDATA[key][1]) for m in timeevolgraphDATA[key][1]]
+                    self.timeEvolfig1.plot(timeevolgraphDATA[key][0],y,label=key)
+                    self.timeEvolfig1.set_ylabel(self.ParamChoice.get()+" NormalizedMax")
+                    datafortxtexport.append(timeevolgraphDATA[key][0])
+                    datafortxtexport.append(y)
+                else:#y is normalized and time is starting at zero
+                    x=[item-timeevolgraphDATA[key][0][0] for item in timeevolgraphDATA[key][0]]
+                    y=[m/max(timeevolgraphDATA[key][1]) for m in timeevolgraphDATA[key][1]]
+                    self.timeEvolfig1.plot(x,y,label=key)
+                    self.timeEvolfig1.set_ylabel(self.ParamChoice.get()+" NormalizedMax")
+                    datafortxtexport.append(x)
+                    datafortxtexport.append(y)
+               
                         
             headings[0]+="Time\t"+self.ParamChoice.get()+"\t"
             headings[1]+="\t"+key+"\t"
@@ -1392,7 +1403,7 @@ class XRDApp(Toplevel):
                 if len(samplename.split('_'))==7:
                     tempdat.append('itsatimeevoldata')
                     #[batch#,sample#,temperature,time,position,nametemp,nametemppos]
-                    tempdat.append([samplename.split('_')[2],samplename.split('_')[3],samplename.split('_')[4],float(samplename.split('_')[5]),samplename.split('_')[6],samplename.split('_')[2]+'_'+samplename.split('_')[3]+'_'+samplename.split('_')[4],samplename.split('_')[2]+'_'+samplename.split('_')[3]+'_'+samplename.split('_')[4]+'_'+samplename.split('_')[6]])
+                    tempdat.append([samplename.split('_')[2],samplename.split('_')[3],samplename.split('_')[4],float(samplename.split('_')[6]),samplename.split('_')[5],samplename.split('_')[2]+'_'+samplename.split('_')[3]+'_'+samplename.split('_')[4],samplename.split('_')[2]+'_'+samplename.split('_')[3]+'_'+samplename.split('_')[4]+'_'+samplename.split('_')[5]])
 
                 DATA[samplename]=tempdat
                 Patternsamplenameslist.append(samplename)

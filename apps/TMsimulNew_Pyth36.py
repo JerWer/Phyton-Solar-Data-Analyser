@@ -18,6 +18,9 @@ still to be added:
     
 add current of absorber on graph after simulation
 
+make import of nk files compatible with excel files of pvlighthouse
+
+
 """
 #%%
 import os

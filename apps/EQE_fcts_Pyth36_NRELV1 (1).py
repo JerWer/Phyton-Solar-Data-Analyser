@@ -74,13 +74,7 @@ this would give a generation-collection efficiency in the active absorber layer 
 https://www.osti.gov/pages/servlets/purl/1357744
 
 
-- remove spikes in curve
-
-- import EQE files from III-V station
-extract EQE and IQE, calculate Reflectance,
-ignore all other columns: so select only the one with _EQE or _IQE,
-file can contain several measurements
-
+- stiching option for EQEC215
 
 """
 #%%
@@ -130,7 +124,7 @@ listoflinestyle=[]
 listofcolorstyle=[]
 listoflinewidthstyle=[]
 colorstylelist = ['black', 'red', 'blue', 'brown', 'green','cyan','magenta','olive','navy','orange','gray','aliceblue','antiquewhite','aqua','aquamarine','azure','beige','bisque','blanchedalmond','blue','blueviolet','brown','burlywood','cadetblue','chartreuse','chocolate','coral','cornflowerblue','cornsilk','crimson','darkblue','darkcyan','darkgoldenrod','darkgray','darkgreen','darkkhaki','darkmagenta','darkolivegreen','darkorange','darkorchid','darkred','darksalmon','darkseagreen','darkslateblue','darkslategray','darkturquoise','darkviolet','deeppink','deepskyblue','dimgray','dodgerblue','firebrick','floralwhite','forestgreen','fuchsia','gainsboro','ghostwhite','gold','goldenrod','greenyellow','honeydew','hotpink','indianred','indigo','ivory','khaki','lavender','lavenderblush','lawngreen','lemonchiffon','lightblue','lightcoral','lightcyan','lightgoldenrodyellow','lightgreen','lightgray','lightpink','lightsalmon','lightseagreen','lightskyblue','lightslategray','lightsteelblue','lightyellow','lime','limegreen','linen','magenta','maroon','mediumaquamarine','mediumblue','mediumorchid','mediumpurple','mediumseagreen','mediumslateblue','mediumspringgreen','mediumturquoise','mediumvioletred','midnightblue','mintcream','mistyrose','moccasin','navajowhite','navy','oldlace','olive','olivedrab','orange','orangered','orchid','palegoldenrod','palegreen','paleturquoise','palevioletred','papayawhip','peachpuff','peru','pink','plum','powderblue','purple','red','rosybrown','royalblue','saddlebrown','salmon','sandybrown','seagreen','seashell','sienna','silver','skyblue','slateblue','slategray','snow','springgreen','steelblue','tan','teal','thistle','tomato','turquoise','violet','wheat','white','whitesmoke','yellow','yellowgreen']
-stitching=0
+
 
 #%%###############################################################################             
     
@@ -410,13 +404,9 @@ class EQEApp(Toplevel):
     #%%###########        
     def GetEQEDATA(self):
         global DATAFORGRAPH
-        global colorstylelist,firstimport,stitching
+        global colorstylelist,firstimport
         
-        if stitching==0:
-            file_path = filedialog.askopenfilenames()
-        else:
-            file_path=[stitching]
-            stitching=0
+        file_path = filedialog.askopenfilenames()
 #        print(file_path[0])
 #        print(modification_date(file_path[0]))
 #        
@@ -608,291 +598,143 @@ class EQEApp(Toplevel):
     #                        print("some error with m>k in Spline...")
                         DATA.append(datadict)
             elif os.path.splitext(file_path[k])[1]==".txt":
+                samplename=file_path[k].replace('\\','/') 
+                samplename=samplename.split('/')[-1].replace('-','_').split('.')[0]
+#                print(samplename)
+#                AllNames.append(samplename)
+                batchnumb=samplename.split('_')[0]
+                samplenumb=samplename.split('_')[1]
                 
                 file = open(file_path[k], encoding='ISO-8859-1')
                 filedat = file.readlines()
                 file.close()
-                if filedat[1].split('\t')[0]!='':
-                    samplename=file_path[k].replace('\\','/') 
-                    samplename=samplename.split('/')[-1].replace('-','_').split('.')[0]
-    #                print(samplename)
-    #                AllNames.append(samplename)
-                    batchnumb=samplename.split('_')[0]
-                    samplenumb=samplename.split('_')[1]
-                    
-                    
-                    datetime=modification_date(file_path[k])
-                    datadict = {'dateTime': datetime, 'filepath':file_path[k],'Name': samplename,'Jsc':[],'Eg':[],
-                                        'EgTauc':[],'lnDat':[],'EgLn':[],'EuLn':[],'stderrEgLn':[],'NbColumn':999, 
-                                        'DATA': [],'tangent': [],'tangentLn': [], 'comment': "", 'Vbias':[],'filterbias':[],'ledbias':[],
-                                        'batchnumb': batchnumb, 'samplenumb': samplenumb}   
-                    
-                    
-                    datadict['DATA']=[[],[]]
-                    for item in filedat:
-                        datadict['DATA'][0].append(float(item.split('\t')[0]))
-                        datadict['DATA'][1].append(float(item.split('\t')[1]))
-                    
-                    m=list(zip(*sorted(zip(datadict['DATA'][0],datadict['DATA'][1]), key=lambda pair: pair[0])))
-                    
-                    datadict['DATA'][0]=list(m[0])
-                    datadict['DATA'][1]=list(m[1])
-                    x=datadict['DATA'][0]
-                    y=datadict['DATA'][1]
-                    spl = UnivariateSpline(x, y, s=0)
-                    f = interp1d(x, y, kind='cubic')
-                    x2 = lambda x0: self.AM15GParticlesinnm(x0)*f(x0)
-                    integral = echarge/10*integrate.quad(x2,datadict['DATA'][0][0],datadict['DATA'][0][-1])[0]
-                    datadict['Jsc'].append(integral)
-                    if integrationJscYes:
-                        datadict['integJsclist']=[datadict['DATA'][0]]
-                    else:
-                        datadict['integJsclist']=[[]]
-                    integlist=[]
-                    if integrationJscYes:
-                        for item in x:
-                            integral = echarge/10*integrate.quad(x2,datadict['DATA'][0][0],item)[0]
-                            integlist.append(integral)
-                    datadict['integJsclist'].append(integlist)
-                                  
-                    #Eg calculation from linear normal curve
+                datetime=modification_date(file_path[k])
+                datadict = {'dateTime': datetime, 'filepath':file_path[k],'Name': samplename,'Jsc':[],'Eg':[],
+                                    'EgTauc':[],'lnDat':[],'EgLn':[],'EuLn':[],'stderrEgLn':[],'NbColumn':999, 
+                                    'DATA': [],'tangent': [],'tangentLn': [], 'comment': "", 'Vbias':[],'filterbias':[],'ledbias':[],
+                                    'batchnumb': batchnumb, 'samplenumb': samplenumb}   
+                
+                
+                datadict['DATA']=[[],[]]
+                for item in filedat:
+                    datadict['DATA'][0].append(float(item.split('\t')[0]))
+                    datadict['DATA'][1].append(float(item.split('\t')[1]))
+                
+                m=list(zip(*sorted(zip(datadict['DATA'][0],datadict['DATA'][1]), key=lambda pair: pair[0])))
+                
+                datadict['DATA'][0]=list(m[0])
+                datadict['DATA'][1]=list(m[1])
+                x=datadict['DATA'][0]
+                y=datadict['DATA'][1]
+#                print(x)
+                spl = UnivariateSpline(x, y, s=0)
+                f = interp1d(x, y, kind='cubic')
+                x2 = lambda x0: self.AM15GParticlesinnm(x0)*f(x0)
+                integral = echarge/10*integrate.quad(x2,datadict['DATA'][0][0],datadict['DATA'][0][-1])[0]
+                datadict['Jsc'].append(integral)
+                if integrationJscYes:
+                    datadict['integJsclist']=[datadict['DATA'][0]]
+                else:
+                    datadict['integJsclist']=[[]]
+                integlist=[]
+                if integrationJscYes:
+                    for item in x:
+                        integral = echarge/10*integrate.quad(x2,datadict['DATA'][0][0],item)[0]
+                        integlist.append(integral)
+                datadict['integJsclist'].append(integlist)
+                              
+                #Eg calculation from linear normal curve
+                splder = spl.derivative(n=1)
+                splderlist = []
+                newx=[]
+                for item in x :
+                    if item >400:
+                        splderlist.append(splder(item))
+                        newx.append(item)
+                minder=splderlist.index(min(splderlist))
+                xhighslope = newx[minder]
+                yhighslope = spl(newx[minder]).tolist()
+                yprimehighslope = splder(newx[minder]).tolist()
+                Eg= 1239.8/(xhighslope - yhighslope/yprimehighslope)
+                datadict['Eg'].append(Eg)
+                datadict['tangent'].append([yprimehighslope, yhighslope-yprimehighslope*xhighslope])#[pente,ordonnee a l'origine]
+    
+                #Eg calculation from ln(EQE) curve
+                xE=[]
+                yln=[]
+                for xi in range(len(x)):
+                    if y[xi]>0:
+                        xE.append(1239.8/x[xi])
+                        yln.append(math.log(100*y[xi]))
+
+                datadict['lnDat'].append([xE,yln])
+                
+                xErestricted=[]
+                ylnrestricted=[]
+                
+                for xi in range(len(xE)-1,-1,-1):
+                    if yln[xi]<3 and yln[xi]>-2:
+                        xErestricted.append(xE[xi])
+                        ylnrestricted.append(yln[xi])
+                xErestricted.append(999)
+                ylnrestricted.append(999)
+                xErestricted2=[]
+                ylnrestricted2=[]
+                for xi in range(len(xErestricted)-1):
+                    xErestricted2.append(xErestricted[xi])
+                    ylnrestricted2.append(ylnrestricted[xi])
+                    if abs(xErestricted[xi]-xErestricted[xi+1])>0.3:
+                        break
+                if len(xErestricted2)>1:
+                    slope, intercept, r_value, p_value, std_err = stats.linregress(xErestricted2,ylnrestricted2)
+                                                    
+                    datadict['EgLn'].append(-intercept/slope)
+                    datadict['EuLn'].append(1000/slope)#Eu calculation from ln(EQE) curve slope at band edge
+                    datadict['tangentLn'].append([slope, intercept,xErestricted2,ylnrestricted2])#[pente,ordonnee a l'origine]
+                    datadict['stderrEgLn'].append([std_err,len(xErestricted2)])
+                else:
+                    print("EgLn not found enough points...")
+                    datadict['EgLn'].append(999)
+                    datadict['EuLn'].append(999)#Eu calculation from ln(EQE) curve slope at band edge
+                    datadict['tangentLn'].append([999, 999,[999],[999]])#[pente,ordonnee a l'origine]
+                    datadict['stderrEgLn'].append([999,999])
+                
+                #Tauc plots
+                try:
+                    xtauc=[1239.8/xm for xm in x]
+                    ytauc=[((math.log(1-y[m]))**2)*(xtauc[m]**2) for m in range(len(y)) ]
+                    xtauc=xtauc[::-1]
+                    ytauc=ytauc[::-1]
+                    spl = UnivariateSpline(xtauc, ytauc, s=0)
                     splder = spl.derivative(n=1)
                     splderlist = []
                     newx=[]
-                    for item in x :
-                        if item >400:
+                    for item in xtauc :
+                        if item <2:
                             splderlist.append(splder(item))
                             newx.append(item)
-                    minder=splderlist.index(min(splderlist))
-                    xhighslope = newx[minder]
-                    yhighslope = spl(newx[minder]).tolist()
-                    yprimehighslope = splder(newx[minder]).tolist()
-                    Eg= 1239.8/(xhighslope - yhighslope/yprimehighslope)
-                    datadict['Eg'].append(Eg)
-                    datadict['tangent'].append([yprimehighslope, yhighslope-yprimehighslope*xhighslope])#[pente,ordonnee a l'origine]
-        
-                    #Eg calculation from ln(EQE) curve
-                    xE=[]
-                    yln=[]
-                    for xi in range(len(x)):
-                        if y[xi]>0:
-                            xE.append(1239.8/x[xi])
-                            yln.append(math.log(100*y[xi]))
-    
-                    datadict['lnDat'].append([xE,yln])
                     
-                    xErestricted=[]
-                    ylnrestricted=[]
+                    maxder=splderlist.index(max(splderlist))
+                    xhighslope = newx[maxder]
+                    yhighslope = spl(newx[maxder]).tolist()
+                    yprimehighslope = splder(newx[maxder]).tolist()
+                    Eg= (xhighslope - yhighslope/yprimehighslope)
                     
-                    for xi in range(len(xE)-1,-1,-1):
-                        if yln[xi]<3 and yln[xi]>-2:
-                            xErestricted.append(xE[xi])
-                            ylnrestricted.append(yln[xi])
-                    xErestricted.append(999)
-                    ylnrestricted.append(999)
-                    xErestricted2=[]
-                    ylnrestricted2=[]
-                    for xi in range(len(xErestricted)-1):
-                        xErestricted2.append(xErestricted[xi])
-                        ylnrestricted2.append(ylnrestricted[xi])
-                        if abs(xErestricted[xi]-xErestricted[xi+1])>0.3:
-                            break
-                    if len(xErestricted2)>1:
-                        slope, intercept, r_value, p_value, std_err = stats.linregress(xErestricted2,ylnrestricted2)
-                                                        
-                        datadict['EgLn'].append(-intercept/slope)
-                        datadict['EuLn'].append(1000/slope)#Eu calculation from ln(EQE) curve slope at band edge
-                        datadict['tangentLn'].append([slope, intercept,xErestricted2,ylnrestricted2])#[pente,ordonnee a l'origine]
-                        datadict['stderrEgLn'].append([std_err,len(xErestricted2)])
-                    else:
-                        print("EgLn not found enough points...")
-                        datadict['EgLn'].append(999)
-                        datadict['EuLn'].append(999)#Eu calculation from ln(EQE) curve slope at band edge
-                        datadict['tangentLn'].append([999, 999,[999],[999]])#[pente,ordonnee a l'origine]
-                        datadict['stderrEgLn'].append([999,999])
-                    
-                    #Tauc plots
-                    try:
-                        xtauc=[1239.8/xm for xm in x]
-                        ytauc=[((math.log(1-y[m]))**2)*(xtauc[m]**2) for m in range(len(y)) ]
-                        xtauc=xtauc[::-1]
-                        ytauc=ytauc[::-1]
-                        spl = UnivariateSpline(xtauc, ytauc, s=0)
-                        splder = spl.derivative(n=1)
-                        splderlist = []
-                        newx=[]
-                        for item in xtauc :
-                            if item <2:
-                                splderlist.append(splder(item))
-                                newx.append(item)
-                        
-                        maxder=splderlist.index(max(splderlist))
-                        xhighslope = newx[maxder]
-                        yhighslope = spl(newx[maxder]).tolist()
-                        yprimehighslope = splder(newx[maxder]).tolist()
-                        Eg= (xhighslope - yhighslope/yprimehighslope)
-                        
-                        m=yprimehighslope
-                        h=yhighslope-yprimehighslope*xhighslope
-                        x2=Eg
-                        x=np.linspace(x2,x2+0.1,10)
-                        y=eval('m*x+h')
-                        datadict['EgTauc'].append([Eg,xtauc,ytauc,m,h])
-                    except:
-                        datadict['EgTauc'].append([999,[],[],999,999])
-                                        
-                    datadict['Vbias'].append('')
-                    datadict['filterbias'].append('')
-                    datadict['ledbias'].append('')
-                    
-                    
-                    DATA.append(datadict)
-                else:#for III-V EQE setup NREL
-                    print('EQEiii-v')
-                    firstline=filedat[0].split('\t')
-                    columnsofEQE=[]
-                    columnsofIQE=[]
-                    for item in range(len(firstline)):
-                        if 'EQE' in firstline[item]:
-                            columnsofEQE.append(item)
-                        elif 'IQE' in firstline[item]:
-                            columnsofIQE.append(item)
-                    
-                    #select EQE&IQE meas
-                    for indexEQE in columnsofEQE+columnsofIQE:
-                        samplename=firstline[indexEQE]
-                        samplename=samplename.split('/')[-1].replace('-','_').split('.')[0]
-                        
-                        datetime=modification_date(file_path[k])
-                        datadict = {'dateTime': datetime, 'filepath':file_path[k],'Name': samplename,'Jsc':[],'Eg':[],
-                                        'EgTauc':[],'lnDat':[],'EgLn':[],'EuLn':[],'stderrEgLn':[],'NbColumn':999, 
-                                        'DATA': [],'tangent': [],'tangentLn': [], 'comment': "", 'Vbias':[],'filterbias':[],'ledbias':[],
-                                        'batchnumb': '', 'samplenumb': ''}   
-                        datadict['DATA']=[[],[]]
-                        for row in range(1,len(filedat)):
-                            if filedat[row].split('\t')[indexEQE+1]!='':
-                                datadict['DATA'][0].append(float(filedat[row].split('\t')[indexEQE+1]))
-                                datadict['DATA'][1].append(float(filedat[row].split('\t')[indexEQE+2]))
-
-                        m=list(zip(*sorted(zip(datadict['DATA'][0],datadict['DATA'][1]), key=lambda pair: pair[0])))
+                    m=yprimehighslope
+                    h=yhighslope-yprimehighslope*xhighslope
+                    x2=Eg
+                    x=np.linspace(x2,x2+0.1,10)
+                    y=eval('m*x+h')
+                    datadict['EgTauc'].append([Eg,xtauc,ytauc,m,h])
+                except:
+                    datadict['EgTauc'].append([999,[],[],999,999])
+                                    
+                datadict['Vbias'].append('')
+                datadict['filterbias'].append('')
+                datadict['ledbias'].append('')
                 
-                        datadict['DATA'][0]=list(m[0])
-                        datadict['DATA'][1]=list(m[1])
-                        x=datadict['DATA'][0]
-                        y=datadict['DATA'][1]
-                        spl = UnivariateSpline(x, y, s=0)
-                        f = interp1d(x, y, kind='cubic')
-                        x2 = lambda x0: self.AM15GParticlesinnm(x0)*f(x0)
-                        integral = echarge/10*integrate.quad(x2,datadict['DATA'][0][0],datadict['DATA'][0][-1])[0]
-                        datadict['Jsc'].append(integral)
-                        if integrationJscYes:
-                            datadict['integJsclist']=[datadict['DATA'][0]]
-                        else:
-                            datadict['integJsclist']=[[]]
-                        integlist=[]
-                        if integrationJscYes:
-                            for item in x:
-                                integral = echarge/10*integrate.quad(x2,datadict['DATA'][0][0],item)[0]
-                                integlist.append(integral)
-                        datadict['integJsclist'].append(integlist)
-                                      
-                        #Eg calculation from linear normal curve
-                        splder = spl.derivative(n=1)
-                        splderlist = []
-                        newx=[]
-                        for item in x :
-                            if item >400:
-                                splderlist.append(splder(item))
-                                newx.append(item)
-                        minder=splderlist.index(min(splderlist))
-                        xhighslope = newx[minder]
-                        yhighslope = spl(newx[minder]).tolist()
-                        yprimehighslope = splder(newx[minder]).tolist()
-                        Eg= 1239.8/(xhighslope - yhighslope/yprimehighslope)
-                        datadict['Eg'].append(Eg)
-                        datadict['tangent'].append([yprimehighslope, yhighslope-yprimehighslope*xhighslope])#[pente,ordonnee a l'origine]
-            
-                        #Eg calculation from ln(EQE) curve
-                        xE=[]
-                        yln=[]
-                        for xi in range(len(x)):
-                            if y[xi]>0:
-                                xE.append(1239.8/x[xi])
-                                yln.append(math.log(100*y[xi]))
-        
-                        datadict['lnDat'].append([xE,yln])
-                        
-                        xErestricted=[]
-                        ylnrestricted=[]
-                        
-                        for xi in range(len(xE)-1,-1,-1):
-                            if yln[xi]<3 and yln[xi]>-2:
-                                xErestricted.append(xE[xi])
-                                ylnrestricted.append(yln[xi])
-                        xErestricted.append(999)
-                        ylnrestricted.append(999)
-                        xErestricted2=[]
-                        ylnrestricted2=[]
-                        for xi in range(len(xErestricted)-1):
-                            xErestricted2.append(xErestricted[xi])
-                            ylnrestricted2.append(ylnrestricted[xi])
-                            if abs(xErestricted[xi]-xErestricted[xi+1])>0.3:
-                                break
-                        if len(xErestricted2)>1:
-                            slope, intercept, r_value, p_value, std_err = stats.linregress(xErestricted2,ylnrestricted2)
-                                                            
-                            datadict['EgLn'].append(-intercept/slope)
-                            datadict['EuLn'].append(1000/slope)#Eu calculation from ln(EQE) curve slope at band edge
-                            datadict['tangentLn'].append([slope, intercept,xErestricted2,ylnrestricted2])#[pente,ordonnee a l'origine]
-                            datadict['stderrEgLn'].append([std_err,len(xErestricted2)])
-                        else:
-                            print("EgLn not found enough points...")
-                            datadict['EgLn'].append(999)
-                            datadict['EuLn'].append(999)#Eu calculation from ln(EQE) curve slope at band edge
-                            datadict['tangentLn'].append([999, 999,[999],[999]])#[pente,ordonnee a l'origine]
-                            datadict['stderrEgLn'].append([999,999])
-                        
-                        #Tauc plots
-                        try:
-                            xtauc=[1239.8/xm for xm in x]
-                            ytauc=[((math.log(1-y[m]))**2)*(xtauc[m]**2) for m in range(len(y)) ]
-                            xtauc=xtauc[::-1]
-                            ytauc=ytauc[::-1]
-                            spl = UnivariateSpline(xtauc, ytauc, s=0)
-                            splder = spl.derivative(n=1)
-                            splderlist = []
-                            newx=[]
-                            for item in xtauc :
-                                if item <2:
-                                    splderlist.append(splder(item))
-                                    newx.append(item)
-                            
-                            maxder=splderlist.index(max(splderlist))
-                            xhighslope = newx[maxder]
-                            yhighslope = spl(newx[maxder]).tolist()
-                            yprimehighslope = splder(newx[maxder]).tolist()
-                            Eg= (xhighslope - yhighslope/yprimehighslope)
-                            
-                            m=yprimehighslope
-                            h=yhighslope-yprimehighslope*xhighslope
-                            x2=Eg
-                            x=np.linspace(x2,x2+0.1,10)
-                            y=eval('m*x+h')
-                            datadict['EgTauc'].append([Eg,xtauc,ytauc,m,h])
-                        except:
-                            datadict['EgTauc'].append([999,[],[],999,999])
-                                            
-                        datadict['Vbias'].append('')
-                        datadict['filterbias'].append('')
-                        datadict['ledbias'].append('')
-                        
-                        
-                        DATA.append(datadict)
-                        
-                    #calculate reflectance meas
-                    #search in DATA for same name having both EQE and IQE
-                    
-                    
+                
+                DATA.append(datadict)
             
             elif os.path.splitext(file_path[k])[1]=='': #file from NREL S&TF 136
 #                print(os.path.splitext(file_path[k])[1])
@@ -2169,60 +2011,9 @@ class EQEApp(Toplevel):
     def StitchEQE(self):
         print("stitching")
         global takenforplot
-        global DATAFORGRAPH, stitching
-        
-        DATAx=DATAFORGRAPH
-        sampletotake=takenforplot
-        
-        newDatlistx=[]
-        newDatlisty=[]
-        
-        for i in range(len(sampletotake)):
-#            newDatlistx.append(DATAx[sampletotake[i]][2])
-#            newDatlisty.append(DATAx[sampletotake[i]][3])
-            newDatlistx+=DATAx[sampletotake[i]][2]
-            newDatlisty+=DATAx[sampletotake[i]][3]
-        overlapx=Repeat(newDatlistx)
-#        print(overlapx)
-        newx=[]
-        newy=[]
-        seen=[]
-        for item in range(len(newDatlistx)):
-            if newDatlistx[item] not in overlapx[0]:
-                newx.append(newDatlistx[item])
-                newy.append(newDatlisty[item])
-            elif newDatlistx[item] in overlapx[0] and newDatlistx[item] not in seen:
-                newx.append(newDatlistx[item])
-                seen.append(newDatlistx[item])
-                indexlist=overlapx[0].index(newDatlistx[item])
-                newy.append((newDatlisty[overlapx[1][indexlist][0]]+newDatlisty[overlapx[1][indexlist][1]])/2)
-
-        #export txt file with new data where the original file was imported from
-        datexport=[]
-        for i in range(len(newx)):
-            datexport.append(str(newx[i])+'\t'+str(newy[i])+'\n')
-        stitching = filedialog.asksaveasfilename(defaultextension=".txt")
-
-        file = open(stitching,'w', encoding='ISO-8859-1')
-        file.writelines("%s" % item for item in datexport)
-        file.close()
-        #reimport that file with import function
-        self.onOpenEQE()
         
         
         
-def Repeat(x): 
-    _size = len(x) 
-    repeated = [] 
-    repindices=[]
-    for i in range(_size): 
-        k = i + 1
-        for j in range(k, _size): 
-            if x[i] == x[j] and x[i] not in repeated: 
-                repeated.append(x[i]) 
-                repindices.append([i,j])
-                
-    return [repeated, repindices]
         
         
 #%%#############         

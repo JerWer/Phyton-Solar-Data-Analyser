@@ -18,8 +18,6 @@ still to be added:
     
 add current of absorber on graph after simulation
 
-make import of nk files compatible with excel files of pvlighthouse
-
 
 """
 #%%
@@ -41,6 +39,7 @@ import copy
 import csv
 import tmm.tmm_core as tm
 import pickle
+import math
 
 
 admittance0=2.6544E-3
@@ -153,17 +152,49 @@ def scatdatas(graph1,*nextgraphs):
 def importindex2(filename):
     index=[[],[],[],[]]
     if filename.split('.')[1]=="csv":
-        with open(filename, 'rt', encoding='ISO-8859-1') as csvfile:
-            spamreader = csv.reader(csvfile, delimiter=',', quotechar="'")
-            iterdata=iter(spamreader)
-            next(iterdata)
-            for row in iterdata:
-                index[0].append(float(row[0]))#wavelength
-                index[1].append(float(row[1])+1j*float(row[2]))#complex notation n+ik
-                index[2].append(float(row[1]))#n
-                index[3].append(float(row[2]))#k
-        return index
-    elif item.split('.')[1]=="txt":
+        if 'nk_' in filename:
+            with open(filename, 'rt', encoding='ISO-8859-1') as csvfile:
+                spamreader = csv.reader(csvfile, delimiter=',', quotechar="'")
+                iterdata=iter(spamreader)
+                next(iterdata)
+                for row in iterdata:
+                    index[0].append(float(row[0]))#wavelength
+                    index[1].append(float(row[1])+1j*float(row[2]))#complex notation n+ik
+                    index[2].append(float(row[1]))#n
+                    index[3].append(float(row[2]))#k
+            return index
+        elif 'pvlighthouse' in filename:
+            #get boundary conditions: largest of both x columns first value, smallest of both x columns last value
+            #interpolate both n and k, with smallest step size of both columns
+            #put in index 
+            csvdata=[[],[],[],[]]
+            with open(filename, 'rt', encoding='ISO-8859-1') as csvfile:
+                spamreader = csv.reader(csvfile, delimiter=',', quotechar="'")
+                iterdata=iter(spamreader)
+                next(iterdata)
+                for row in iterdata:
+                    if row[0]!='':
+                        csvdata[0].append(float(row[0]))
+                    if row[1]!='':
+                        csvdata[1].append(float(row[1]))
+                    if row[2]!='':
+                        csvdata[2].append(float(row[2]))
+                    if row[3]!='':
+                        csvdata[3].append(float(row[3]))
+            
+            xmin=max([min(csvdata[0]),min(csvdata[2])])
+            xmax=min([max(csvdata[0]),max(csvdata[2])])
+            stepsize=min([t - s for s, t in zip(csvdata[0], csvdata[0][1:])]+[t - s for s, t in zip(csvdata[2], csvdata[2][1:])])
+            fn=interp1d(csvdata[0],csvdata[1], kind='cubic')
+            fk=interp1d(csvdata[2],csvdata[3], kind='cubic')
+            for i in range(int(math.ceil(xmin)),int(round(xmax)),int(stepsize)):
+                index[0].append(i)#wavelength
+                index[1].append(fn(i)+1j*fk(i))#complex notation n+ik
+                index[2].append(fn(i))#n
+                index[3].append(fk(i))#k
+            return index
+            
+    elif filename.split('.')[1]=="txt":
         filetoread = open(filename,"r", encoding='ISO-8859-1')
         filerawdata = filetoread.readlines()
         for row in filerawdata:
@@ -173,7 +204,7 @@ def importindex2(filename):
                 index[2].append(float(row.split("\t")[1]))#n
                 index[3].append(float(row.split("\t")[2]))#k
         return index
-    elif item.split('.')[1]=="nk":
+    elif filename.split('.')[1]=="nk":
         filetoread = open(filename,"r", encoding='ISO-8859-1')
         filerawdata = filetoread.readlines()
         for row in filerawdata:
@@ -506,10 +537,18 @@ material_list={}
 material_list_dat={}
 for item in matlist:
     if item.split('.')[1]=="csv":
-        name=item.split('_')[1].split('.')[0]
-        matnamelist.append(name)
-        material_list[name]=material(name,importindex2(item))
-        material_list_dat[name]=importindex2(item)
+        if 'nk_' in item:
+            name=item.split('_')[1].split('.')[0]
+            matnamelist.append(name)
+            indeximported=importindex2(item)
+            material_list[name]=material(name,indeximported)
+            material_list_dat[name]=indeximported
+        elif 'pvlighthouse' in item:    
+            name='pvlh_'+item.split('_')[1].split('.')[0]
+            matnamelist.append(name)
+            indeximported=importindex2(item)
+            material_list[name]=material(name,indeximported)
+            material_list_dat[name]=indeximported
     elif item.split('.')[1]=="txt":
         if "interpolated" not in item:
             name=item.split('.')[0]

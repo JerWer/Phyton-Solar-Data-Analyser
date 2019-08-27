@@ -76,10 +76,7 @@ https://www.osti.gov/pages/servlets/purl/1357744
 
 - remove spikes in curve
 
-- import EQE files from III-V station
-extract EQE and IQE, calculate Reflectance,
-ignore all other columns: so select only the one with _EQE or _IQE,
-file can contain several measurements
+- Isaac's files: don't take the _EQE, only consider _1st_EQE and _2nd_EQE
 
 
 """
@@ -890,9 +887,47 @@ class EQEApp(Toplevel):
                         DATA.append(datadict)
                         
                     #calculate reflectance meas
-                    #search in DATA for same name having both EQE and IQE
-                    
-                    
+                    for indexEQE in range(len(columnsofEQE)):
+                        if firstline[columnsofEQE[indexEQE]][:-3]==firstline[columnsofIQE[indexEQE]][:-3]:
+                            samplename=firstline[columnsofEQE[indexEQE]][:-3]
+                            datadict = {'dateTime': datetime, 'filepath':'','Name': samplename +'_R','Jsc':[],'Eg':[],
+                                                'EgTauc':[],'lnDat':[],'EgLn':[],'EuLn':[],'stderrEgLn':[],'NbColumn':2, 
+                                                'DATA': [],'tangent': [],'tangentLn': [], 'comment': "", 'Vbias':[],
+                                                'filterbias':[],'ledbias':[],
+                                                'batchnumb': '', 'samplenumb': ''} 
+                            datadict['DATA']=[[],[]]
+                            for row in range(1,len(filedat)):
+                                if filedat[row].split('\t')[columnsofEQE[indexEQE]+1]!='':
+                                    datadict['DATA'][0].append(float(filedat[row].split('\t')[columnsofEQE[indexEQE]+1]))
+                                    datadict['DATA'][1].append(1-float(filedat[row].split('\t')[columnsofEQE[indexEQE]+2])/float(filedat[row].split('\t')[columnsofIQE[indexEQE]+2]))
+                            
+                            m=list(zip(*sorted(zip(datadict['DATA'][0],datadict['DATA'][1]), key=lambda pair: pair[0])))
+                            
+                            datadict['DATA'][0]=list(m[0])
+                            datadict['DATA'][1]=list(m[1])
+                            
+                            x=datadict['DATA'][0]
+                            y=datadict['DATA'][1]
+            #                print(x)
+                            spl = UnivariateSpline(x, y, s=0)
+                            f = interp1d(x, y, kind='cubic')
+                            x2 = lambda x0: self.AM15GParticlesinnm(x0)*f(x0)
+                            integral = echarge/10*integrate.quad(x2,datadict['DATA'][0][0],datadict['DATA'][0][-1])[0]
+                            datadict['Jsc'].append(integral)
+                            
+                            datadict['integJsclist']=[[],[]]
+                            datadict['EgTauc'].append([99,[],[],99,99])
+                            datadict['Eg'].append(99)
+                            datadict['tangent'].append([99, 99])#[pente,ordonnee a l'origine]
+                            datadict['EgLn'].append(99)
+                            datadict['EuLn'].append(99)#Eu calculation from ln(EQE) curve slope at band edge
+                            datadict['tangentLn'].append([99, 99,[99],[99]])#[pente,ordonnee a l'origine]
+                            datadict['stderrEgLn'].append([99,99])
+                            datadict['lnDat'].append([[99],[99]])                
+                            datadict['Vbias'].append('')
+                            datadict['filterbias'].append('')
+                            datadict['ledbias'].append('')
+                            DATA.append(datadict)        
             
             elif os.path.splitext(file_path[k])[1]=='': #file from NREL S&TF 136
 #                print(os.path.splitext(file_path[k])[1])

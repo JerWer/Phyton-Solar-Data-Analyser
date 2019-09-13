@@ -23,6 +23,8 @@ from PIL import Image as ImageTk
 - normalizing graph of each sample, so comparable directly sample to sample
 - or same y-axis for all graphs?
 
+-
+
 """
 
 def PLSummary():

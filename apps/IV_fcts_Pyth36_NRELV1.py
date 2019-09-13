@@ -103,6 +103,7 @@ DATAJVforexport=[]
 DATAJVtabforexport=[]
 DATAmppforexport=[]
 DATAgroupforexport=[]
+DATAtimeevolforexport=[]#[[realtime, relativetime, value, normalizedvaluetot0]]
 takenforplot=[]
 takenforplotmpp=[]
 takenforplotTime=[]
@@ -267,6 +268,11 @@ class IVApp(Toplevel):
                            onvalue=1,offvalue=0,height=1, width=10, command = lambda: self.UpdateTimeGraph(1),fg='black',background='white')
         lineTime.grid(row=3, column=7, columnspan=5)
         self.timerelativeTimegraph.set(0)
+        self.normalTimegraph = IntVar()
+        lineTime=Checkbutton(self.Frame3,text="Normal.?",variable=self.normalTimegraph, 
+                           onvalue=1,offvalue=0,height=1, width=10, command = lambda: self.UpdateTimeGraph(1),fg='black',background='white')
+        lineTime.grid(row=3, column=18, columnspan=5)
+        self.normalTimegraph.set(0)
         
         #### Group ####
         columnpos = 8
@@ -2309,7 +2315,7 @@ class IVApp(Toplevel):
 #        except:
 #            pass
     def UpdateTimeGraph(self,a):
-        global DATA, takenforplotTime, colorstylelist
+        global DATA, takenforplotTime, colorstylelist, DATAtimeevolforexport
 #        print("")
 #        print(takenforplotTime)
         #"MeasDayTime2"
@@ -3976,23 +3982,123 @@ class IVApp(Toplevel):
         except:
             print("there is an exception")    
     def GraphTimesave_as(self):
-        print("savingtimegraph")
-        f = filedialog.asksaveasfilename(defaultextension=".png", filetypes = (("graph file", "*.png"),("All Files", "*.*")))
-        extent = self.TimeEvolfig.get_window_extent().transformed(self.fig.dpi_scale_trans.inverted())
-        self.fig.savefig(f, dpi=300, bbox_inches=extent.expanded(1.8, 2), transparent=True)
-        
-#        DATAgroupforexport1=[]            
-#        for item in DATAgroupforexport:
-#            line=""
-#            for item1 in item:
-#                line=line+str(item1)+"\t"
-#            line=line[:-1]+"\n"
-#            DATAgroupforexport1.append(line)
-#        
-#        file = open(str(f[:-4]+"_"+self.GroupChoice.get()+"dat.txt"),'w', encoding='ISO-8859-1')
-#        file.writelines("%s" % item for item in DATAgroupforexport1)
-#        file.close()
-        
+        global DATAtimeevolforexport
+        try:
+            if self.big4Timegraph.get()==0:
+                f = filedialog.asksaveasfilename(defaultextension=".png", filetypes = (("graph file", "*.png"),("All Files", "*.*")))
+                extent = self.TimeEvolfig.get_window_extent().transformed(self.fig.dpi_scale_trans.inverted())
+                if self.transparentbkg.get():
+                    self.fig.savefig(f, dpi=300, bbox_inches=extent.expanded(1.8, 2), transparent=True)
+                else:
+                    self.fig.savefig(f, dpi=300, bbox_inches=extent.expanded(1.8, 2), transparent=False)
+                    
+#                DATAgroupforexport1=[]            
+#                for item in DATAtimeevolforexport:
+#                    line=""
+#                    for item1 in item:
+#                        line=line+str(item1)+"\t"
+#                    line=line[:-1]+"\n"
+#                    DATAgroupforexport1.append(line)
+#                
+#                file = open(str(f[:-4]+"_"+self.GroupChoice.get()+"dat.txt"),'w', encoding='ISO-8859-1')
+#                file.writelines("%s" % item for item in DATAgroupforexport1)
+#                file.close()
+            elif self.big4Timegraph.get()==1:
+                
+                f = filedialog.asksaveasfilename(defaultextension=".png", filetypes = (("graph file", "*.png"),("All Files", "*.*")))
+                self.TimeChoice.set("Eff")
+                self.UpdateTimeGraph(1)
+                extent = self.TimeEvolfig.get_window_extent().transformed(self.fig.dpi_scale_trans.inverted())
+                if self.transparentbkg.get():
+                    self.fig.savefig(f[:-4]+"_"+self.TimeChoice.get()+f[-4:], dpi=300, bbox_inches=extent.expanded(1.8, 2), transparent=True)
+                else:
+                    self.fig.savefig(f[:-4]+"_"+self.TimeChoice.get()+f[-4:], dpi=300, bbox_inches=extent.expanded(1.8, 2), transparent=False)
+                    
+#                DATAgroupforexport1=[]            
+#                for item in DATAgroupforexport:
+#                    line=""
+#                    for item1 in item:
+#                        line=line+str(item1)+"\t"
+#                    line=line[:-1]+"\n"
+#                    DATAgroupforexport1.append(line)
+#                
+#                file = open(str(f[:-4]+"_"+self.GroupChoice.get()+"dat.txt"),'w', encoding='ISO-8859-1')
+#                file.writelines("%s" % item for item in DATAgroupforexport1)
+#                file.close()
+                self.TimeChoice.set("Voc")
+                self.UpdateTimeGraph(1)
+                
+                extent = self.TimeEvolfig.get_window_extent().transformed(self.fig.dpi_scale_trans.inverted())
+                if self.transparentbkg.get():
+                    self.fig.savefig(f[:-4]+"_"+self.TimeChoice.get()+f[-4:], dpi=300, bbox_inches=extent.expanded(1.8, 2), transparent=True)
+                else:
+                    self.fig.savefig(f[:-4]+"_"+self.TimeChoice.get()+f[-4:], dpi=300, bbox_inches=extent.expanded(1.8, 2), transparent=False)
+                
+#                DATAgroupforexport1=[]            
+#                for item in DATAgroupforexport:
+#                    line=""
+#                    for item1 in item:
+#                        line=line+str(item1)+"\t"
+#                    line=line[:-1]+"\n"
+#                    DATAgroupforexport1.append(line)
+#                
+#                file = open(str(f[:-4]+"_"+self.GroupChoice.get()+"dat.txt"),'w', encoding='ISO-8859-1')
+#                file.writelines("%s" % item for item in DATAgroupforexport1)
+#                file.close()
+                self.TimeChoice.set("Jsc")
+                self.UpdateTimeGraph(1)
+                
+                extent = self.TimeEvolfig.get_window_extent().transformed(self.fig.dpi_scale_trans.inverted())
+                if self.transparentbkg.get():
+                    self.fig.savefig(f[:-4]+"_"+self.TimeChoice.get()+f[-4:], dpi=300, bbox_inches=extent.expanded(1.8, 2), transparent=True)
+                else:
+                    self.fig.savefig(f[:-4]+"_"+self.TimeChoice.get()+f[-4:], dpi=300, bbox_inches=extent.expanded(1.8, 2), transparent=False)
+                
+#                DATAgroupforexport1=[]            
+#                for item in DATAgroupforexport:
+#                    line=""
+#                    for item1 in item:
+#                        line=line+str(item1)+"\t"
+#                    line=line[:-1]+"\n"
+#                    DATAgroupforexport1.append(line)
+#                
+#                file = open(str(f[:-4]+"_"+self.GroupChoice.get()+"dat.txt"),'w', encoding='ISO-8859-1')
+#                file.writelines("%s" % item for item in DATAgroupforexport1)
+#                file.close()
+                self.TimeChoice.set("FF")
+                self.UpdateTimeGraph(1)
+                
+                extent = self.TimeEvolfig.get_window_extent().transformed(self.fig.dpi_scale_trans.inverted())
+                if self.transparentbkg.get():
+                    self.fig.savefig(f[:-4]+"_"+self.TimeChoice.get()+f[-4:], dpi=300, bbox_inches=extent.expanded(1.8, 2), transparent=True)
+                else:
+                    self.fig.savefig(f[:-4]+"_"+self.TimeChoice.get()+f[-4:], dpi=300, bbox_inches=extent.expanded(1.8, 2), transparent=False)
+                
+#                DATAgroupforexport1=[]            
+#                for item in DATAgroupforexport:
+#                    line=""
+#                    for item1 in item:
+#                        line=line+str(item1)+"\t"
+#                    line=line[:-1]+"\n"
+#                    DATAgroupforexport1.append(line)
+#                
+#                file = open(str(f[:-4]+"_"+self.GroupChoice.get()+"dat.txt"),'w', encoding='ISO-8859-1')
+#                file.writelines("%s" % item for item in DATAgroupforexport1)
+#                file.close()
+                
+#                images = list(map(ImageTk.open, [f[:-4]+"_Jsc"+f[-4:],f[:-4]+"_FF"+f[-4:],f[:-4]+"_Voc"+f[-4:],f[:-4]+"_Eff"+f[-4:]]))
+#                widths, heights = zip(*(i.size for i in images))
+#                total_width = max(widths[0]+widths[2],widths[1]+widths[3])
+#                max_height = max(heights[0]+heights[1],heights[2]+heights[3])
+#                new_im = ImageTk.new('RGB', (total_width, max_height), (255, 255, 255))
+#                new_im.paste(im=images[0],box=(0,0))
+#                new_im.paste(im=images[1],box=(0,max(heights[0],heights[2])))
+#                new_im.paste(im=images[2],box=(max(widths[0],widths[1]),0))
+#                new_im.paste(im=images[3],box=(max(widths[0],widths[1]),max(heights[0],heights[2])))
+#                new_im.save(f[:-4]+"_big4"+f[-4:])
+                
+        except:
+            print("there is an exception")  
         
     def GraphGroupsave_as(self):
         global DATAgroupforexport

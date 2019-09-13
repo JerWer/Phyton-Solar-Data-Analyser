@@ -20,6 +20,8 @@ from PIL import Image as ImageTk
 
 - export txt files with data of graphs
 
+- normalizing graph of each sample, so comparable directly sample to sample
+- or same y-axis for all graphs?
 
 """
 
@@ -82,7 +84,16 @@ def PLSummary():
             fignames=[]
             for key2 in DATA[key].keys():
                 for key3 in DATA[key][key2].keys():
-                    plt.plot(DATA[key][key2][key3][0],DATA[key][key2][key3][1],label=key3)
+                    threshold=0.01
+                    MinDist=50
+                    y=np.array(DATA[key][key2][key3][1])
+                    while(1):
+                        indexes = peakutils.indexes(y, thres=threshold, min_dist=MinDist)
+                        if len(indexes)==1:
+                            break
+                        else:
+                            threshold+=0.01
+                    plt.plot(DATA[key][key2][key3][0],DATA[key][key2][key3][1],label=key3+'_'+'%.2f' % float(DATA[key][key2][key3][0][indexes[0]]))
                 plt.xlabel('Wavelength (nm)')
                 plt.ylabel('PL intensity (-)')
                 plt.title(key+'_'+key2)

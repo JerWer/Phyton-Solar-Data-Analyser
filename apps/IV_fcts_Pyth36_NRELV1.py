@@ -83,11 +83,9 @@ add time plot to autoanalysis if span over 5hrs
 
 
 Plottime graph:
-- normalization
-- export with txt files
+- normalization: at chosen time (only in relative plot)
+- yscaling
 - change legend
-- export big4
-- time relative or absolute
     
 
 mpp graph:
@@ -103,7 +101,7 @@ DATAJVforexport=[]
 DATAJVtabforexport=[]
 DATAmppforexport=[]
 DATAgroupforexport=[]
-DATAtimeevolforexport=[]#[[realtime, relativetime, value, normalizedvaluetot0]]
+DATAtimeevolforexport={}#key: [[realtimeF, relativetimeF, valueF, normalizedvaluetot0F, realtimeR, relativetimeR, valueR, normalizedvaluetot0R]]
 takenforplot=[]
 takenforplotmpp=[]
 takenforplotTime=[]
@@ -271,8 +269,12 @@ class IVApp(Toplevel):
         self.normalTimegraph = IntVar()
         lineTime=Checkbutton(self.Frame3,text="Normal.?",variable=self.normalTimegraph, 
                            onvalue=1,offvalue=0,height=1, width=10, command = lambda: self.UpdateTimeGraph(1),fg='black',background='white')
-        lineTime.grid(row=3, column=18, columnspan=5)
+        lineTime.grid(row=1, column=13, columnspan=5)
         self.normalTimegraph.set(0)
+        self.normalsettimegraph = tk.DoubleVar()
+        entry=Entry(self.Frame3, textvariable=self.normalsettimegraph,width=3)
+        entry.grid(row=1,column=18,columnspan=2)
+        self.normalsettimegraph.set(-1)
         
         #### Group ####
         columnpos = 8
@@ -2314,11 +2316,94 @@ class IVApp(Toplevel):
                 plt.gcf().canvas.draw()
 #        except:
 #            pass
+#    def UpdateTimeGraph(self,a):
+#        global DATA, takenforplotTime, colorstylelist, DATAtimeevolforexport
+##        print("")
+##        print(takenforplotTime)
+#        #"MeasDayTime2"
+#        if takenforplotTime!=[]:
+#            TimeDatDict={}
+#            self.TimeEvolfig.clear()
+#            for item in takenforplotTime:
+#                newkey=item.split('_')[0]+'_'+item.split('_')[1]+'_'+item.split('_')[2]
+#                if newkey not in TimeDatDict.keys():
+#                    TimeDatDict[newkey]={'reverse':{'Voc':[[],[]],'Jsc':[[],[]],'FF':[[],[]],'Eff':[[],[]]},'forward':{'Voc':[[],[]],'Jsc':[[],[]],'FF':[[],[]],'Eff':[[],[]]}}
+#                for item1 in DATA:
+#                    if item1["SampleName"]==item:
+#                        if item1["ScanDirection"]=="Reverse" and item1["Illumination"]=="Light":
+#                            TimeDatDict[newkey]['reverse']['Voc'][0].append(item1["MeasDayTime2"])
+#                            TimeDatDict[newkey]['reverse']['Voc'][1].append(item1["Voc"])
+#                            TimeDatDict[newkey]['reverse']['Jsc'][0].append(item1["MeasDayTime2"])
+#                            TimeDatDict[newkey]['reverse']['Jsc'][1].append(item1["Jsc"])
+#                            TimeDatDict[newkey]['reverse']['FF'][0].append(item1["MeasDayTime2"])
+#                            TimeDatDict[newkey]['reverse']['FF'][1].append(item1["FF"])
+#                            TimeDatDict[newkey]['reverse']['Eff'][0].append(item1["MeasDayTime2"])
+#                            TimeDatDict[newkey]['reverse']['Eff'][1].append(item1["Eff"])
+#                        elif item1["ScanDirection"]=="Forward" and item1["Illumination"]=="Light":
+#                            TimeDatDict[newkey]['forward']['Voc'][0].append(item1["MeasDayTime2"])
+#                            TimeDatDict[newkey]['forward']['Voc'][1].append(item1["Voc"])
+#                            TimeDatDict[newkey]['forward']['Jsc'][0].append(item1["MeasDayTime2"])
+#                            TimeDatDict[newkey]['forward']['Jsc'][1].append(item1["Jsc"])
+#                            TimeDatDict[newkey]['forward']['FF'][0].append(item1["MeasDayTime2"])
+#                            TimeDatDict[newkey]['forward']['FF'][1].append(item1["FF"])
+#                            TimeDatDict[newkey]['forward']['Eff'][0].append(item1["MeasDayTime2"])
+#                            TimeDatDict[newkey]['forward']['Eff'][1].append(item1["Eff"])
+#    #        num_plots = len(TimeDatDict.keys())          
+#    #        plt.gca().set_prop_cycle(plt.cycler('color', plt.cm.Spectral(np.linspace(0, 1, num_plots))))
+#            color1=0    
+#    #        print(list(TimeDatDict.keys())) 
+#            minx=min(TimeDatDict[newkey]['forward'][self.TimeChoice.get()][0]+TimeDatDict[newkey]['reverse'][self.TimeChoice.get()][0])
+#            maxx=max(TimeDatDict[newkey]['forward'][self.TimeChoice.get()][0]+TimeDatDict[newkey]['reverse'][self.TimeChoice.get()][0])
+#            
+#            for key in list(TimeDatDict.keys()):
+#                if minx>min(TimeDatDict[key]['forward'][self.TimeChoice.get()][0]+TimeDatDict[key]['reverse'][self.TimeChoice.get()][0]):
+#                    minx=min(TimeDatDict[key]['forward'][self.TimeChoice.get()][0]+TimeDatDict[key]['reverse'][self.TimeChoice.get()][0])
+#                if maxx<max(TimeDatDict[key]['forward'][self.TimeChoice.get()][0]+TimeDatDict[key]['reverse'][self.TimeChoice.get()][0]):
+#                    maxx=max(TimeDatDict[key]['forward'][self.TimeChoice.get()][0]+TimeDatDict[key]['reverse'][self.TimeChoice.get()][0])
+#                try:
+#                    xfor, yfor=zip(*sorted(zip(TimeDatDict[key]['forward'][self.TimeChoice.get()][0],TimeDatDict[key]['forward'][self.TimeChoice.get()][1]), key = lambda x: x[1]))
+#                    xfor=list(xfor)
+#                    yfor=list(yfor)
+#                    yfor.sort(key=dict(zip(yfor, xfor)).get)
+#                    xfor=sorted(xfor)
+#                    if self.LineornolineTimegraph.get():
+#                        self.TimeEvolfig.plot(xfor, yfor, linestyle='--', marker='o',color=colorstylelist[color1],label=key+'_For')
+#                    else:
+#                        self.TimeEvolfig.plot(xfor, yfor, linestyle='', marker='o',color=colorstylelist[color1],label=key+'_For')                       
+#                except ValueError:
+#                    pass
+#                try:
+#                    xrev, yrev=zip(*sorted(zip(TimeDatDict[key]['reverse'][self.TimeChoice.get()][0],TimeDatDict[key]['reverse'][self.TimeChoice.get()][1]), key = lambda x: x[1]))                
+#                    xrev=list(xrev)
+#                    yrev=list(yrev)
+#                    yrev.sort(key=dict(zip(yrev, xrev)).get)
+#                    xrev=sorted(xrev)
+#                    if self.LineornolineTimegraph.get():
+#                        self.TimeEvolfig.plot(xrev, yrev, linestyle='-', marker='o', color=colorstylelist[color1], alpha=0.5,label=key+'_Rev')
+#                    else:
+#                        self.TimeEvolfig.plot(xrev, yrev, linestyle='', marker='o', color=colorstylelist[color1], alpha=0.5,label=key+'_Rev')                        
+#                except ValueError:
+#                    pass
+#                color1=color1+1
+#                
+#            self.TimeEvolfig.set_xlim(minx-0.05*(maxx-minx),maxx+0.05*(maxx-minx))    
+#            self.TimeEvolfig.set_xlabel('Time')
+#            self.TimeEvolfig.set_ylabel(self.TimeChoice.get())
+#            for tick in self.TimeEvolfig.get_xticklabels():
+#                tick.set_rotation(20)
+#            self.TimeEvolfigleg=self.TimeEvolfig.legend(loc='lower left', bbox_to_anchor=(1, 0))
+#            plt.gcf().canvas.draw()
+#        
+#        #order by time, and substract the oldest measurement from the other, then transform all in hours
+#        
+#        #normalization of y axis
     def UpdateTimeGraph(self,a):
         global DATA, takenforplotTime, colorstylelist, DATAtimeevolforexport
 #        print("")
 #        print(takenforplotTime)
         #"MeasDayTime2"
+        DATAtimeevolforexport={}
+        
         if takenforplotTime!=[]:
             TimeDatDict={}
             self.TimeEvolfig.clear()
@@ -2348,12 +2433,13 @@ class IVApp(Toplevel):
                             TimeDatDict[newkey]['forward']['Eff'][1].append(item1["Eff"])
     #        num_plots = len(TimeDatDict.keys())          
     #        plt.gca().set_prop_cycle(plt.cycler('color', plt.cm.Spectral(np.linspace(0, 1, num_plots))))
-            color1=0    
+               
     #        print(list(TimeDatDict.keys())) 
             minx=min(TimeDatDict[newkey]['forward'][self.TimeChoice.get()][0]+TimeDatDict[newkey]['reverse'][self.TimeChoice.get()][0])
             maxx=max(TimeDatDict[newkey]['forward'][self.TimeChoice.get()][0]+TimeDatDict[newkey]['reverse'][self.TimeChoice.get()][0])
             
             for key in list(TimeDatDict.keys()):
+                partdatatime=[[],[],[],[],[],[],[],[]]
                 if minx>min(TimeDatDict[key]['forward'][self.TimeChoice.get()][0]+TimeDatDict[key]['reverse'][self.TimeChoice.get()][0]):
                     minx=min(TimeDatDict[key]['forward'][self.TimeChoice.get()][0]+TimeDatDict[key]['reverse'][self.TimeChoice.get()][0])
                 if maxx<max(TimeDatDict[key]['forward'][self.TimeChoice.get()][0]+TimeDatDict[key]['reverse'][self.TimeChoice.get()][0]):
@@ -2364,10 +2450,20 @@ class IVApp(Toplevel):
                     yfor=list(yfor)
                     yfor.sort(key=dict(zip(yfor, xfor)).get)
                     xfor=sorted(xfor)
-                    if self.LineornolineTimegraph.get():
-                        self.TimeEvolfig.plot(xfor, yfor, linestyle='--', marker='o',color=colorstylelist[color1],label=key+'_For')
+                    partdatatime[0]=xfor
+                    partdatatime[1]=[(m-xfor[0]).total_seconds()/3600 for m in xfor]
+                    partdatatime[2]=yfor
+                    if self.normalsettimegraph.get()==-1:
+                        partdatatime[3]=[(m)/(yfor[0]) for m in yfor]
                     else:
-                        self.TimeEvolfig.plot(xfor, yfor, linestyle='', marker='o',color=colorstylelist[color1],label=key+'_For')                       
+                        foundnormalsetpt=0
+                        for item in range(len(partdatatime[1])):
+                            if partdatatime[1][item]>=self.normalsettimegraph.get():
+                                partdatatime[3]=[(m)/(partdatatime[2][item]) for m in yfor]
+                                foundnormalsetpt=1
+                                break
+                        if foundnormalsetpt==0:
+                            partdatatime[3]=[(m)/(yfor[0]) for m in yfor]
                 except ValueError:
                     pass
                 try:
@@ -2376,26 +2472,60 @@ class IVApp(Toplevel):
                     yrev=list(yrev)
                     yrev.sort(key=dict(zip(yrev, xrev)).get)
                     xrev=sorted(xrev)
-                    if self.LineornolineTimegraph.get():
-                        self.TimeEvolfig.plot(xrev, yrev, linestyle='-', marker='o', color=colorstylelist[color1], alpha=0.5,label=key+'_Rev')
+                    partdatatime[4]=xrev
+                    partdatatime[5]=[(m-xrev[0]).total_seconds()/3600 for m in xrev]
+                    partdatatime[6]=yrev
+                    
+                    if self.normalsettimegraph.get()==-1:
+                        partdatatime[7]=[(m)/(yrev[0]) for m in yrev]
                     else:
-                        self.TimeEvolfig.plot(xrev, yrev, linestyle='', marker='o', color=colorstylelist[color1], alpha=0.5,label=key+'_Rev')                        
+                        foundnormalsetpt=0
+                        for item in range(len(partdatatime[5])):
+                            if partdatatime[5][item]>=self.normalsettimegraph.get():
+                                partdatatime[7]=[(m)/(partdatatime[6][item]) for m in yrev]
+                                foundnormalsetpt=1
+                                break
+                        if foundnormalsetpt==0:
+                            partdatatime[7]=[(m)/(yrev[0]) for m in yrev]
+                    
                 except ValueError:
                     pass
+                DATAtimeevolforexport[key]=partdatatime
+             
+            color1=0 
+            for key in list(DATAtimeevolforexport.keys()):
+                xfor=DATAtimeevolforexport[key][0]
+                yfor=DATAtimeevolforexport[key][2]
+                xrev=DATAtimeevolforexport[key][4]
+                yrev=DATAtimeevolforexport[key][6]
+                if self.timerelativeTimegraph.get():
+                    xfor=DATAtimeevolforexport[key][1]
+                    xrev=DATAtimeevolforexport[key][5]
+                if self.normalTimegraph.get():
+                    yfor=DATAtimeevolforexport[key][3]
+                    yrev=DATAtimeevolforexport[key][7]
+            
+                if self.LineornolineTimegraph.get():
+                    self.TimeEvolfig.plot(xfor, yfor, linestyle='--', marker='o',color=colorstylelist[color1],label=key+'_For')
+                    self.TimeEvolfig.plot(xrev, yrev, linestyle='-', marker='o', color=colorstylelist[color1], alpha=0.5,label=key+'_Rev')
+                else:
+                    self.TimeEvolfig.plot(xfor, yfor, linestyle='', marker='o',color=colorstylelist[color1],label=key+'_For')
+                    self.TimeEvolfig.plot(xrev, yrev, linestyle='', marker='o', color=colorstylelist[color1], alpha=0.5,label=key+'_Rev')  
                 color1=color1+1
                 
-            self.TimeEvolfig.set_xlim(minx-0.05*(maxx-minx),maxx+0.05*(maxx-minx))    
-            self.TimeEvolfig.set_xlabel('Time')
+            
+            if self.timerelativeTimegraph.get():
+                self.TimeEvolfig.set_xlabel('Time (hours)')
+            else:
+                self.TimeEvolfig.set_xlim(minx-0.05*(maxx-minx),maxx+0.05*(maxx-minx))    
+                self.TimeEvolfig.set_xlabel('Time')
+            
             self.TimeEvolfig.set_ylabel(self.TimeChoice.get())
             for tick in self.TimeEvolfig.get_xticklabels():
                 tick.set_rotation(20)
             self.TimeEvolfigleg=self.TimeEvolfig.legend(loc='lower left', bbox_to_anchor=(1, 0))
             plt.gcf().canvas.draw()
         
-        #order by time, and substract the oldest measurement from the other, then transform all in hours
-        
-        #normalization of y axis
-
         
     def UpdateIVGraph(self):
         global DATA
@@ -3991,18 +4121,22 @@ class IVApp(Toplevel):
                     self.fig.savefig(f, dpi=300, bbox_inches=extent.expanded(1.8, 2), transparent=True)
                 else:
                     self.fig.savefig(f, dpi=300, bbox_inches=extent.expanded(1.8, 2), transparent=False)
-                    
-#                DATAgroupforexport1=[]            
-#                for item in DATAtimeevolforexport:
-#                    line=""
-#                    for item1 in item:
-#                        line=line+str(item1)+"\t"
-#                    line=line[:-1]+"\n"
-#                    DATAgroupforexport1.append(line)
-#                
-#                file = open(str(f[:-4]+"_"+self.GroupChoice.get()+"dat.txt"),'w', encoding='ISO-8859-1')
-#                file.writelines("%s" % item for item in DATAgroupforexport1)
-#                file.close()
+                
+                
+                
+                for key in list(DATAtimeevolforexport.keys()):
+                    DATAgroupforexport1=["realtimeF\trelativetimeF\tvalueF\tnormalizedvaluetot0F\trealtimeR\trelativetimeR\tvalueR\tnormalizedvaluetot0R\n"] 
+                    templist=map(list, zip(*DATAtimeevolforexport[key]))
+                    for item in templist:
+                        line=""
+                        for item1 in item:
+                            line=line+str(item1)+"\t"
+                        line=line[:-1]+"\n"
+                        DATAgroupforexport1.append(line)
+                    file = open(str(f[:-4]+"_"+self.TimeChoice.get()+'_'+str(key)+"_dat.txt"),'w', encoding='ISO-8859-1')
+                    file.writelines("%s" % item for item in DATAgroupforexport1)
+                    file.close()
+                
             elif self.big4Timegraph.get()==1:
                 
                 f = filedialog.asksaveasfilename(defaultextension=".png", filetypes = (("graph file", "*.png"),("All Files", "*.*")))
@@ -4014,17 +4148,19 @@ class IVApp(Toplevel):
                 else:
                     self.fig.savefig(f[:-4]+"_"+self.TimeChoice.get()+f[-4:], dpi=300, bbox_inches=extent.expanded(1.8, 2), transparent=False)
                     
-#                DATAgroupforexport1=[]            
-#                for item in DATAgroupforexport:
-#                    line=""
-#                    for item1 in item:
-#                        line=line+str(item1)+"\t"
-#                    line=line[:-1]+"\n"
-#                    DATAgroupforexport1.append(line)
-#                
-#                file = open(str(f[:-4]+"_"+self.GroupChoice.get()+"dat.txt"),'w', encoding='ISO-8859-1')
-#                file.writelines("%s" % item for item in DATAgroupforexport1)
-#                file.close()
+                for key in list(DATAtimeevolforexport.keys()):
+                    DATAgroupforexport1=["realtimeF\trelativetimeF\tvalueF\tnormalizedvaluetot0F\trealtimeR\trelativetimeR\tvalueR\tnormalizedvaluetot0R\n"] 
+                    templist=map(list, zip(*DATAtimeevolforexport[key]))
+                    for item in templist:
+                        line=""
+                        for item1 in item:
+                            line=line+str(item1)+"\t"
+                        line=line[:-1]+"\n"
+                        DATAgroupforexport1.append(line)
+                    file = open(str(f[:-4]+"_"+self.TimeChoice.get()+'_'+str(key)+"_dat.txt"),'w', encoding='ISO-8859-1')
+                    file.writelines("%s" % item for item in DATAgroupforexport1)
+                    file.close()
+                    
                 self.TimeChoice.set("Voc")
                 self.UpdateTimeGraph(1)
                 
@@ -4034,17 +4170,18 @@ class IVApp(Toplevel):
                 else:
                     self.fig.savefig(f[:-4]+"_"+self.TimeChoice.get()+f[-4:], dpi=300, bbox_inches=extent.expanded(1.8, 2), transparent=False)
                 
-#                DATAgroupforexport1=[]            
-#                for item in DATAgroupforexport:
-#                    line=""
-#                    for item1 in item:
-#                        line=line+str(item1)+"\t"
-#                    line=line[:-1]+"\n"
-#                    DATAgroupforexport1.append(line)
-#                
-#                file = open(str(f[:-4]+"_"+self.GroupChoice.get()+"dat.txt"),'w', encoding='ISO-8859-1')
-#                file.writelines("%s" % item for item in DATAgroupforexport1)
-#                file.close()
+                for key in list(DATAtimeevolforexport.keys()):
+                    DATAgroupforexport1=["realtimeF\trelativetimeF\tvalueF\tnormalizedvaluetot0F\trealtimeR\trelativetimeR\tvalueR\tnormalizedvaluetot0R\n"] 
+                    templist=map(list, zip(*DATAtimeevolforexport[key]))
+                    for item in templist:
+                        line=""
+                        for item1 in item:
+                            line=line+str(item1)+"\t"
+                        line=line[:-1]+"\n"
+                        DATAgroupforexport1.append(line)
+                    file = open(str(f[:-4]+"_"+self.TimeChoice.get()+'_'+str(key)+"_dat.txt"),'w', encoding='ISO-8859-1')
+                    file.writelines("%s" % item for item in DATAgroupforexport1)
+                    file.close()
                 self.TimeChoice.set("Jsc")
                 self.UpdateTimeGraph(1)
                 
@@ -4054,17 +4191,18 @@ class IVApp(Toplevel):
                 else:
                     self.fig.savefig(f[:-4]+"_"+self.TimeChoice.get()+f[-4:], dpi=300, bbox_inches=extent.expanded(1.8, 2), transparent=False)
                 
-#                DATAgroupforexport1=[]            
-#                for item in DATAgroupforexport:
-#                    line=""
-#                    for item1 in item:
-#                        line=line+str(item1)+"\t"
-#                    line=line[:-1]+"\n"
-#                    DATAgroupforexport1.append(line)
-#                
-#                file = open(str(f[:-4]+"_"+self.GroupChoice.get()+"dat.txt"),'w', encoding='ISO-8859-1')
-#                file.writelines("%s" % item for item in DATAgroupforexport1)
-#                file.close()
+                for key in list(DATAtimeevolforexport.keys()):
+                    DATAgroupforexport1=["realtimeF\trelativetimeF\tvalueF\tnormalizedvaluetot0F\trealtimeR\trelativetimeR\tvalueR\tnormalizedvaluetot0R\n"] 
+                    templist=map(list, zip(*DATAtimeevolforexport[key]))
+                    for item in templist:
+                        line=""
+                        for item1 in item:
+                            line=line+str(item1)+"\t"
+                        line=line[:-1]+"\n"
+                        DATAgroupforexport1.append(line)
+                    file = open(str(f[:-4]+"_"+self.TimeChoice.get()+'_'+str(key)+"_dat.txt"),'w', encoding='ISO-8859-1')
+                    file.writelines("%s" % item for item in DATAgroupforexport1)
+                    file.close()
                 self.TimeChoice.set("FF")
                 self.UpdateTimeGraph(1)
                 
@@ -4074,17 +4212,18 @@ class IVApp(Toplevel):
                 else:
                     self.fig.savefig(f[:-4]+"_"+self.TimeChoice.get()+f[-4:], dpi=300, bbox_inches=extent.expanded(1.8, 2), transparent=False)
                 
-#                DATAgroupforexport1=[]            
-#                for item in DATAgroupforexport:
-#                    line=""
-#                    for item1 in item:
-#                        line=line+str(item1)+"\t"
-#                    line=line[:-1]+"\n"
-#                    DATAgroupforexport1.append(line)
-#                
-#                file = open(str(f[:-4]+"_"+self.GroupChoice.get()+"dat.txt"),'w', encoding='ISO-8859-1')
-#                file.writelines("%s" % item for item in DATAgroupforexport1)
-#                file.close()
+                for key in list(DATAtimeevolforexport.keys()):
+                    DATAgroupforexport1=["realtimeF\trelativetimeF\tvalueF\tnormalizedvaluetot0F\trealtimeR\trelativetimeR\tvalueR\tnormalizedvaluetot0R\n"] 
+                    templist=map(list, zip(*DATAtimeevolforexport[key]))
+                    for item in templist:
+                        line=""
+                        for item1 in item:
+                            line=line+str(item1)+"\t"
+                        line=line[:-1]+"\n"
+                        DATAgroupforexport1.append(line)
+                    file = open(str(f[:-4]+"_"+self.TimeChoice.get()+'_'+str(key)+"_dat.txt"),'w', encoding='ISO-8859-1')
+                    file.writelines("%s" % item for item in DATAgroupforexport1)
+                    file.close()
                 
 #                images = list(map(ImageTk.open, [f[:-4]+"_Jsc"+f[-4:],f[:-4]+"_FF"+f[-4:],f[:-4]+"_Voc"+f[-4:],f[:-4]+"_Eff"+f[-4:]]))
 #                widths, heights = zip(*(i.size for i in images))

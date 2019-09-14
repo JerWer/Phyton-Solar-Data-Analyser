@@ -49,13 +49,22 @@ while j<2:
 if ready:
     DATA={}
     for i in range(len(file_paths)):
+
+        filename=os.path.split(file_paths[i])[-1][:-9]
+        
+        #samplenumber
+        samplenumber=filename.split('_')[0]
+        DATA[samplenumber]={}
+    
+    for i in range(len(file_paths)):
+
         partdict={}
         filename=os.path.split(file_paths[i])[-1][:-9]
         print(filename)
         
         #samplenumber
         samplenumber=filename.split('_')[0]
-        
+
         #extract OD, power, integtime
         filenamesplit=filename.split('_')
         for item in filenamesplit:
@@ -68,7 +77,8 @@ if ready:
         
         #extract which type of file it is
         filetype=filename.split('_')[1]
-        
+        print(filetype)
+        DATA[samplenumber][filetype]={}
         #get data
         filetoread = open(file_paths[i],"r", encoding='ISO-8859-1')
         filerawdata = list(filetoread.readlines())
@@ -94,42 +104,61 @@ if ready:
         while(1):
             indexes = peakutils.indexes(yarray, thres=threshold, min_dist=MinDist)
             if len(indexes)==1:
+                indexes.tolist()
                 break
             else:
-                threshold+=0.01
-        print(x[indexes[0]])
-        
-        base=list(peakutils.baseline(yarray,1))
-#        print(base)
-        plt.plot(x,base)
-        
-        #calculate area
-        f = interp1d(x, yarray-base, kind='cubic')
-        plt.plot(x, f(x))
-        f2 = lambda x0: f(x0)
-        peakarea = integrate.quad(f2,x[0],x[-1])[0]
-        print(peakarea)
-        
-        #normalize area
-        
-        PL_area_norm = peakarea * (10**OD) * (150 / LaserPower) * (1000 / Int_Time)
-        
-        print(PL_area_norm)
+                if threshold<1:
+                    threshold+=0.01
+                else:
+                    indexes=[]
+                    break
+#        print(x[indexes[0]])
+        if len(indexes)!=0:
+            base=list(peakutils.baseline(yarray,1))
+    #        print(base)
+            plt.plot(x,base)
+            
+            #calculate area
+            f = interp1d(x, yarray-base, kind='cubic')
+            plt.plot(x, f(x))
+            f2 = lambda x0: f(x0)
+            peakarea = integrate.quad(f2,x[0],x[-1])[0]
+            print(peakarea)
+            
+            #normalize area
+            
+            PL_area_norm = peakarea * (10**OD) * (150 / LaserPower) * (1000 / Int_Time)
+            
+            print(PL_area_norm)
+        else:
+            PL_area_norm=0
+            print('no peak')
         
         #export control graphs with overlay baseline lines and area taken
         
-        DATA[samplenumber]={'LaserPower':LaserPower, 'type': filetype, 'Int_Time':Int_Time, 'OD': OD, 'wave': x, 
+        DATA[samplenumber][filetype]={'LaserPower':LaserPower, 'type': filetype, 'Int_Time':Int_Time, 'OD': OD, 'wave': x, 
             'intensity': y, 'baseline': base, 'peakarea': peakarea, 'PL_area_norm': PL_area_norm}
 
     #calculate PLQE with Richard Friend's formula
-    for key in list(DATA.keys):
-        L_a = DATA[key][PL_area_norm]
-        L_b = 
-        L_c = 
-        P_c = 
-        P_b = 
-        A = 1 - L_c ./ L_b;
-        ext_PLQE = (P_c - (1 - A) .* P_b) ./ (L_a .* A);
+    
+    print('')
+    for key in list(DATA.keys()):
+        for key1 in list(DATA[key].keys()):
+            print(key1)
+            if key1=='laserPLemptysphere':
+                L_a = DATA[key][key1]['PL_area_norm']
+            elif key1=='laserPLoffsample':
+                L_b = DATA[key][key1]['PL_area_norm']
+            elif key1=='laserPLonsample':
+                L_c = DATA[key][key1]['PL_area_norm']
+            elif key1=='samplePLon':
+                P_c = DATA[key][key1]['PL_area_norm']
+            elif key1=='samplePLoff':
+                P_b = DATA[key][key1]['PL_area_norm']
+        
+        A = 1 - L_c / L_b
+        ext_PLQE = (P_c - (1 - A) * P_b) / (L_a * A)
+        print(ext_PLQE)
 
 
 

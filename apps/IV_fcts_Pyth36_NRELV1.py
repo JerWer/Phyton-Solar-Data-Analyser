@@ -1167,18 +1167,26 @@ class IVApp(Toplevel):
                         
                         
                         for item in names:
-                            DATAgroupforexport.append([item,"RevEff"]+[i["RevEff"] for i in grouplistdict if i["Group"]==item and "RevEff" in i][0])
-                            DATAgroupforexport.append([item,"ForEff"]+[i["ForEff"] for i in grouplistdict if i["Group"]==item and "ForEff" in i][0])
-#                            try:
-                            DATAgroupforexport.append([item,"RevEffAMPP"]+[i["RevEffAMPP"] for i in grouplistdict if i["Group"]==item and "RevEffAMPP" in i][0])
-#                            except IndexError:
+                            try:
+                                DATAgroupforexport.append([item,"RevEff"]+[i["RevEff"] for i in grouplistdict if i["Group"]==item and "RevEff" in i][0])
+                            except IndexError:
 #                                print("indexError1")
-#                                DATAgroupforexport.append([item,"RevEffAMPP"]+[])
-#                            try:
-                            DATAgroupforexport.append([item,"ForEffAMPP"]+[i["ForEffAMPP"] for i in grouplistdict if i["Group"]==item and "ForEffAMPP" in i][0])
-#                            except IndexError:
+                                DATAgroupforexport.append([item,"RevEff"]+[])
+                            try:
+                                DATAgroupforexport.append([item,"ForEff"]+[i["ForEff"] for i in grouplistdict if i["Group"]==item and "ForEff" in i][0])
+                            except IndexError:
+#                                print("indexError1")
+                                DATAgroupforexport.append([item,"ForEff"]+[])
+                            try:
+                                DATAgroupforexport.append([item,"RevEffAMPP"]+[i["RevEffAMPP"] for i in grouplistdict if i["Group"]==item and "RevEffAMPP" in i][0])
+                            except IndexError:
+#                                print("indexError1")
+                                DATAgroupforexport.append([item,"RevEffAMPP"]+[])
+                            try:
+                                DATAgroupforexport.append([item,"ForEffAMPP"]+[i["ForEffAMPP"] for i in grouplistdict if i["Group"]==item and "ForEffAMPP" in i][0])
+                            except IndexError:
 #                                print("indexError2")
-#                                DATAgroupforexport.append([item,"ForEffAMPP"]+[])
+                                DATAgroupforexport.append([item,"ForEffAMPP"]+[])
 
                         DATAgroupforexport=map(list, six.moves.zip_longest(*DATAgroupforexport, fillvalue=' '))
                         
@@ -1189,25 +1197,58 @@ class IVApp(Toplevel):
                         ForwAMPP=[]
                         namelist=[]
                         for i in range(len(names)):
-                            if valsRev[i][0]!=[]:
-                                 Rev.append(valsRev[i][0])
+                            if valsRev[i]!=[]:
+                                if valsRev[i][0]!=[]:
+                                     Rev.append(valsRev[i][0])
+                                else:
+                                     Rev.append([])
                             else:
-                                 Rev.append([])
-                            if valsFor[i][0]!=[]:
-                                 Forw.append(valsFor[i][0])
+                                Rev.append([])
+                            if valsFor[i]!=[]:
+                                if valsFor[i][0]!=[]:
+                                     Forw.append(valsFor[i][0])
+                                else:
+                                     Forw.append([])
                             else:
-                                 Forw.append([])
-                            if valsRevAMPP[i][0]!=[]:
-                                 RevAMPP.append(valsRevAMPP[i][0])
+                                Forw.append([])
+                            if valsRevAMPP[i]!=[]:
+                                if valsRevAMPP[i][0]!=[]:
+                                     RevAMPP.append(valsRevAMPP[i][0])
+                                else:
+                                     RevAMPP.append([])
                             else:
-                                 RevAMPP.append([])
-                            if valsForAMPP[i][0]!=[]:
-                                 ForwAMPP.append(valsForAMPP[i][0])
+                                RevAMPP.append([])
+                            if valsForAMPP[i]!=[]:    
+                                if valsForAMPP[i][0]!=[]:
+                                     ForwAMPP.append(valsForAMPP[i][0])
+                                else:
+                                     ForwAMPP.append([])  
                             else:
-                                 ForwAMPP.append([])    
-                            if valsRev[i][0]!=[] or valsFor[i][0]!=[] or valsRevAMPP[i][0]!=[] or valsForAMPP[i][0]!=[]:
-                                 valstot.append(valsRev[i][0]+valsFor[i][0]+valsRevAMPP[i][0]+valsForAMPP[i][0])
-                                 namelist.append(names[i])
+                                ForwAMPP.append([])
+                            try:    
+                                if valsRev[i][0]!=[] or valsFor[i][0]!=[] or valsRevAMPP[i][0]!=[] or valsForAMPP[i][0]!=[]:
+                                     valstot.append(valsRev[i][0]+valsFor[i][0]+valsRevAMPP[i][0]+valsForAMPP[i][0])
+                                     namelist.append(names[i])
+                            except IndexError:
+                                toaddtovalstot=[]
+                                try:
+                                    toaddtovalstot+=valsRev[i][0]
+                                except:
+                                    pass
+                                try:
+                                    toaddtovalstot+=valsFor[i][0]
+                                except:
+                                    pass
+                                try:
+                                    toaddtovalstot+=valsRevAMPP[i][0]
+                                except:
+                                    pass
+                                try:
+                                    toaddtovalstot+=valsForAMPP[i][0]
+                                except:
+                                    pass
+                                    
+                                    
 #                        if len(listofthegroup)!=0:
 #                            for i in range(len(names)):
 #                                found1=0

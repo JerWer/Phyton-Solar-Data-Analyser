@@ -1157,69 +1157,74 @@ class XRDApp(Toplevel):
                     nbofpoints=self.nbofpoints.get()#on each side of max position
                     appendcheck=0
 #                    print(indexes[item1])
-                    if indexes[item1]>nbofpoints:
-                        while(1):
+                    
+                    while(1):
+                        try:
+                            x0=x[indexes[item1]-nbofpoints:indexes[item1]+nbofpoints]
+                            y0=y[indexes[item1]-nbofpoints:indexes[item1]+nbofpoints]
+#                            print('')
+#                            print(len(y0))
                             try:
-                                x0=x[indexes[item1]-nbofpoints:indexes[item1]+nbofpoints]
-                                y0=y[indexes[item1]-nbofpoints:indexes[item1]+nbofpoints]
-#                                print(len(y0))
                                 base=list(peakutils.baseline(y0,1))
-                                #baseline height
-                                bhleft=np.mean(y0[:self.basepoints.get()])
-                                bhright=np.mean(y0[-self.basepoints.get():])
+                            except ValueError:
+                                print('valueerror: ', len(y0))
+                            #baseline height
+                            bhleft=np.mean(y0[:self.basepoints.get()])
+                            bhright=np.mean(y0[-self.basepoints.get():])
 #                                baselineheightatmaxpeak=(bhleft+bhright)/2
-                                baselineheightatmaxpeak=base[nbofpoints]
-    #                            print(baselineheightatmaxpeak)
-    #                            print("")
-    #                            print(abs(bhleft-bhright))
-                                if abs(bhleft-bhright)<self.diffleftright.get():#arbitrary choice of criteria...
-                                    #find FWHM
-                                    d=y0-((max(y0)-bhright)/2)
-                                    ind=np.where(d>bhright)[0]
-                                    
-                                    hl=(x0[ind[0]-1]*y0[ind[0]]-y0[ind[0]-1]*x0[ind[0]])/(x0[ind[0]-1]-x0[ind[0]])
-                                    ml=(y0[ind[0]-1]-hl)/x0[ind[0]-1]
-                                    yfwhm=((max(y0)-baselineheightatmaxpeak)/2)+baselineheightatmaxpeak
-                                    xleftfwhm=(yfwhm - hl)/ml
-                                    hr=(x0[ind[-1]]*y0[ind[-1]+1]-y0[ind[-1]]*x0[ind[-1]+1])/(x0[ind[-1]]-x0[ind[-1]+1])
-                                    mr=(y0[ind[-1]]-hr)/x0[ind[-1]]
-                                    xrightfwhm=(yfwhm - hr)/mr
-                                    
-                                    FWHM=abs(xrightfwhm-xleftfwhm)
-    #                                Peakheight=max(y0)-baselineheightatmaxpeak
-                                    Peakheight=max(y0)-baselineheightatmaxpeak
-                                    center=x[indexes[item1]]
-                                    f = interp1d(x0, y0-base, kind='cubic')
-                                    x2 = lambda x: f(x)
-                                    peakarea = integrate.quad(x2,x0[0],x0[-1])[0]
+                            baselineheightatmaxpeak=base[nbofpoints]
+#                            print(baselineheightatmaxpeak)
+#                            print("")
+#                            print(abs(bhleft-bhright))
+                            if abs(bhleft-bhright)<self.diffleftright.get():#arbitrary choice of criteria...
+                                #find FWHM
+                                d=y0-((max(y0)-bhright)/2)
+                                ind=np.where(d>bhright)[0]
+                                
+                                hl=(x0[ind[0]-1]*y0[ind[0]]-y0[ind[0]-1]*x0[ind[0]])/(x0[ind[0]-1]-x0[ind[0]])
+                                ml=(y0[ind[0]-1]-hl)/x0[ind[0]-1]
+                                yfwhm=((max(y0)-baselineheightatmaxpeak)/2)+baselineheightatmaxpeak
+                                xleftfwhm=(yfwhm - hl)/ml
+                                hr=(x0[ind[-1]]*y0[ind[-1]+1]-y0[ind[-1]]*x0[ind[-1]+1])/(x0[ind[-1]]-x0[ind[-1]+1])
+                                mr=(y0[ind[-1]]-hr)/x0[ind[-1]]
+                                xrightfwhm=(yfwhm - hr)/mr
+                                
+                                FWHM=abs(xrightfwhm-xleftfwhm)
+#                                Peakheight=max(y0)-baselineheightatmaxpeak
+                                Peakheight=max(y0)-baselineheightatmaxpeak
+                                center=x[indexes[item1]]
+#                                f = interp1d(x0, y0-base, kind='cubic')
+#                                x2 = lambda x: f(x)
+#                                peakarea = integrate.quad(x2,x0[0],x0[-1])[0]
+                                peakarea = integrate.trapz(y0-base)
 
-    #                                print(nbofpoints)
-    #                                print(baselineheightatmaxpeak)
-                                    tempdat["Position"]=center
-                                    tempdat["PositionQ"]=tth_to_q(center)
-                                    tempdat["FWHM"]=FWHM
-                                    tempdat["Intensity"]=Peakheight
-                                    tempdat["PeakArea"]=peakarea
-                                    tempdat["IntBreadth"]=peakarea/Peakheight
-                                    tempdat["PeakName"]=''
-                                    tempdat["CrystSize"]=self.ScherrerCst.get()*0.1*lambdaXRD/(radians(tempdat["IntBreadth"])*cos(radians(tempdat["Position"]/2)))
-                                    tempdat["xydata"]=[x0,y0, base,[xleftfwhm,xrightfwhm],[yfwhm,yfwhm]]
-                                    
-                                    appendcheck=1
-                                    break
-                                else:
-                                    if nbofpoints>=self.basepoints.get():
-                                        nbofpoints-=5
-                                    else:
-                                        print("indexerror unsolvable")
-                                        print(y[indexes[item1]])
-                                        break
-                            except IndexError:
-                                if nbofpoints>=self.basepoints.get():
-                                    nbofpoints-=5
+#                                print(nbofpoints)
+#                                print(baselineheightatmaxpeak)
+                                tempdat["Position"]=center
+                                tempdat["PositionQ"]=tth_to_q(center)
+                                tempdat["FWHM"]=FWHM
+                                tempdat["Intensity"]=Peakheight
+                                tempdat["PeakArea"]=peakarea
+                                tempdat["IntBreadth"]=peakarea/Peakheight
+                                tempdat["PeakName"]=''
+                                tempdat["CrystSize"]=self.ScherrerCst.get()*0.1*lambdaXRD/(radians(tempdat["IntBreadth"])*cos(radians(tempdat["Position"]/2)))
+                                tempdat["xydata"]=[x0,y0, base,[xleftfwhm,xrightfwhm],[yfwhm,yfwhm]]
+                                
+                                appendcheck=1
+                                break
+                            else:
+                                if nbofpoints>=2*self.basepoints.get():
+                                    nbofpoints-=2
                                 else:
                                     print("indexerror unsolvable")
+                                    print(x[indexes[item1]])
                                     break
+                        except IndexError:
+                            if nbofpoints>=2*self.basepoints.get():
+                                nbofpoints-=2
+                            else:
+                                print("indexerror unsolvable")
+                                break
                         
                     if appendcheck:
                         DATA[item][4].append(tempdat)

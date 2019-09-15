@@ -11,7 +11,7 @@ from scipy.interpolate import interp1d
 import peakutils
 from peakutils.plot import plot as pplot
 from PIL import Image as ImageTk
-from scipy import signal
+from scipy import signal, integrate
 from scipy.signal import chirp, find_peaks, peak_widths
 
 """
@@ -57,7 +57,7 @@ if ready:
         DATA[samplenumber]={}
     
     for i in range(len(file_paths)):
-
+        plt.close()
         partdict={}
         filename=os.path.split(file_paths[i])[-1][:-9]
         print(filename)
@@ -77,7 +77,7 @@ if ready:
         
         #extract which type of file it is
         filetype=filename.split('_')[1]
-        print(filetype)
+#        print(filetype)
         DATA[samplenumber][filetype]={}
         #get data
         filetoread = open(file_paths[i],"r", encoding='ISO-8859-1')
@@ -118,22 +118,56 @@ if ready:
     #        print(base)
             plt.plot(x,base)
             
+            indexLeft=0
+            indexRight=-1
+            peakheight=y[indexes[0]]-base[indexes[0]]
+            i=1
+#            print(len(y))
+#            print(indexes[0])
+            while 1:
+                
+                if y[indexes[0]+i]-base[indexes[0]+i]<=0:
+                    indexRight=indexes[0]+i
+                    break
+                elif indexes[0]+i==len(y)-1:
+                    break
+                else:
+                    i+=1
+            i=1
+            while 1:
+                if y[indexes[0]-i]-base[indexes[0]-i]<=0:
+                    indexLeft=indexes[0]-i
+                    break
+                elif indexes[0]-i==0:
+                    break  
+                else:
+                    i+=1
+#            print(x[indexLeft])
+#            print(x[indexRight])
+            restrictedX=[x[item] for item in range(indexLeft,indexRight,1)]
+            restrictedY=[y[item] for item in range(indexLeft,indexRight,1)]
+            restrictedBase=[base[item] for item in range(indexLeft,indexRight,1)]
+            plt.plot(restrictedX, restrictedY)
+#            print('')
             #calculate area
-            f = interp1d(x, yarray-base, kind='cubic')
-            plt.plot(x, f(x))
-            f2 = lambda x0: f(x0)
-            peakarea = integrate.quad(f2,x[0],x[-1])[0]
-            print(peakarea)
+#            f = interp1d(restrictedX, np.array(restrictedY)-np.array(restrictedBase), kind='cubic')
+#            plt.plot(restrictedX, f(restrictedX))
+#            f2 = lambda x0: f(x0)
+#            peakarea = integrate.quad(f2,restrictedX[0],restrictedX[-1])[0]
+#            print(peakarea)
             
+            peakarea=np.trapz(np.array(restrictedY)-np.array(restrictedBase),dx=1)
+#            print(peakarea)
+
             #normalize area
             
             PL_area_norm = peakarea * (10**OD) * (150 / LaserPower) * (1000 / Int_Time)
             
-            print(PL_area_norm)
+            print('PL_area_norm: ',PL_area_norm)
         else:
             PL_area_norm=0
             print('no peak')
-        
+        plt.show()
         #export control graphs with overlay baseline lines and area taken
         
         DATA[samplenumber][filetype]={'LaserPower':LaserPower, 'type': filetype, 'Int_Time':Int_Time, 'OD': OD, 'wave': x, 
@@ -144,7 +178,7 @@ if ready:
     print('')
     for key in list(DATA.keys()):
         for key1 in list(DATA[key].keys()):
-            print(key1)
+#            print(key1)
             if key1=='laserPLemptysphere':
                 L_a = DATA[key][key1]['PL_area_norm']
             elif key1=='laserPLoffsample':
@@ -158,7 +192,7 @@ if ready:
         
         A = 1 - L_c / L_b
         ext_PLQE = (P_c - (1 - A) * P_b) / (L_a * A)
-        print(ext_PLQE)
+        print('PLQE: ',ext_PLQE*100,'%')
 
 
 

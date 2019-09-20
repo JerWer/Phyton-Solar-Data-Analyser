@@ -93,6 +93,8 @@ mpp graph:
     
 
 
+- for CIGS station: dark file makes some errors...
+
 """
 #%%############# Global variable definition
 testdata = []
@@ -3170,12 +3172,12 @@ class IVApp(Toplevel):
 #                        print(partdict["MeasDayTime2"])
                         break
                 
-                partdict["MeasComment"]=filerawdata[-1][filerawdata[-1].index('"')+1:-3]
-                
-                if "aftermpp" in partdict["MeasComment"]:
-                    partdict["aftermpp"]=1
-                else:
-                    partdict["aftermpp"]=0
+#                partdict["MeasComment"]=filerawdata[-1][filerawdata[-1].index('"')+1:-3]
+                partdict["MeasComment"]=''
+#                if "aftermpp" in partdict["MeasComment"]:
+#                    partdict["aftermpp"]=1
+#                else:
+#                    partdict["aftermpp"]=0
                 
                 for item in range(len(filerawdata)):
                     if "X SetScale" in filerawdata[item]:

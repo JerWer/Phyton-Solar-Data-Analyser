@@ -176,6 +176,7 @@ if ready:
     #calculate PLQE with Richard Friend's formula
     
     print('')
+    found=0
     for key in list(DATA.keys()):
         for key1 in list(DATA[key].keys()):
 #            print(key1)
@@ -189,10 +190,12 @@ if ready:
                 P_c = DATA[key][key1]['PL_area_norm']
             elif key1=='samplePLoff':
                 P_b = DATA[key][key1]['PL_area_norm']
-        
+                found=1
+        if found==0:
+            P_b=0
         A = 1 - L_c / L_b
         ext_PLQE = (P_c - (1 - A) * P_b) / (L_a * A)
-        print('PLQE: ',ext_PLQE*100,'%')
+        print('PLQE '+key+': ',ext_PLQE*100,'%')
 
 
 

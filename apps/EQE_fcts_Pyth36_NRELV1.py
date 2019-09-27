@@ -627,8 +627,11 @@ class EQEApp(Toplevel):
                     
                     datadict['DATA']=[[],[]]
                     for item in filedat:
-                        datadict['DATA'][0].append(float(item.split('\t')[0]))
-                        datadict['DATA'][1].append(float(item.split('\t')[1]))
+                        try:
+                            datadict['DATA'][0].append(float(item.split('\t')[0]))
+                            datadict['DATA'][1].append(float(item.split('\t')[1]))
+                        except:
+                            pass
                     
                     m=list(zip(*sorted(zip(datadict['DATA'][0],datadict['DATA'][1]), key=lambda pair: pair[0])))
                     

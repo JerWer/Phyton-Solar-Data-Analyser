@@ -35,7 +35,8 @@ import os.path
 import shutil
 import sqlite3
 from dateutil import parser
-
+from scipy import stats
+from statistics import mean
 
 """
 TODOLIST
@@ -84,16 +85,23 @@ add time plot to autoanalysis if span over 5hrs
 
 Plottime graph:
 - normalization: at chosen time (only in relative plot)
-- yscaling
 - change legend
     
 
 mpp graph:
     problem with legend mod if after importing on loaded session: invalid command name toplevel3.!canvas.!frame.!entry2
-    
+    problem is solved if save session again and reload
 
 
 - for CIGS station: dark file makes some errors...
+
+
+
+UpdateCompGraph
+updateCompgrouptoplotdropbutton
+GraphCompsave_as
+
+
 
 """
 #%%############# Global variable definition
@@ -127,6 +135,7 @@ titmpp=0
 titStat=0
 samplesgroups=["Default group"]
 groupstoplot=["Default group"]
+groupstoplotcomp=["Default group"]
 
 listofanswer=[]
 listoflinestyle=[]
@@ -166,7 +175,7 @@ class IVApp(Toplevel):
         Toplevel.__init__(self, *args, **kwargs)
         Toplevel.wm_title(self, "IVApp")
         Toplevel.config(self,background="white")
-        self.wm_geometry("1050x700")
+        self.wm_geometry("1250x700")
         self.wm_resizable(True,True)
         center(self)
         #self.iconbitmap('icon1.ico') #gives an error when calling self.__init__() : TclError: bitmap "icon1.ico" not defined
@@ -199,6 +208,7 @@ class IVApp(Toplevel):
         self.mppsubfig = self.fig.add_subplot(533) 
         self.GroupStatfig = self.fig.add_subplot(537)  
         self.TimeEvolfig = self.fig.add_subplot(5,3,13) 
+        self.CompParamGroupfig = self.fig.add_subplot(5,3,15) 
          
         label = tk.Label(self.superframe, text="IV & MPPT DATA Analyzer", bg="black",fg="white")
         label.grid(row = 0, column = 0, rowspan = 2, columnspan = 100, sticky = "wens")
@@ -210,13 +220,64 @@ class IVApp(Toplevel):
             self.Frame2.rowconfigure(r, weight=1)    
         for c in range(100):
             self.Frame2.columnconfigure(c, weight=1)
-               
+        
+        #### Comparison of parameters ####
+        
+        self.Frame31 = Frame(self.superframe, bg="white")
+        self.Frame31.grid(row = 55, column = 60, rowspan = 5, columnspan = 30)
+        
+        self.saveCompgraph = Button(self.Frame31, text="Save graph",
+                            command = self.GraphCompsave_as)
+        self.saveCompgraph.grid(row=0, column=0, columnspan=6)
+
+        CompChoiceList = ["Voc","Jsc","FF", "Eff", "Roc", "Rsc","Vmpp","Jmpp"]
+        self.CompXChoice=StringVar()
+        self.CompXChoice.set("Eff") # default choice
+        self.dropMenuComp = OptionMenu(self.Frame31, self.CompXChoice, *CompChoiceList, command=self.UpdateCompGraph)
+        self.dropMenuComp.grid(row=0, column=7, columnspan=5)
+        self.CompYChoice=StringVar()
+        self.CompYChoice.set("Eff") # default choice
+        self.dropMenuComp = OptionMenu(self.Frame31, self.CompYChoice, *CompChoiceList, command=self.UpdateCompGraph)
+        self.dropMenuComp.grid(row=0, column=12, columnspan=5)
+        
+        self.Compgrouptoplotbutton = tk.Menubutton(self.Frame31, text="grouptoplot", 
+                                   indicatoron=True, borderwidth=1, relief="raised")
+        self.Compgrouptoplotmenu = tk.Menu(self.Compgrouptoplotbutton, tearoff=False)
+        self.Compgrouptoplotbutton.configure(menu=self.Compgrouptoplotmenu)
+        self.Compgrouptoplotbutton.grid(row=0, column=17, columnspan=6)
+        
+        self.updateCompgrouptoplotdropbutton()
+        
+        self.minYCompgraph = tk.DoubleVar()
+        entry=Entry(self.Frame31, textvariable=self.minYCompgraph,width=3)
+        entry.grid(row=1,column=0,columnspan=2)
+        self.minYCompgraph.set(0)
+        self.maxYCompgraph = tk.DoubleVar()
+        entry=Entry(self.Frame31, textvariable=self.maxYCompgraph,width=3)
+        entry.grid(row=1,column=2,columnspan=2)
+        self.maxYCompgraph.set(1)
+        self.minXCompgraph = tk.DoubleVar()
+        entry=Entry(self.Frame31, textvariable=self.minXCompgraph,width=3)
+        entry.grid(row=1,column=4,columnspan=2)
+        self.minXCompgraph.set(0)
+        self.maxXCompgraph = tk.DoubleVar()
+        entry=Entry(self.Frame31, textvariable=self.maxXCompgraph,width=3)
+        entry.grid(row=1,column=6,columnspan=2)
+        self.maxXCompgraph.set(1)
+        self.minmaxCompgraphcheck = IntVar()
+        Checkbutton(self.Frame31,text="rescale?",variable=self.minmaxCompgraphcheck, 
+                           onvalue=1,offvalue=0,height=1, width=6, command = lambda: self.UpdateCompGraph(1),fg='black',background='white').grid(row=1, column=8, columnspan=5)
+#        aftermppcheck=Checkbutton(self.Frame31,text="onlyDark?",variable=self.minmaxCompgraphcheck, 
+#                           onvalue=1,offvalue=0,height=1, width=6, command = lambda: self.UpdateCompGraph(1),fg='black',background='white')
+#        aftermppcheck.grid(row=1, column=13, columnspan=5)
+#        aftermppcheck=Checkbutton(self.Frame31,text="onlyLight?",variable=self.minmaxCompgraphcheck, 
+#                           onvalue=1,offvalue=0,height=1, width=6, command = lambda: self.UpdateCompGraph(1),fg='black',background='white')
+#        aftermppcheck.grid(row=1, column=18, columnspan=6)
+        
         #### TimeEvol ####
-        columnpos = 25
-        rowpos = 52
         
         self.Frame3 = Frame(self.superframe, bg="white")
-        self.Frame3.grid(row = 55, column = 8, rowspan = 5, columnspan = 30)
+        self.Frame3.grid(row = 54, column = 8, rowspan = 5, columnspan = 30)
         
         self.saveTimegraph = Button(self.Frame3, text="Save graph",
                             command = self.GraphTimesave_as)
@@ -254,19 +315,19 @@ class IVApp(Toplevel):
         self.LineornolineTimegraph = IntVar()
         lineTime=Checkbutton(self.Frame3,text="Line?",variable=self.LineornolineTimegraph, 
                            onvalue=1,offvalue=0,height=1, width=3, command = lambda: self.UpdateTimeGraph(1),fg='black',background='white')
-        lineTime.grid(row=3, column=0, columnspan=6)
+        lineTime.grid(row=2, column=0, columnspan=6)
         self.LineornolineTimegraph.set(1)
         
         self.big4Timegraph = IntVar()
         lineTime=Checkbutton(self.Frame3,text="big4?",variable=self.big4Timegraph, 
                            onvalue=1,offvalue=0,height=1, width=3, command = lambda: self.UpdateTimeGraph(1),fg='black',background='white')
-        lineTime.grid(row=3, column=13, columnspan=5)
+        lineTime.grid(row=2, column=13, columnspan=5)
         self.big4Timegraph.set(1)
         
         self.timerelativeTimegraph = IntVar()
         lineTime=Checkbutton(self.Frame3,text="RelativeTime?",variable=self.timerelativeTimegraph, 
                            onvalue=1,offvalue=0,height=1, width=10, command = lambda: self.UpdateTimeGraph(1),fg='black',background='white')
-        lineTime.grid(row=3, column=7, columnspan=5)
+        lineTime.grid(row=2, column=7, columnspan=5)
         self.timerelativeTimegraph.set(0)
         self.normalTimegraph = IntVar()
         lineTime=Checkbutton(self.Frame3,text="Normal.?",variable=self.normalTimegraph, 
@@ -277,6 +338,19 @@ class IVApp(Toplevel):
         entry=Entry(self.Frame3, textvariable=self.normalsettimegraph,width=3)
         entry.grid(row=1,column=18,columnspan=2)
         self.normalsettimegraph.set(-1)
+        
+        self.minYtimegraph = tk.DoubleVar()
+        entry=Entry(self.Frame3, textvariable=self.minYtimegraph,width=3)
+        entry.grid(row=2,column=18,columnspan=2)
+        self.minYtimegraph.set(0)
+        self.maxYtimegraph = tk.DoubleVar()
+        entry=Entry(self.Frame3, textvariable=self.maxYtimegraph,width=3)
+        entry.grid(row=2,column=20,columnspan=2)
+        self.maxYtimegraph.set(1)
+        self.minmaxtimegraphcheck = IntVar()
+        aftermppcheck=Checkbutton(self.Frame3,text="Yscale",variable=self.minmaxtimegraphcheck, 
+                           onvalue=1,offvalue=0,height=1, width=6, command = lambda: self.UpdateTimeGraph(1),fg='black',background='white')
+        aftermppcheck.grid(row=2, column=22, columnspan=3)
         
         #### Group ####
         columnpos = 8
@@ -631,7 +705,7 @@ class IVApp(Toplevel):
         while j<2:
             #try: 
             file_pathnew=[]
-            file_path =filedialog.askopenfilenames(title="Please select the IV files")
+            file_path =filedialog.askopenfilenames(title="Please select the JV files")
             if file_path!='':
                 filetypes=[os.path.splitext(item)[1] for item in file_path]
 #                print(list(set(filetypes)))
@@ -2563,12 +2637,112 @@ class IVApp(Toplevel):
                 self.TimeEvolfig.set_xlim(minx-0.05*(maxx-minx),maxx+0.05*(maxx-minx))    
                 self.TimeEvolfig.set_xlabel('Time')
             
+            if self.minmaxtimegraphcheck.get():
+                self.TimeEvolfig.set_ylim(self.minYtimegraph.get(),self.maxYtimegraph.get())
+            
             self.TimeEvolfig.set_ylabel(self.TimeChoice.get())
             for tick in self.TimeEvolfig.get_xticklabels():
                 tick.set_rotation(20)
             self.TimeEvolfigleg=self.TimeEvolfig.legend(loc='lower left', bbox_to_anchor=(1, 0))
             plt.gcf().canvas.draw()
         
+    def UpdateCompGraph(self,a):
+        global DATA
+        global DATAdark
+        global DATAFV
+        global DATAMPP
+        global groupstoplot
+        global DATAgroupforexport
+        
+        
+        DATAx=copy.deepcopy(DATA)
+        
+        samplesgroups=[]
+        for name, var in self.choicesgroupcomptoplot.items():
+            samplesgroups.append(var.get())
+        m=[]
+        for i in range(len(samplesgroups)):
+            if samplesgroups[i]==1:
+                m.append(groupstoplot[i])
+        samplesgroups=m
+        
+        print(samplesgroups)
+        
+        if samplesgroups==[]:
+            self.CompParamGroupfig.clear()
+        else:
+            grouplistdict={}
+            for item in range(len(samplesgroups)):
+                groupdict={}
+                groupdict["Group"]=samplesgroups[item]
+                listofthegroup=[]
+                for item1 in range(len(DATAx)):
+                    if DATAx[item1]["Group"]==groupdict["Group"] and DATAx[item1]["Illumination"]=='Light':
+                        listofthegroup.append(DATAx[item1])
+               
+                if len(listofthegroup)!=0:
+                    listofthegroupRev=[]
+                    listofthegroupFor=[]
+                    for item1 in range(len(listofthegroup)):
+                        if listofthegroup[item1]["ScanDirection"]=="Reverse":
+                            listofthegroupRev.append(listofthegroup[item1])
+                        else:
+                            listofthegroupFor.append(listofthegroup[item1])
+                    
+                    groupdict["Voc"]={}
+                    groupdict["Jsc"]={}
+                    groupdict["FF"]={}
+                    groupdict["Eff"]={}
+                    groupdict["Roc"]={}
+                    groupdict["Rsc"]={}
+                    groupdict["Vmpp"]={}
+                    groupdict["Jmpp"]={}
+                    
+                    
+                    groupdict["Voc"]["Rev"]=[x['Voc'] for x in listofthegroupRev if 'Voc' in x]
+                    groupdict["Voc"]["For"]=[x['Voc'] for x in listofthegroupFor if 'Voc' in x]
+                    groupdict["Jsc"]["Rev"]=[x['Jsc'] for x in listofthegroupRev if 'Jsc' in x]
+                    groupdict["Jsc"]["For"]=[x['Jsc'] for x in listofthegroupFor if 'Jsc' in x]
+                    groupdict["FF"]["Rev"]=[x['FF'] for x in listofthegroupRev if 'FF' in x]
+                    groupdict["FF"]["For"]=[x['FF'] for x in listofthegroupFor if 'FF' in x]
+                    groupdict["Eff"]["Rev"]=[x['Eff'] for x in listofthegroupRev if 'Eff' in x]
+                    groupdict["Eff"]["For"]=[x['Eff'] for x in listofthegroupFor if 'Eff' in x]
+                    groupdict["Roc"]["Rev"]=[x['Roc'] for x in listofthegroupRev if 'Roc' in x]
+                    groupdict["Roc"]["For"]=[x['Roc'] for x in listofthegroupFor if 'Roc' in x]
+                    groupdict["Rsc"]["Rev"]=[x['Rsc'] for x in listofthegroupRev if 'Rsc' in x]
+                    groupdict["Rsc"]["For"]=[x['Rsc'] for x in listofthegroupFor if 'Rsc' in x]
+                    groupdict["Vmpp"]["Rev"]=[x['Vmpp'] for x in listofthegroupRev if 'Vmpp' in x]
+                    groupdict["Vmpp"]["For"]=[x['Vmpp'] for x in listofthegroupFor if 'Vmpp' in x]
+                    groupdict["Jmpp"]["Rev"]=[x['Jmpp'] for x in listofthegroupRev if 'Jmpp' in x]
+                    groupdict["Jmpp"]["For"]=[x['Jmpp'] for x in listofthegroupFor if 'Jmpp' in x]
+                    
+#                    grouplistdict.append(groupdict)
+                    grouplistdict[samplesgroups[item]]=groupdict
+            colormapname="jet"
+            cmap = plt.get_cmap(colormapname)
+            colors = cmap(np.linspace(0, 1.0, len(list(grouplistdict.keys()))))
+            colors=[tuple(item) for item in colors]  
+             
+            self.CompParamGroupfig.clear()
+            indexcolor=0
+            for group in list(grouplistdict.keys()):
+                self.CompParamGroupfig.scatter(grouplistdict[group][self.CompXChoice.get()]['Rev'],grouplistdict[group][self.CompYChoice.get()]['Rev']
+                                            ,label=group+'_Rev',color=colors[indexcolor],marker="o")
+                self.CompParamGroupfig.scatter(grouplistdict[group][self.CompXChoice.get()]['For'],grouplistdict[group][self.CompYChoice.get()]['For']
+                                            ,label=group+'_For',color=colors[indexcolor],marker="s")
+                indexcolor+=1
+                
+            if self.minmaxCompgraphcheck.get():
+                self.CompParamGroupfig.set_ylim([self.minYCompgraph.get(),self.maxYCompgraph.get()])
+                self.CompParamGroupfig.set_xlim([self.minXCompgraph.get(),self.maxXCompgraph.get()])
+            
+            self.CompParamGroupfig.set_ylabel(self.CompYChoice.get())    
+            self.CompParamGroupfig.set_xlabel(self.CompXChoice.get()) 
+#            self.CompParamGroupfig.legend()
+            self.CompParamGroupfig.legend(loc='lower left', bbox_to_anchor=(1, 0))
+            
+        plt.gcf().canvas.draw()
+            
         
     def UpdateIVGraph(self):
         global DATA
@@ -3040,7 +3214,7 @@ class IVApp(Toplevel):
         from scipy.interpolate import interp1d, UnivariateSpline
     
         # Create a dict to store the parameters. Default values are -1 indicating failure to extract parameter
-        params = {'Voc': -1., 'Jsc': -1., 'FF': -1., 'Pmax': -1., 'Roc':-1., 'Rsc':-1., 'Jmpp':-1, 'Vmpp':-1}
+        params = {'Voc': -1., 'Jsc': -1., 'FF': -1., 'Pmax': -1., 'Roc':-1., 'Rsc':-1., 'Jmpp':-1, 'Vmpp':-1, 'Rshunt':-1, 'Rseries':-1}
         
         try:
             # Extract Jsc by interpolating wrt V
@@ -3051,26 +3225,26 @@ class IVApp(Toplevel):
             # Extract Voc by interpolating wrt J
             jv_interp_J = interp1d(jv[1], jv[0], bounds_error=False, fill_value=0.)
             Voc = jv_interp_J(0.)
-#            print(Voc)
+    #            print(Voc)
             params['Voc'] = np.around(Voc, decimals=4)
         
             # Resample JV curve over standard interval and find Pmax
             Vrange_new = np.arange(0., Voc, resample_step_size)
-#            print(Vrange_new)
+    #            print(Vrange_new)
             jv_resampled = np.zeros((len(Vrange_new), 3))
             jv_resampled[:,0] = np.copy(Vrange_new)
             jv_resampled[:,1] = jv_interp_V(jv_resampled[:,0])
             jv_resampled[:,2] = np.abs(np.multiply(jv_resampled[:,0], jv_resampled[:,1]))
-#            print(jv_resampled)
+    #            print(jv_resampled)
             pmax=np.max(np.abs(np.multiply(jv_resampled[:,0], jv_resampled[:,1])))
             params['Pmax'] = np.around(np.max(np.abs(np.multiply(jv_resampled[:,0], jv_resampled[:,1]))), decimals=4)
             indPmax=list(jv_resampled[:,2]).index(pmax)
             params['Jmpp']=abs(list(jv_resampled[:,1])[indPmax])
-#            print(list(jv_resampled[:,1])[indPmax])
-#            print(indPmax)
-#            print(jv_interp_J(list(jv_resampled[:,1])[indPmax]))
+    #            print(list(jv_resampled[:,1])[indPmax])
+    #            print(indPmax)
+    #            print(jv_interp_J(list(jv_resampled[:,1])[indPmax]))
             params['Vmpp']=1000*abs(list(jv_resampled[:,0])[indPmax])
-#            print(params['Vmpp'])
+    #            print(params['Vmpp'])
         
             # Calculate fill factor
             params['FF'] = abs(100*np.around(pmax/(Jsc*Voc), decimals=4))
@@ -3079,11 +3253,86 @@ class IVApp(Toplevel):
             x= [x0 for x0,y0 in sorted(zip(jv[0],jv[1]))]
             y= [0.001*y0 for x0,y0 in sorted(zip(jv[0],jv[1]))]
     
-            spl = UnivariateSpline(x,y, s=0)
-            splder = spl.derivative(n=1)
-            params['Roc']=1./splder(params['Voc'])
-            params['Rsc']=1./splder(0.)
-
+#            spl = UnivariateSpline(x,y, s=0)
+    #        plt.plot(x, spl(x))
+    #        plt.plot(x,y,'ro')
+    #        plt.show()
+    #        splder = spl.derivative(n=1)
+    #        plt.plot(x,1/splder(x))
+    #        plt.show()
+    #        params['Roc']=1./splder(params['Voc'])
+    #        params['Rsc']=1./splder(0.)
+            
+            
+    #        print('Rsc')
+    #        print(params['Rsc'])
+    #        print(params['Roc'])
+            
+            xSC=[]
+            ySC=[]
+            for i in range(len(x)):
+                if x[i]>=0:
+                    xSC.append(x[i-3])
+                    xSC.append(x[i-2])
+                    xSC.append(x[i-1])
+                    xSC.append(x[i])
+                    xSC.append(x[i+1])
+                    xSC.append(x[i+2])
+                    ySC.append(y[i-3])
+                    ySC.append(y[i-2])
+                    ySC.append(y[i-2])
+                    ySC.append(y[i])
+                    ySC.append(y[i+1])
+                    ySC.append(y[i+2])
+                    break
+    #        print(xSC)
+    #        print(ySC)
+    #        plt.plot(xSC,ySC,'bo')
+            xSC=np.array(xSC)
+            ySC=np.array(ySC)    
+                
+    #        slope = stats.linregress(xSC,ySC)   
+            
+            params['Rsc'] =abs( 1/(((mean(xSC)*mean(ySC)) - mean(xSC*ySC)) / ((mean(xSC)**2) - mean(xSC**2))))    
+            
+            if params['Jsc']>1:
+                xSC=[]
+                ySC=[]
+                for i in range(len(x)):
+                    if x[i]>=params['Voc']:
+                        xSC.append(x[i-2])
+                        xSC.append(x[i-1])
+                        xSC.append(x[i])
+                        xSC.append(x[i+1])
+                        
+                        ySC.append(y[i-2])
+                        ySC.append(y[i-1])
+                        ySC.append(y[i])
+                        ySC.append(y[i+1])
+                        break
+#                plt.plot(xSC,ySC,'bo')
+                xSC=np.array(xSC)
+                ySC=np.array(ySC)      
+                
+                params['Roc'] =abs( 1/(((mean(xSC)*mean(ySC)) - mean(xSC*ySC)) / ((mean(xSC)**2) - mean(xSC**2))))
+            else:
+                xSC=x[-3:]
+                ySC=y[-3:]
+#                plt.plot(xSC,ySC,'bo')
+                xSC=np.array(xSC)
+                ySC=np.array(ySC)      
+                
+                params['Roc'] = abs(1/(((mean(xSC)*mean(ySC)) - mean(xSC*ySC)) / ((mean(xSC)**2) - mean(xSC**2))) )   
+            
+            
+            
+            
+#        plt.show()
+#        print(params['Rsc'])
+#        print(params['Roc'])
+#        print(params['Jsc'])
+        
+        
         except:
             print("error with fits, probably a dark curve...")
     
@@ -3533,7 +3782,9 @@ class IVApp(Toplevel):
             DATAMPP[item]['SampleName']=groupednames[item]
         
         self.updategrouptoplotdropbutton()
+        self.updateCompgrouptoplotdropbutton()
         self.UpdateGroupGraph(1)
+        self.UpdateCompGraph(1)
         
     def getdatalistsfromIVTFfiles(self, file_path):
         global DATA
@@ -4084,7 +4335,9 @@ class IVApp(Toplevel):
             DATAMPP[item]['SampleName']=groupednames[item]
         
         self.updategrouptoplotdropbutton()
+        self.updateCompgrouptoplotdropbutton()
         self.UpdateGroupGraph(1)
+        self.UpdateCompGraph(1)
         
 #%%######################################################################
         
@@ -4154,6 +4407,9 @@ class IVApp(Toplevel):
         
         except:
             print("there is an exception")    
+    def GraphCompsave_as(self):
+        print('')
+        
     def GraphTimesave_as(self):
         global DATAtimeevolforexport
         try:
@@ -5940,6 +6196,7 @@ class IVApp(Toplevel):
                                      onvalue=1, offvalue=0, command = self.UpdateMppGraph0)
             self.UpdateMppGraph0() 
         self.UpdateGroupGraph(1)
+        self.UpdateCompGraph(1)
         self.updateTable()
         
 #%%######################################################################
@@ -6363,7 +6620,9 @@ class IVApp(Toplevel):
             self.updateTable()
             self.UpdateIVGraph()
             self.updategrouptoplotdropbutton()
+            self.updateCompgrouptoplotdropbutton()
             self.UpdateGroupGraph(1)
+            self.UpdateCompGraph(1)
 #%%######################################################################
     
     def GiveIVatitle(self):
@@ -6932,6 +7191,7 @@ class IVApp(Toplevel):
         self.updateTable()
         self.UpdateIVGraph()
         self.UpdateGroupGraph(1)
+        self.UpdateCompGraph(1)
         
 #########################################################
 #########################################################        
@@ -6983,6 +7243,7 @@ class IVApp(Toplevel):
             for item in selected_items:
                 self.treeview.delete(item)
             self.UpdateGroupGraph(1)
+            self.UpdateCompGraph(1)
         except IndexError:
             messagebox.showinfo("Information","you didn't select an element in the table")
 #                print("you didn't select an element in the table")
@@ -7162,7 +7423,19 @@ class IVApp(Toplevel):
             self.choicesgrouptoplot[choice] = tk.IntVar(value=1)
             self.grouptoplotmenu.add_checkbutton(label=groupstoplot[choice], variable=self.choicesgrouptoplot[choice], 
                                  onvalue=1, offvalue=0, command = lambda: self.UpdateGroupGraph(1))
+    
+    def updateCompgrouptoplotdropbutton(self):
+        global groupstoplot
+        
+        self.Compgrouptoplotmenu = tk.Menu(self.Compgrouptoplotbutton, tearoff=False)
+        self.Compgrouptoplotbutton.configure(menu=self.Compgrouptoplotmenu)
+        self.choicesgroupcomptoplot = {}
+        for choice in range(len(groupstoplot)):
+            self.choicesgroupcomptoplot[choice] = tk.IntVar(value=1)
+            self.Compgrouptoplotmenu.add_checkbutton(label=groupstoplot[choice], variable=self.choicesgroupcomptoplot[choice], 
+                                 onvalue=1, offvalue=0, command = lambda: self.UpdateCompGraph(1))
 
+        
     def printlist2(self):
         global samplesgroups,groupstoplot
         groupstoplot=list(self.listbox.get(0,tk.END))
@@ -7171,7 +7444,9 @@ class IVApp(Toplevel):
         self.reorderwindow.destroy()
         self.window.destroy()
         self.updategrouptoplotdropbutton()
+        self.updateCompgrouptoplotdropbutton()
         self.UpdateGroupGraph(1)
+        self.UpdateCompGraph(1)
         #self.groupfromTable()
     
     def validategroup(self):
@@ -7199,7 +7474,9 @@ class IVApp(Toplevel):
                         break
         self.TableBuilder()
         self.updategrouptoplotdropbutton()
+        self.updateCompgrouptoplotdropbutton()
         self.UpdateGroupGraph(1)
+        self.UpdateCompGraph(1)
         self.window.destroy()
         
     def deletegroup(self):
@@ -7215,7 +7492,9 @@ class IVApp(Toplevel):
                 DATA[i]["Group"]="Default group"
         self.TableBuilder()
         self.updategrouptoplotdropbutton()
+        self.updateCompgrouptoplotdropbutton()
         self.UpdateGroupGraph(1)
+        self.UpdateCompGraph(1)
         self.window.destroy()
         
     def SampleMppNames(self, DATAx):

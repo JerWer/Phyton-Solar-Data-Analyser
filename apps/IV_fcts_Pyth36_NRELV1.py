@@ -96,10 +96,7 @@ mpp graph:
 - for CIGS station: dark file makes some errors...
 
 
-
-UpdateCompGraph
-updateCompgrouptoplotdropbutton
-GraphCompsave_as
+GraphCompsave_as, add text file
 
 
 
@@ -111,6 +108,7 @@ DATAJVforexport=[]
 DATAJVtabforexport=[]
 DATAmppforexport=[]
 DATAgroupforexport=[]
+DATAcompforexport=[]
 DATAtimeevolforexport={}#key: [[realtimeF, relativetimeF, valueF, normalizedvaluetot0F, realtimeR, relativetimeR, valueR, normalizedvaluetot0R]]
 takenforplot=[]
 takenforplotmpp=[]
@@ -2652,9 +2650,9 @@ class IVApp(Toplevel):
         global DATAFV
         global DATAMPP
         global groupstoplot
-        global DATAgroupforexport
+        global DATAcompforexport
         
-        
+        DATAcompforexport=[]
         DATAx=copy.deepcopy(DATA)
         
         samplesgroups=[]
@@ -2726,12 +2724,18 @@ class IVApp(Toplevel):
             self.CompParamGroupfig.clear()
             indexcolor=0
             for group in list(grouplistdict.keys()):
+                DATAcompforexport.append([self.CompXChoice.get(),'']+grouplistdict[group][self.CompXChoice.get()]['Rev'])
+                DATAcompforexport.append([self.CompYChoice.get(),group+'_Rev']+grouplistdict[group][self.CompYChoice.get()]['Rev'])
                 self.CompParamGroupfig.scatter(grouplistdict[group][self.CompXChoice.get()]['Rev'],grouplistdict[group][self.CompYChoice.get()]['Rev']
                                             ,label=group+'_Rev',color=colors[indexcolor],marker="o")
+                DATAcompforexport.append([self.CompXChoice.get(),'']+grouplistdict[group][self.CompXChoice.get()]['For'])
+                DATAcompforexport.append([self.CompYChoice.get(),group+'For']+grouplistdict[group][self.CompYChoice.get()]['For'])
                 self.CompParamGroupfig.scatter(grouplistdict[group][self.CompXChoice.get()]['For'],grouplistdict[group][self.CompYChoice.get()]['For']
                                             ,label=group+'_For',color=colors[indexcolor],marker="s")
                 indexcolor+=1
-                
+            
+            DATAcompforexport=map(list, six.moves.zip_longest(*DATAcompforexport, fillvalue=' '))
+    
             if self.minmaxCompgraphcheck.get():
                 self.CompParamGroupfig.set_ylim([self.minYCompgraph.get(),self.maxYCompgraph.get()])
                 self.CompParamGroupfig.set_xlim([self.minXCompgraph.get(),self.maxXCompgraph.get()])
@@ -2739,7 +2743,7 @@ class IVApp(Toplevel):
             self.CompParamGroupfig.set_ylabel(self.CompYChoice.get())    
             self.CompParamGroupfig.set_xlabel(self.CompXChoice.get()) 
 #            self.CompParamGroupfig.legend()
-            self.CompParamGroupfig.legend(loc='lower left', bbox_to_anchor=(1, 0))
+            self.leg=self.CompParamGroupfig.legend(loc='lower left', bbox_to_anchor=(1, 0))
             
         plt.gcf().canvas.draw()
             
@@ -4408,7 +4412,27 @@ class IVApp(Toplevel):
         except:
             print("there is an exception")    
     def GraphCompsave_as(self):
-        print('')
+        global DATAcompforexport
+        
+        try:
+            f = filedialog.asksaveasfilename(defaultextension=".png", filetypes = (("graph file", "*.png"),("All Files", "*.*")))
+            extent = self.CompParamGroupfig.get_window_extent().transformed(self.fig.dpi_scale_trans.inverted())
+            self.fig.savefig(f, dpi=300, bbox_inches=extent.expanded(3, 1.4),bbox_extra_artists=(self.leg,))#, transparent=True)
+                           
+            DATAcompforexport1=[]            
+            for item in DATAcompforexport:
+                line=""
+                for item1 in item:
+                    line=line+str(item1)+"\t"
+                line=line[:-1]+"\n"
+                DATAcompforexport1.append(line)
+                
+            file = open(str(f[:-4]+"_dat.txt"),'w', encoding='ISO-8859-1')
+            file.writelines("%s" % item for item in DATAcompforexport1)
+            file.close()
+        
+        except:
+            print("there is an exception") 
         
     def GraphTimesave_as(self):
         global DATAtimeevolforexport

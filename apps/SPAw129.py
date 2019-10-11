@@ -259,13 +259,13 @@ for sample in samplenames:
     Effsubfig=fig.add_subplot(224)
     
     listsfortxtexport=[]
-    
+    elementnormal=1
     x=[(item-min(DATA[sample]['TimesSec']))/3600 for item in DATA[sample]['TimesSec']]
     listsfortxtexport.append(x)
-    y1=[item/DATA[sample]['Reverse']['Voc'][0] for item in DATA[sample]['Reverse']['Voc']]
+    y1=[item/DATA[sample]['Reverse']['Voc'][elementnormal] for item in DATA[sample]['Reverse']['Voc']]
     listsfortxtexport.append(y1)
     Vocsubfig.plot(x,y1,color='black', label=sample+'_Reverse')
-    y2=[item/DATA[sample]['Forward']['Voc'][0] for item in DATA[sample]['Forward']['Voc']]
+    y2=[item/DATA[sample]['Forward']['Voc'][elementnormal] for item in DATA[sample]['Forward']['Voc']]
     listsfortxtexport.append(y2)
     Vocsubfig.plot(x,y2,color='grey', label=sample+'_Forward')
     Vocsubfig.axis([min(x),max(x),0,max(y1+y2)])
@@ -275,10 +275,10 @@ for sample in samplenames:
     Vocsubfig.set_ylabel('Normalized Voc')
 
 #    x=[(item-min(DATA[sample]['TimesSec']))/3600 for item in DATA[sample]['TimesSec']]
-    y1=[item/DATA[sample]['Reverse']['Jsc'][0] for item in DATA[sample]['Reverse']['Jsc']]
+    y1=[item/DATA[sample]['Reverse']['Jsc'][elementnormal] for item in DATA[sample]['Reverse']['Jsc']]
     listsfortxtexport.append(y1)
     Jscsubfig.plot(x,y1,color='black', label=sample+'_Reverse')
-    y2=[item/DATA[sample]['Forward']['Jsc'][0] for item in DATA[sample]['Forward']['Jsc']]
+    y2=[item/DATA[sample]['Forward']['Jsc'][elementnormal] for item in DATA[sample]['Forward']['Jsc']]
     listsfortxtexport.append(y2)
     Jscsubfig.plot(x,y2,color='grey', label=sample+'_Forward')
     Jscsubfig.axis([min(x),max(x),0,max(y1+y2)])
@@ -288,10 +288,10 @@ for sample in samplenames:
     Jscsubfig.set_ylabel('Normalized Jsc')
     
 #    x=[(item-min(DATA[sample]['TimesSec']))/3600 for item in DATA[sample]['TimesSec']]
-    y1=[item/DATA[sample]['Reverse']['FF'][0] for item in DATA[sample]['Reverse']['FF']]
+    y1=[item/DATA[sample]['Reverse']['FF'][elementnormal] for item in DATA[sample]['Reverse']['FF']]
     listsfortxtexport.append(y1)
     FFsubfig.plot(x,y1,color='black', label=sample+'_Reverse')
-    y2=[item/DATA[sample]['Forward']['FF'][0] for item in DATA[sample]['Forward']['FF']]
+    y2=[item/DATA[sample]['Forward']['FF'][elementnormal] for item in DATA[sample]['Forward']['FF']]
     listsfortxtexport.append(y2)
     FFsubfig.plot(x,y2,color='grey', label=sample+'_Forward')
     FFsubfig.axis([min(x),max(x),0,max(y1+y2)])
@@ -301,10 +301,10 @@ for sample in samplenames:
     FFsubfig.set_ylabel('Normalized FF')
     
 #    x=[(item-min(DATA[sample]['TimesSec']))/3600 for item in DATA[sample]['TimesSec']]
-    y1=[item/DATA[sample]['Reverse']['Power'][0] for item in DATA[sample]['Reverse']['Power']]
+    y1=[item/DATA[sample]['Reverse']['Power'][elementnormal] for item in DATA[sample]['Reverse']['Power']]
     listsfortxtexport.append(y1)
     Effsubfig.plot(x,y1,color='black', label=sample+'_Reverse')
-    y2=[item/DATA[sample]['Forward']['Power'][0] for item in DATA[sample]['Forward']['Power']]
+    y2=[item/DATA[sample]['Forward']['Power'][elementnormal] for item in DATA[sample]['Forward']['Power']]
     listsfortxtexport.append(y2)
     Effsubfig.plot(x,y2,color='grey', label=sample+'_Forward')
     Effsubfig.axis([min(x),max(x),0,max(y1+y2)])
@@ -315,7 +315,74 @@ for sample in samplenames:
     
     
     fig.savefig(sample+'.png')
-    plt.close()
+    
+#    fig.clear()
+#    fig = plt.figure(figsize=(15, 10))
+#    Vocsubfig=fig.add_subplot(221)
+#    Jscsubfig=fig.add_subplot(222)
+#    FFsubfig=fig.add_subplot(223)
+#    Effsubfig=fig.add_subplot(224)
+##    plt.close()
+#    
+##    listsfortxtexport=[]
+#    
+#    x=[(item-min(DATA[sample]['TimesSec']))/3600 for item in DATA[sample]['TimesSec']]
+##    listsfortxtexport.append(x)
+#    y1=[item/max(DATA[sample]['Reverse']['Voc']) for item in DATA[sample]['Reverse']['Voc']]
+##    listsfortxtexport.append(y1)
+#    Vocsubfig.plot(x,y1,color='black', label=sample+'_Reverse')
+#    y2=[item/max(DATA[sample]['Forward']['Voc']) for item in DATA[sample]['Forward']['Voc']]
+##    listsfortxtexport.append(y2)
+#    Vocsubfig.plot(x,y2,color='grey', label=sample+'_Forward')
+#    Vocsubfig.axis([min(x),max(x),0,max(y1+y2)])
+#    Vocsubfig.axhline(y=0.8,color='r')
+#    Vocsubfig.legend()
+#    Vocsubfig.set_xlabel('Time (hrs)')
+#    Vocsubfig.set_ylabel('Normalized Voc')
+#
+##    x=[(item-min(DATA[sample]['TimesSec']))/3600 for item in DATA[sample]['TimesSec']]
+#    y1=[item/max(DATA[sample]['Reverse']['Jsc']) for item in DATA[sample]['Reverse']['Jsc']]
+##    listsfortxtexport.append(y1)
+#    Jscsubfig.plot(x,y1,color='black', label=sample+'_Reverse')
+#    y2=[item/max(DATA[sample]['Forward']['Jsc']) for item in DATA[sample]['Forward']['Jsc']]
+##    listsfortxtexport.append(y2)
+#    Jscsubfig.plot(x,y2,color='grey', label=sample+'_Forward')
+#    Jscsubfig.axis([min(x),max(x),0,max(y1+y2)])
+#    Jscsubfig.axhline(y=0.8,color='r')
+#    Jscsubfig.legend()
+#    Jscsubfig.set_xlabel('Time (hrs)')
+#    Jscsubfig.set_ylabel('Normalized Jsc')
+#    
+##    x=[(item-min(DATA[sample]['TimesSec']))/3600 for item in DATA[sample]['TimesSec']]
+#    y1=[item/max(DATA[sample]['Reverse']['FF']) for item in DATA[sample]['Reverse']['FF']]
+##    listsfortxtexport.append(y1)
+#    FFsubfig.plot(x,y1,color='black', label=sample+'_Reverse')
+#    y2=[item/max(DATA[sample]['Forward']['FF']) for item in DATA[sample]['Forward']['FF']]
+##    listsfortxtexport.append(y2)
+#    FFsubfig.plot(x,y2,color='grey', label=sample+'_Forward')
+#    FFsubfig.axis([min(x),max(x),0,max(y1+y2)])
+#    FFsubfig.axhline(y=0.8,color='r')
+#    FFsubfig.legend()
+#    FFsubfig.set_xlabel('Time (hrs)')
+#    FFsubfig.set_ylabel('Normalized FF')
+#    
+##    x=[(item-min(DATA[sample]['TimesSec']))/3600 for item in DATA[sample]['TimesSec']]
+#    y1=[item/max(DATA[sample]['Reverse']['Power']) for item in DATA[sample]['Reverse']['Power']]
+##    listsfortxtexport.append(y1)
+#    Effsubfig.plot(x,y1,color='black', label=sample+'_Reverse')
+#    y2=[item/max(DATA[sample]['Forward']['Power']) for item in DATA[sample]['Forward']['Power']]
+##    listsfortxtexport.append(y2)
+#    Effsubfig.plot(x,y2,color='grey', label=sample+'_Forward')
+#    Effsubfig.axis([min(x),max(x),0,max(y1+y2)])
+#    Effsubfig.axhline(y=0.8,color='r')
+#    Effsubfig.legend()
+#    Effsubfig.set_xlabel('Time (hrs)')
+#    Effsubfig.set_ylabel('Normalized Power')
+#    
+#    
+#    fig.savefig(sample+'_normatmax.png')
+#    plt.close()    
+    
     #export text files with all data: timeSecNormalized, Voc, Jsc, FF, Power
     
     DATAtoexport=['Time\tVocRev\tVocFor\tJscRev\tJscFor\tFFRev\tFFFor\tPowerRev\tPowerFor\n']

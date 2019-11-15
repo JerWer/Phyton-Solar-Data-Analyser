@@ -79,6 +79,19 @@ https://www.osti.gov/pages/servlets/purl/1357744
 - Isaac's files: don't take the _EQE, only consider _1st_EQE and _2nd_EQE
 
 
+add in "showthesecret" the vertical line where the Eg is taken
+
+new Eg calculation: https://onlinelibrary.wiley.com/doi/epdf/10.1002/aenm.201902573
+    - now: I calculate the inflection point and take the intercept of x-axis by the tangent. this is actually E0
+    - Eg at inflection point
+    - EgEQETauc: plot (QeEQE*hv)**2 vs hv. then find tangent, extrapolate to x-axis, intercept is Eg
+    - Eg,EQE/2, half the max of EQE
+    - Eg,EQE=0.5, at 50%
+
+add option to calculate the radiative limit, loss-in-potential
+
+add table with all Eg types, selectable items to plot, so user can have a direct view of all Eg&Jsc values
+
 """
 #%%
 
@@ -255,7 +268,7 @@ class EQEApp(Toplevel):
                            onvalue=1,offvalue=0,height=1, width=10, command = self.UpdateEQEGraph, bg="white")
         legend.pack(side=tk.LEFT,fill=tk.X,expand=1)
         
-        Ytype = ["linear","log","Tauc","NormalizedByAll","NormalizedBySingle"]
+        Ytype = ["linear","log","Tauc1","Tauc2","NormalizedByAll","NormalizedBySingle"]
         self.YtypeChoice=StringVar()
         self.YtypeChoice.set("linear") # default choice
         self.dropMenuFrame = OptionMenu(frame21314, self.YtypeChoice, *Ytype, command=self.choiceYtype)
@@ -612,15 +625,15 @@ class EQEApp(Toplevel):
                 if filedat[1].split('\t')[0]!='':
                     samplename=file_path[k].replace('\\','/') 
                     samplename=samplename.split('/')[-1].replace('-','_').split('.')[0]
-    #                print(samplename)
+                    print(samplename)
     #                AllNames.append(samplename)
                     batchnumb=samplename.split('_')[0]
                     samplenumb=samplename.split('_')[1]
                     
                     
                     datetime=modification_date(file_path[k])
-                    datadict = {'dateTime': datetime, 'filepath':file_path[k],'Name': samplename,'Jsc':[],'Eg':[],
-                                        'EgTauc':[],'lnDat':[],'EgLn':[],'EuLn':[],'stderrEgLn':[],'NbColumn':999, 
+                    datadict = {'dateTime': datetime, 'filepath':file_path[k],'Name': samplename,'Jsc':[],'Eg0':[],'EgIP':[],
+                                        'EgTauc':[],'EgTauc2':[],'lnDat':[],'EgLn':[],'EuLn':[],'stderrEgLn':[],'NbColumn':999, 
                                         'DATA': [],'tangent': [],'tangentLn': [], 'comment': "", 'Vbias':[],'filterbias':[],'ledbias':[],
                                         'batchnumb': batchnumb, 'samplenumb': samplenumb}   
                     
@@ -663,13 +676,20 @@ class EQEApp(Toplevel):
                         if item >400:
                             splderlist.append(splder(item))
                             newx.append(item)
-                    minder=splderlist.index(min(splderlist))
-                    xhighslope = newx[minder]
-                    yhighslope = spl(newx[minder]).tolist()
-                    yprimehighslope = splder(newx[minder]).tolist()
-                    Eg= 1239.8/(xhighslope - yhighslope/yprimehighslope)
-                    datadict['Eg'].append(Eg)
-                    datadict['tangent'].append([yprimehighslope, yhighslope-yprimehighslope*xhighslope])#[pente,ordonnee a l'origine]
+                    if splderlist==[]:
+                        datadict['Eg0'].append(0)
+                        datadict['tangent'].append([0, 0])
+                    else:
+                        minder=splderlist.index(min(splderlist))
+                        xhighslope = newx[minder]
+                        datadict['EgIP'].append(1239.8/xhighslope)
+                        yhighslope = spl(newx[minder]).tolist()
+                        yprimehighslope = splder(newx[minder]).tolist()
+                        Eg= 1239.8/(xhighslope - yhighslope/yprimehighslope)#intercept of x-axis
+                        datadict['Eg0'].append(Eg)
+                        datadict['tangent'].append([yprimehighslope, yhighslope-yprimehighslope*xhighslope])#[pente,ordonnee a l'origine]
+                        print('EgIP: ', datadict['EgIP'][0])
+                        print('Eg0: ', datadict['Eg0'][0])
         
                     #Eg calculation from ln(EQE) curve
                     xE=[]
@@ -712,35 +732,67 @@ class EQEApp(Toplevel):
                         datadict['stderrEgLn'].append([999,999])
                     
                     #Tauc plots
-                    try:
-                        xtauc=[1239.8/xm for xm in x]
-                        ytauc=[((math.log(1-y[m]))**2)*(xtauc[m]**2) for m in range(len(y)) ]
-                        xtauc=xtauc[::-1]
-                        ytauc=ytauc[::-1]
-                        spl = UnivariateSpline(xtauc, ytauc, s=0)
-                        splder = spl.derivative(n=1)
-                        splderlist = []
-                        newx=[]
-                        for item in xtauc :
-                            if item <2:
-                                splderlist.append(splder(item))
-                                newx.append(item)
-                        
-                        maxder=splderlist.index(max(splderlist))
-                        xhighslope = newx[maxder]
-                        yhighslope = spl(newx[maxder]).tolist()
-                        yprimehighslope = splder(newx[maxder]).tolist()
-                        Eg= (xhighslope - yhighslope/yprimehighslope)
-                        
-                        m=yprimehighslope
-                        h=yhighslope-yprimehighslope*xhighslope
-                        x2=Eg
-                        x=np.linspace(x2,x2+0.1,10)
-                        y=eval('m*x+h')
-                        datadict['EgTauc'].append([Eg,xtauc,ytauc,m,h])
-                    except:
-                        datadict['EgTauc'].append([999,[],[],999,999])
-                                        
+#                    try:
+#                        xtauc=[1239.8/xm for xm in x]
+#                        ytauc=[((math.log(1-y[m]))**2)*(xtauc[m]**2) for m in range(len(y)) ]
+#                        xtauc=xtauc[::-1]
+#                        ytauc=ytauc[::-1]
+#                        spl = UnivariateSpline(xtauc, ytauc, s=0)
+#                        splder = spl.derivative(n=1)
+#                        splderlist = []
+#                        newx=[]
+#                        for item in xtauc :
+#                            if item <2:
+#                                splderlist.append(splder(item))
+#                                newx.append(item)
+#                        
+#                        maxder=splderlist.index(max(splderlist))
+#                        xhighslope = newx[maxder]
+#                        yhighslope = spl(newx[maxder]).tolist()
+#                        yprimehighslope = splder(newx[maxder]).tolist()
+#                        Eg= (xhighslope - yhighslope/yprimehighslope)
+#                        
+#                        m=yprimehighslope
+#                        h=yhighslope-yprimehighslope*xhighslope
+#                        x2=Eg
+#                        x=np.linspace(x2,x2+0.1,10)
+#                        y=eval('m*x+h')
+#                        datadict['EgTauc2'].append([Eg,xtauc,ytauc,m,h])
+#                    except:
+#                        datadict['EgTauc2'].append([999,[],[],999,999])
+                    
+#                    try:
+                    xtauc=[1239.8/xm for xm in x]
+                    ytauc=[(y[m]*xtauc[m])**2 for m in range(len(y)) ]
+                    xtauc=xtauc[::-1]
+                    ytauc=ytauc[::-1]
+                    spl = UnivariateSpline(xtauc, ytauc, s=0)
+                    splder = spl.derivative(n=1)
+                    splderlist = []
+                    newx=[]
+                    for item in xtauc :
+                        if item <2:
+                            splderlist.append(splder(item))
+                            newx.append(item)
+                    
+                    maxder=splderlist.index(max(splderlist))
+                    xhighslope = newx[maxder]
+                    yhighslope = spl(newx[maxder]).tolist()
+                    yprimehighslope = splder(newx[maxder]).tolist()
+                    Eg= (xhighslope - yhighslope/yprimehighslope)
+                    
+                    m=yprimehighslope
+                    h=yhighslope-yprimehighslope*xhighslope
+                    x2=Eg
+                    x=np.linspace(x2,x2+0.1,10)
+                    y=eval('m*x+h')
+                    datadict['EgTauc'].append([Eg,xtauc,ytauc,m,h])
+#                    except:
+#                        datadict['EgTauc2'].append([999,[],[],999,999])
+                    
+                    print('EgTauc: ', datadict['EgTauc'][0][0])                    
+
+                    
                     datadict['Vbias'].append('')
                     datadict['filterbias'].append('')
                     datadict['ledbias'].append('')
@@ -1219,12 +1271,18 @@ class EQEApp(Toplevel):
         for i in range(len(DATA)):
             for j in range(len(DATA[i]['Jsc'])):
                 DATAforgraph.append([DATA[i]['Name']+'_'+str(j),DATA[i]['Jsc'][j],DATA[i]['DATA'][0],DATA[i]['DATA'][j+1],
-                                     DATA[i]['Eg'][j],DATA[i]['Name']+'_'+str(j),DATA[i]['Name']+'_'+str(j)+'_'+'Jsc: %.2f' % DATA[i]['Jsc'][j],
-                                     DATA[i]['Name']+'_'+str(j)+'_'+'Eg: %.2f' % DATA[i]['Eg'][j],DATA[i]['Name']+'_'+str(j)+'_'+'Jsc: %.2f' % DATA[i]['Jsc'][j]+'_'+'Eg: %.2f' % DATA[i]['Eg'][j],
-                                     '-',colorstylelist[i],DATA[i]['tangent'][j][0],DATA[i]['tangent'][j][1],DATA[i]['tangentLn'][j][0],DATA[i]['tangentLn'][j][1],DATA[i]['lnDat'][j][0],DATA[i]['lnDat'][j][1],
+                                     DATA[i]['Eg0'][j],
+                                     DATA[i]['Name']+'_'+str(j),
+                                     DATA[i]['Name']+'_'+str(j)+'_'+'Jsc: %.2f' % DATA[i]['Jsc'][j],
+                                     DATA[i]['Name']+'_'+str(j)+'_'+'Eg0: %.2f' % DATA[i]['Eg0'][j],
+                                     DATA[i]['Name']+'_'+str(j)+'_'+'Jsc: %.2f' % DATA[i]['Jsc'][j]+'_'+'Eg0: %.2f' % DATA[i]['Eg0'][j],
+                                     '-',colorstylelist[i],
+                                     DATA[i]['tangent'][j][0], DATA[i]['tangent'][j][1], DATA[i]['tangentLn'][j][0],DATA[i]['tangentLn'][j][1],DATA[i]['lnDat'][j][0],DATA[i]['lnDat'][j][1],
                                      DATA[i]['tangentLn'][j][2],DATA[i]['tangentLn'][j][3],DATA[i]['EgTauc'][j][0],DATA[i]['EgTauc'][j][1],DATA[i]['EgTauc'][j][2],DATA[i]['EgTauc'][j][3],DATA[i]['EgTauc'][j][4],
-                                     DATA[i]['Name']+'_'+str(j)+'_'+'Eg: %.2f' % DATA[i]['EgLn'][j],DATA[i]['Name']+'_'+str(j)+'_'+'Jsc: %.2f' % DATA[i]['Jsc'][j]+'_'+'Eg: %.2f' % DATA[i]['EgLn'][j],
-                                     DATA[i]['Name']+'_'+str(j)+'_'+'Eg: %.2f' % DATA[i]['EgTauc'][j][0],DATA[i]['Name']+'_'+str(j)+'_'+'Jsc: %.2f' % DATA[i]['Jsc'][j]+'_'+'Eg: %.2f' % DATA[i]['EgTauc'][j][0],
+                                     DATA[i]['Name']+'_'+str(j)+'_'+'Egln: %.2f' % DATA[i]['EgLn'][j],
+                                     DATA[i]['Name']+'_'+str(j)+'_'+'Jsc: %.2f' % DATA[i]['Jsc'][j]+'_'+'Egln: %.2f' % DATA[i]['EgLn'][j],
+                                     DATA[i]['Name']+'_'+str(j)+'_'+'EgTauc: %.2f' % DATA[i]['EgTauc'][j][0],
+                                     DATA[i]['Name']+'_'+str(j)+'_'+'Jsc: %.2f' % DATA[i]['Jsc'][j]+'_'+'EgTauc: %.2f' % DATA[i]['EgTauc'][j][0],
                                      DATA[i]['integJsclist'][j+1],int(2)
                                      ])
         DATAFORGRAPH = DATAforgraph
@@ -1674,7 +1732,7 @@ class EQEApp(Toplevel):
             self.EQEgraph.axis([min(minxlist),max(maxxlist),min(minylist),math.ceil(max(maxylist))])
             plt.gcf().canvas.draw()
             
-        elif self.YtypeChoice.get()=="Tauc":
+        elif self.YtypeChoice.get()=="Tauc1":
             self.EQEgraph.clear()
             self.EQEgraphY2.clear()
             self.EQEgraphY2.get_yaxis().set_visible(False)
@@ -1691,7 +1749,7 @@ class EQEApp(Toplevel):
                 minylist.append(min(y))
                 maxylist.append(max(y))
                 colx=["Energy","eV"," "]+x
-                coly=["Ln(1-EQE)^2 * E^2","a.u.",DATAx[sampletotake[i]][5]]+y
+                coly=["(EQE*E)^2","(eV)^2",DATAx[sampletotake[i]][5]]+y
                 DATAforexport.append(colx)
                 DATAforexport.append(coly)
                 
@@ -1715,7 +1773,7 @@ class EQEApp(Toplevel):
                     y=eval('m*x+h')
                     EQEfig.plot(x,y)
                 
-            self.EQEgraph.set_ylabel('Ln(1-EQE)^2 * E^2 (a.u.)', fontsize=14)
+            self.EQEgraph.set_ylabel("(EQE*E)^2 (eV)^2", fontsize=14)
             self.EQEgraph.set_xlabel('Energy (eV)', fontsize=14)
             if titEQE:
                 self.EQEgraph.set_title(self.titleEQE.get())
@@ -1730,7 +1788,64 @@ class EQEApp(Toplevel):
 #                self.EQEgraph.axis([self.minx.get(),self.maxx.get(),self.miny.get(),self.maxy.get()])
             self.EQEgraph.axis([min(minxlist),max(maxxlist),min(minylist),math.ceil(max(maxylist))])
             plt.gcf().canvas.draw()
-    
+            
+#        elif self.YtypeChoice.get()=="Tauc2":
+#            self.EQEgraph.clear()
+#            self.EQEgraphY2.clear()
+#            self.EQEgraphY2.get_yaxis().set_visible(False)
+#            EQEfig=self.EQEgraph
+#            minxlist=[]
+#            maxxlist=[]
+#            minylist=[]
+#            maxylist=[]
+#            for i in range(len(sampletotake)):
+#                x = DATAx[sampletotake[i]][20]
+#                y = DATAx[sampletotake[i]][21]                
+#                minxlist.append(x[0])
+#                maxxlist.append(x[-1])
+#                minylist.append(min(y))
+#                maxylist.append(max(y))
+#                colx=["Energy","eV"," "]+x
+#                coly=["Ln(1-EQE)^2 * E^2","a.u.",DATAx[sampletotake[i]][5]]+y
+#                DATAforexport.append(colx)
+#                DATAforexport.append(coly)
+#                
+#                if self.CheckLegend.get()==1:
+#                    if self.CheckLegJsc.get()==0 and self.CheckLegEg.get()==0:
+#                        EQEfig.plot(x,y,label=DATAx[sampletotake[i]][5],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])
+#                    elif self.CheckLegJsc.get()==1 and self.CheckLegEg.get()==0:
+#                        EQEfig.plot(x,y,label=DATAx[sampletotake[i]][6],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])
+#                    elif self.CheckLegJsc.get()==0 and self.CheckLegEg.get()==1:
+#                        EQEfig.plot(x,y,label=DATAx[sampletotake[i]][26],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])
+#                    elif self.CheckLegJsc.get()==1 and self.CheckLegEg.get()==1:
+#                        EQEfig.plot(x,y,label=DATAx[sampletotake[i]][27],linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])
+#                else:
+#                    EQEfig.plot(x,y,linestyle=DATAx[sampletotake[i]][9],color=DATAx[sampletotake[i]][10],linewidth=DATAx[sampletotake[i]][29])
+#                
+#                if self.CheckTangent.get()==1:
+#                    m=DATAx[sampletotake[i]][22]
+#                    h=DATAx[sampletotake[i]][23]
+#                    x2=DATAx[sampletotake[i]][19]
+#                    x=np.linspace(x2,x2+0.1,10)
+#                    y=eval('m*x+h')
+#                    EQEfig.plot(x,y)
+#                
+#            self.EQEgraph.set_ylabel('Ln(1-EQE)^2 * E^2 (a.u.)', fontsize=14)
+#            self.EQEgraph.set_xlabel('Energy (eV)', fontsize=14)
+#            if titEQE:
+#                self.EQEgraph.set_title(self.titleEQE.get())
+#            if self.CheckLegend.get()==1:
+#                if self.pos1.get()==5:
+#                    self.leg=EQEfig.legend(bbox_to_anchor=(1, 0.5), loc=2, ncol=1)
+#                elif self.pos1.get()==1 or self.pos1.get()==2  or self.pos1.get()==3 or self.pos1.get()==4:   
+#                    self.leg=EQEfig.legend(loc=self.pos1.get())
+#                else:
+#                    self.leg=EQEfig.legend(loc=0)
+##            if self.CheckAutoscale.get()==0:        
+##                self.EQEgraph.axis([self.minx.get(),self.maxx.get(),self.miny.get(),self.maxy.get()])
+#            self.EQEgraph.axis([min(minxlist),max(maxxlist),min(minylist),math.ceil(max(maxylist))])
+#            plt.gcf().canvas.draw()    
+            
         elif self.YtypeChoice.get()=="NormalizedBySingle":
             self.EQEgraph.clear()
             self.EQEgraphY2.clear()

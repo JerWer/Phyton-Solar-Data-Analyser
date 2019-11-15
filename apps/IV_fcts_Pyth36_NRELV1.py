@@ -97,7 +97,7 @@ mpp graph:
 
 
 GraphCompsave_as, add text file
-
+ChangeLegendTimegraph
 
 
 """
@@ -2664,7 +2664,7 @@ class IVApp(Toplevel):
                 m.append(groupstoplot[i])
         samplesgroups=m
         
-        print(samplesgroups)
+#        print(samplesgroups)
         
         if samplesgroups==[]:
             self.CompParamGroupfig.clear()
@@ -3073,7 +3073,7 @@ class IVApp(Toplevel):
                     if xlsheet.cell(13,0).value=="Number of points":#epfl hit iv files
                         #AllNames.append(sheet_names[j])
                         partdict["SampleName"]=sheet_names[j]
-                        print(partdict["SampleName"])
+#                        print(partdict["SampleName"])
                         partdict["SampleName"]=partdict["SampleName"].replace("-","_")
                         partdict["DepID"]=partdict["SampleName"]
                         partdict["Cellletter"]='SingleEPFL'
@@ -3136,7 +3136,7 @@ class IVApp(Toplevel):
                     elif xlsheet.cell(13,0).value=="Vend:":#CSEM iv files
                         #AllNames.append(sheet_names[j])
                         partdict["SampleName"]=sheet_names[j]
-                        print(partdict["SampleName"])
+#                        print(partdict["SampleName"])
                         partdict["SampleName"]=partdict["SampleName"].replace("-","_")
                         partdict["DepID"]=partdict["SampleName"]
                         partdict["Cellletter"]='SingleCSEM'
@@ -3407,7 +3407,7 @@ class IVApp(Toplevel):
                 partdict["batchname"]=partdict["DepID"].split('.')[0]
                 partdict["SampleName"]=partdict["DepID"]+"_"+aftername.split('.')[1]+"_"+aftername.split('.')[2]
                 
-                print(partdict["SampleName"])
+#                print(partdict["SampleName"])
                 
                 if 'LIV' in aftername:
                     partdict["Illumination"]="Light"
@@ -3718,6 +3718,7 @@ class IVApp(Toplevel):
                 partdict["PowerAvg"]=sum(mpppartdat[3])/float(len(mpppartdat[3]))
                 partdict["trackingduration"]=mpppartdat[2][-1]
                 partdict["MppData"]=mpppartdat
+                partdict["SampleName"]=partdict["SampleName"]+'_'+str(partdict["MeasDayTime"])
                 DATAMPP.append(partdict)                
         
         DATA = sorted(DATA, key=itemgetter('SampleName')) 

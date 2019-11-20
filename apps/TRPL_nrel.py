@@ -194,8 +194,8 @@ else:
     plt.legend()
     plt.xlabel('Time (ns)')
     plt.ylabel('Normalized PL intensity')
-#    plt.axis([0,max(xx),0.01,1])
-#    plt.savefig(os.path.join(os.path.dirname(file_path),'graph.png'),dpi=300)
+    plt.axis([0,max(profile[0]),0.01,1])
+    plt.savefig(os.path.join(os.path.dirname(file_path),'graph.png'),dpi=300)
     plt.show()
 
 

@@ -84,8 +84,8 @@ add time plot to autoanalysis if span over 5hrs
 
 
 Plottime graph:
-- normalization: at chosen time (only in relative plot)
 - change legend
+- best of rev and forw at every date
     
 
 mpp graph:
@@ -98,6 +98,9 @@ mpp graph:
 
 GraphCompsave_as, add text file
 ChangeLegendTimegraph
+
+
+
 
 
 """
@@ -349,6 +352,18 @@ class IVApp(Toplevel):
         aftermppcheck=Checkbutton(self.Frame3,text="Yscale",variable=self.minmaxtimegraphcheck, 
                            onvalue=1,offvalue=0,height=1, width=6, command = lambda: self.UpdateTimeGraph(1),fg='black',background='white')
         aftermppcheck.grid(row=2, column=22, columnspan=3)
+        
+        self.BestofRevForTimegraph = IntVar()
+        lineTime=Checkbutton(self.Frame3,text="bestofRevFor",variable=self.BestofRevForTimegraph, 
+                           onvalue=1,offvalue=0,height=1, width=9, command = lambda: self.UpdateTimeGraph(1),fg='black',background='white')
+        lineTime.grid(row=3, column=0, columnspan=8)
+        self.BestofRevForTimegraph.set(0)
+        
+        self.BestPixofDayTimegraph = IntVar()
+        lineTime=Checkbutton(self.Frame3,text="BestEffPixDay",variable=self.BestPixofDayTimegraph, 
+                           onvalue=1,offvalue=0,height=1, width=9, command = lambda: self.UpdateTimeGraph(1),fg='black',background='white')
+        lineTime.grid(row=3, column=7, columnspan=8)
+        self.BestPixofDayTimegraph.set(0)
         
         #### Group ####
         columnpos = 8
@@ -2520,129 +2535,243 @@ class IVApp(Toplevel):
         DATAtimeevolforexport={}
         
         if takenforplotTime!=[]:
-            TimeDatDict={}
-            self.TimeEvolfig.clear()
-            for item in takenforplotTime:
-                newkey=item.split('_')[0]+'_'+item.split('_')[1]+'_'+item.split('_')[2]
-                if newkey not in TimeDatDict.keys():
-                    TimeDatDict[newkey]={'reverse':{'Voc':[[],[]],'Jsc':[[],[]],'FF':[[],[]],'Eff':[[],[]]},'forward':{'Voc':[[],[]],'Jsc':[[],[]],'FF':[[],[]],'Eff':[[],[]]}}
-                for item1 in DATA:
-                    if item1["SampleName"]==item:
-                        if item1["ScanDirection"]=="Reverse" and item1["Illumination"]=="Light":
-                            TimeDatDict[newkey]['reverse']['Voc'][0].append(item1["MeasDayTime2"])
-                            TimeDatDict[newkey]['reverse']['Voc'][1].append(item1["Voc"])
-                            TimeDatDict[newkey]['reverse']['Jsc'][0].append(item1["MeasDayTime2"])
-                            TimeDatDict[newkey]['reverse']['Jsc'][1].append(item1["Jsc"])
-                            TimeDatDict[newkey]['reverse']['FF'][0].append(item1["MeasDayTime2"])
-                            TimeDatDict[newkey]['reverse']['FF'][1].append(item1["FF"])
-                            TimeDatDict[newkey]['reverse']['Eff'][0].append(item1["MeasDayTime2"])
-                            TimeDatDict[newkey]['reverse']['Eff'][1].append(item1["Eff"])
-                        elif item1["ScanDirection"]=="Forward" and item1["Illumination"]=="Light":
-                            TimeDatDict[newkey]['forward']['Voc'][0].append(item1["MeasDayTime2"])
-                            TimeDatDict[newkey]['forward']['Voc'][1].append(item1["Voc"])
-                            TimeDatDict[newkey]['forward']['Jsc'][0].append(item1["MeasDayTime2"])
-                            TimeDatDict[newkey]['forward']['Jsc'][1].append(item1["Jsc"])
-                            TimeDatDict[newkey]['forward']['FF'][0].append(item1["MeasDayTime2"])
-                            TimeDatDict[newkey]['forward']['FF'][1].append(item1["FF"])
-                            TimeDatDict[newkey]['forward']['Eff'][0].append(item1["MeasDayTime2"])
-                            TimeDatDict[newkey]['forward']['Eff'][1].append(item1["Eff"])
-    #        num_plots = len(TimeDatDict.keys())          
-    #        plt.gca().set_prop_cycle(plt.cycler('color', plt.cm.Spectral(np.linspace(0, 1, num_plots))))
-               
-    #        print(list(TimeDatDict.keys())) 
-            minx=min(TimeDatDict[newkey]['forward'][self.TimeChoice.get()][0]+TimeDatDict[newkey]['reverse'][self.TimeChoice.get()][0])
-            maxx=max(TimeDatDict[newkey]['forward'][self.TimeChoice.get()][0]+TimeDatDict[newkey]['reverse'][self.TimeChoice.get()][0])
-            
-            for key in list(TimeDatDict.keys()):
-                partdatatime=[[],[],[],[],[],[],[],[]]
-                if minx>min(TimeDatDict[key]['forward'][self.TimeChoice.get()][0]+TimeDatDict[key]['reverse'][self.TimeChoice.get()][0]):
-                    minx=min(TimeDatDict[key]['forward'][self.TimeChoice.get()][0]+TimeDatDict[key]['reverse'][self.TimeChoice.get()][0])
-                if maxx<max(TimeDatDict[key]['forward'][self.TimeChoice.get()][0]+TimeDatDict[key]['reverse'][self.TimeChoice.get()][0]):
-                    maxx=max(TimeDatDict[key]['forward'][self.TimeChoice.get()][0]+TimeDatDict[key]['reverse'][self.TimeChoice.get()][0])
-                try:
-                    xfor, yfor=zip(*sorted(zip(TimeDatDict[key]['forward'][self.TimeChoice.get()][0],TimeDatDict[key]['forward'][self.TimeChoice.get()][1]), key = lambda x: x[1]))
-                    xfor=list(xfor)
-                    yfor=list(yfor)
-                    yfor.sort(key=dict(zip(yfor, xfor)).get)
-                    xfor=sorted(xfor)
-                    partdatatime[0]=xfor
-                    partdatatime[1]=[(m-xfor[0]).total_seconds()/3600 for m in xfor]
-                    partdatatime[2]=yfor
-                    if self.normalsettimegraph.get()==-1:
-                        partdatatime[3]=[(m)/(yfor[0]) for m in yfor]
-                    else:
-                        foundnormalsetpt=0
-                        for item in range(len(partdatatime[1])):
-                            if partdatatime[1][item]>=self.normalsettimegraph.get():
-                                partdatatime[3]=[(m)/(partdatatime[2][item]) for m in yfor]
-                                foundnormalsetpt=1
-                                break
-                        if foundnormalsetpt==0:
-                            partdatatime[3]=[(m)/(yfor[0]) for m in yfor]
-                except ValueError:
-                    pass
-                try:
-                    xrev, yrev=zip(*sorted(zip(TimeDatDict[key]['reverse'][self.TimeChoice.get()][0],TimeDatDict[key]['reverse'][self.TimeChoice.get()][1]), key = lambda x: x[1]))                
-                    xrev=list(xrev)
-                    yrev=list(yrev)
-                    yrev.sort(key=dict(zip(yrev, xrev)).get)
-                    xrev=sorted(xrev)
-                    partdatatime[4]=xrev
-                    partdatatime[5]=[(m-xrev[0]).total_seconds()/3600 for m in xrev]
-                    partdatatime[6]=yrev
-                    
-                    if self.normalsettimegraph.get()==-1:
-                        partdatatime[7]=[(m)/(yrev[0]) for m in yrev]
-                    else:
-                        foundnormalsetpt=0
-                        for item in range(len(partdatatime[5])):
-                            if partdatatime[5][item]>=self.normalsettimegraph.get():
-                                partdatatime[7]=[(m)/(partdatatime[6][item]) for m in yrev]
-                                foundnormalsetpt=1
-                                break
-                        if foundnormalsetpt==0:
-                            partdatatime[7]=[(m)/(yrev[0]) for m in yrev]
-                    
-                except ValueError:
-                    pass
-                DATAtimeevolforexport[key]=partdatatime
-             
-            color1=0 
-            for key in list(DATAtimeevolforexport.keys()):
-                xfor=DATAtimeevolforexport[key][0]
-                yfor=DATAtimeevolforexport[key][2]
-                xrev=DATAtimeevolforexport[key][4]
-                yrev=DATAtimeevolforexport[key][6]
-                if self.timerelativeTimegraph.get():
-                    xfor=DATAtimeevolforexport[key][1]
-                    xrev=DATAtimeevolforexport[key][5]
-                if self.normalTimegraph.get():
-                    yfor=DATAtimeevolforexport[key][3]
-                    yrev=DATAtimeevolforexport[key][7]
-            
-                if self.LineornolineTimegraph.get():
-                    self.TimeEvolfig.plot(xfor, yfor, linestyle='--', marker='o',color=colorstylelist[color1],label=key+'_For')
-                    self.TimeEvolfig.plot(xrev, yrev, linestyle='-', marker='o', color=colorstylelist[color1], alpha=0.5,label=key+'_Rev')
-                else:
-                    self.TimeEvolfig.plot(xfor, yfor, linestyle='', marker='o',color=colorstylelist[color1],label=key+'_For')
-                    self.TimeEvolfig.plot(xrev, yrev, linestyle='', marker='o', color=colorstylelist[color1], alpha=0.5,label=key+'_Rev')  
-                color1=color1+1
+            if self.BestPixofDayTimegraph.get()==0 and self.BestofRevForTimegraph.get()==0:
+                TimeDatDict={}
+                self.TimeEvolfig.clear()
+                for item in takenforplotTime:
+                    newkey=item.split('_')[0]+'_'+item.split('_')[1]+'_'+item.split('_')[2]
+                    if newkey not in TimeDatDict.keys():
+                        TimeDatDict[newkey]={'reverse':{'Voc':[[],[]],'Jsc':[[],[]],'FF':[[],[]],'Eff':[[],[]]},'forward':{'Voc':[[],[]],'Jsc':[[],[]],'FF':[[],[]],'Eff':[[],[]]}}
+                    for item1 in DATA:
+                        if item1["SampleName"]==item:
+                            if item1["ScanDirection"]=="Reverse" and item1["Illumination"]=="Light":
+                                TimeDatDict[newkey]['reverse']['Voc'][0].append(item1["MeasDayTime2"])
+                                TimeDatDict[newkey]['reverse']['Voc'][1].append(item1["Voc"])
+                                TimeDatDict[newkey]['reverse']['Jsc'][0].append(item1["MeasDayTime2"])
+                                TimeDatDict[newkey]['reverse']['Jsc'][1].append(item1["Jsc"])
+                                TimeDatDict[newkey]['reverse']['FF'][0].append(item1["MeasDayTime2"])
+                                TimeDatDict[newkey]['reverse']['FF'][1].append(item1["FF"])
+                                TimeDatDict[newkey]['reverse']['Eff'][0].append(item1["MeasDayTime2"])
+                                TimeDatDict[newkey]['reverse']['Eff'][1].append(item1["Eff"])
+                            elif item1["ScanDirection"]=="Forward" and item1["Illumination"]=="Light":
+                                TimeDatDict[newkey]['forward']['Voc'][0].append(item1["MeasDayTime2"])
+                                TimeDatDict[newkey]['forward']['Voc'][1].append(item1["Voc"])
+                                TimeDatDict[newkey]['forward']['Jsc'][0].append(item1["MeasDayTime2"])
+                                TimeDatDict[newkey]['forward']['Jsc'][1].append(item1["Jsc"])
+                                TimeDatDict[newkey]['forward']['FF'][0].append(item1["MeasDayTime2"])
+                                TimeDatDict[newkey]['forward']['FF'][1].append(item1["FF"])
+                                TimeDatDict[newkey]['forward']['Eff'][0].append(item1["MeasDayTime2"])
+                                TimeDatDict[newkey]['forward']['Eff'][1].append(item1["Eff"])
+        #        num_plots = len(TimeDatDict.keys())          
+        #        plt.gca().set_prop_cycle(plt.cycler('color', plt.cm.Spectral(np.linspace(0, 1, num_plots))))
+                   
+        #        print(list(TimeDatDict.keys())) 
+                minx=min(TimeDatDict[newkey]['forward'][self.TimeChoice.get()][0]+TimeDatDict[newkey]['reverse'][self.TimeChoice.get()][0])
+                maxx=max(TimeDatDict[newkey]['forward'][self.TimeChoice.get()][0]+TimeDatDict[newkey]['reverse'][self.TimeChoice.get()][0])
                 
-            
-            if self.timerelativeTimegraph.get():
-                self.TimeEvolfig.set_xlabel('Time (hours)')
-            else:
-                self.TimeEvolfig.set_xlim(minx-0.05*(maxx-minx),maxx+0.05*(maxx-minx))    
-                self.TimeEvolfig.set_xlabel('Time')
-            
-            if self.minmaxtimegraphcheck.get():
-                self.TimeEvolfig.set_ylim(self.minYtimegraph.get(),self.maxYtimegraph.get())
-            
-            self.TimeEvolfig.set_ylabel(self.TimeChoice.get())
-            for tick in self.TimeEvolfig.get_xticklabels():
-                tick.set_rotation(20)
-            self.TimeEvolfigleg=self.TimeEvolfig.legend(loc='lower left', bbox_to_anchor=(1, 0))
-            plt.gcf().canvas.draw()
+                for key in list(TimeDatDict.keys()):
+                    partdatatime=[[],[],[],[],[],[],[],[]]
+                    if minx>min(TimeDatDict[key]['forward'][self.TimeChoice.get()][0]+TimeDatDict[key]['reverse'][self.TimeChoice.get()][0]):
+                        minx=min(TimeDatDict[key]['forward'][self.TimeChoice.get()][0]+TimeDatDict[key]['reverse'][self.TimeChoice.get()][0])
+                    if maxx<max(TimeDatDict[key]['forward'][self.TimeChoice.get()][0]+TimeDatDict[key]['reverse'][self.TimeChoice.get()][0]):
+                        maxx=max(TimeDatDict[key]['forward'][self.TimeChoice.get()][0]+TimeDatDict[key]['reverse'][self.TimeChoice.get()][0])
+                    try:
+                        xfor, yfor=zip(*sorted(zip(TimeDatDict[key]['forward'][self.TimeChoice.get()][0],TimeDatDict[key]['forward'][self.TimeChoice.get()][1]), key = lambda x: x[1]))
+                        xfor=list(xfor)
+                        yfor=list(yfor)
+                        yfor.sort(key=dict(zip(yfor, xfor)).get)
+                        xfor=sorted(xfor)
+                        partdatatime[0]=xfor
+                        partdatatime[1]=[(m-xfor[0]).total_seconds()/3600 for m in xfor]
+                        partdatatime[2]=yfor
+                        if self.normalsettimegraph.get()==-1:
+                            partdatatime[3]=[(m)/(yfor[0]) for m in yfor]
+                        else:
+                            foundnormalsetpt=0
+                            for item in range(len(partdatatime[1])):
+                                if partdatatime[1][item]>=self.normalsettimegraph.get():
+                                    partdatatime[3]=[(m)/(partdatatime[2][item]) for m in yfor]
+                                    foundnormalsetpt=1
+                                    break
+                            if foundnormalsetpt==0:
+                                partdatatime[3]=[(m)/(yfor[0]) for m in yfor]
+                    except ValueError:
+                        pass
+                    try:
+                        xrev, yrev=zip(*sorted(zip(TimeDatDict[key]['reverse'][self.TimeChoice.get()][0],TimeDatDict[key]['reverse'][self.TimeChoice.get()][1]), key = lambda x: x[1]))                
+                        xrev=list(xrev)
+                        yrev=list(yrev)
+                        yrev.sort(key=dict(zip(yrev, xrev)).get)
+                        xrev=sorted(xrev)
+                        partdatatime[4]=xrev
+                        partdatatime[5]=[(m-xrev[0]).total_seconds()/3600 for m in xrev]
+                        partdatatime[6]=yrev
+                        
+                        if self.normalsettimegraph.get()==-1:
+                            partdatatime[7]=[(m)/(yrev[0]) for m in yrev]
+                        else:
+                            foundnormalsetpt=0
+                            for item in range(len(partdatatime[5])):
+                                if partdatatime[5][item]>=self.normalsettimegraph.get():
+                                    partdatatime[7]=[(m)/(partdatatime[6][item]) for m in yrev]
+                                    foundnormalsetpt=1
+                                    break
+                            if foundnormalsetpt==0:
+                                partdatatime[7]=[(m)/(yrev[0]) for m in yrev]
+                        
+                    except ValueError:
+                        pass
+                    DATAtimeevolforexport[key]=partdatatime
+                 
+                color1=0 
+                for key in list(DATAtimeevolforexport.keys()):
+                    xfor=DATAtimeevolforexport[key][0]
+                    yfor=DATAtimeevolforexport[key][2]
+                    xrev=DATAtimeevolforexport[key][4]
+                    yrev=DATAtimeevolforexport[key][6]
+                    if self.timerelativeTimegraph.get():
+                        xfor=DATAtimeevolforexport[key][1]
+                        xrev=DATAtimeevolforexport[key][5]
+                    if self.normalTimegraph.get():
+                        yfor=DATAtimeevolforexport[key][3]
+                        yrev=DATAtimeevolforexport[key][7]
+                
+                    if self.LineornolineTimegraph.get():
+                        self.TimeEvolfig.plot(xfor, yfor, linestyle='--', marker='o',color=colorstylelist[color1],label=key+'_For')
+                        self.TimeEvolfig.plot(xrev, yrev, linestyle='-', marker='o', color=colorstylelist[color1], alpha=0.5,label=key+'_Rev')
+                    else:
+                        self.TimeEvolfig.plot(xfor, yfor, linestyle='', marker='o',color=colorstylelist[color1],label=key+'_For')
+                        self.TimeEvolfig.plot(xrev, yrev, linestyle='', marker='o', color=colorstylelist[color1], alpha=0.5,label=key+'_Rev')  
+                    color1=color1+1
+                    
+                
+                if self.timerelativeTimegraph.get():
+                    self.TimeEvolfig.set_xlabel('Time (hours)')
+                else:
+                    self.TimeEvolfig.set_xlim(minx-0.05*(maxx-minx),maxx+0.05*(maxx-minx))    
+                    self.TimeEvolfig.set_xlabel('Time')
+                
+                if self.minmaxtimegraphcheck.get():
+                    self.TimeEvolfig.set_ylim(self.minYtimegraph.get(),self.maxYtimegraph.get())
+                
+                self.TimeEvolfig.set_ylabel(self.TimeChoice.get())
+                for tick in self.TimeEvolfig.get_xticklabels():
+                    tick.set_rotation(20)
+                self.TimeEvolfigleg=self.TimeEvolfig.legend(loc='lower left', bbox_to_anchor=(1, 0))
+                plt.gcf().canvas.draw()
+                
+            elif self.BestofRevForTimegraph.get()==1 and self.BestPixofDayTimegraph.get()==0:
+                print("bestrevfor")
+                
+                
+            elif self.BestofRevForTimegraph.get()==0 and self.BestPixofDayTimegraph.get()==1:   
+#                print("bestoftheday")
+                TimeDatDict={}
+                self.TimeEvolfig.clear()
+                for item in takenforplotTime:
+                    newkey=item.split('_')[0]+'_'+item.split('_')[1]#per substrate e.g. 41_10
+                    if newkey not in TimeDatDict.keys():
+                        TimeDatDict[newkey]={}
+                    for item1 in DATA:
+                        if item1["SampleName"]==item:
+                            newdatekey=str(item1["MeasDayTime2"].date())
+                            if newdatekey not in TimeDatDict[newkey].keys():
+                                TimeDatDict[newkey][newdatekey]={'Voc':[[],[]],'Jsc':[[],[]],'FF':[[],[]],'Eff':[[],[]]}
+                            
+                            TimeDatDict[newkey][newdatekey]['Voc'][0].append(item1["MeasDayTime2"])
+                            TimeDatDict[newkey][newdatekey]['Voc'][1].append(item1["Voc"])
+                            TimeDatDict[newkey][newdatekey]['Jsc'][0].append(item1["MeasDayTime2"])
+                            TimeDatDict[newkey][newdatekey]['Jsc'][1].append(item1["Jsc"])
+                            TimeDatDict[newkey][newdatekey]['FF'][0].append(item1["MeasDayTime2"])
+                            TimeDatDict[newkey][newdatekey]['FF'][1].append(item1["FF"])
+                            TimeDatDict[newkey][newdatekey]['Eff'][0].append(item1["MeasDayTime2"])
+                            TimeDatDict[newkey][newdatekey]['Eff'][1].append(item1["Eff"])
+                
+                for key0 in list(TimeDatDict.keys()):
+#                    print(key0)
+                    TimeDatDict[key0]['bestEffofday']={'Voc':[[],[]],'Jsc':[[],[]],'FF':[[],[]],'Eff':[[],[]]}
+                    for key in list(TimeDatDict[key0].keys()):
+#                        print(key)
+#                        print(max(TimeDatDict[key0][key]['Eff'][1]))
+                        
+                        ind=TimeDatDict[key0][key]['Eff'][1].index(max(TimeDatDict[key0][key]['Eff'][1]))
+                        
+                        TimeDatDict[key0]['bestEffofday']['Voc'][0].append(TimeDatDict[key0][key]['Voc'][0][ind])
+                        TimeDatDict[key0]['bestEffofday']['Voc'][1].append(TimeDatDict[key0][key]['Voc'][1][ind])
+                        TimeDatDict[key0]['bestEffofday']['Jsc'][0].append(TimeDatDict[key0][key]['Jsc'][0][ind])
+                        TimeDatDict[key0]['bestEffofday']['Jsc'][1].append(TimeDatDict[key0][key]['Jsc'][1][ind])
+                        TimeDatDict[key0]['bestEffofday']['FF'][0].append(TimeDatDict[key0][key]['FF'][0][ind])
+                        TimeDatDict[key0]['bestEffofday']['FF'][1].append(TimeDatDict[key0][key]['FF'][1][ind])
+                        TimeDatDict[key0]['bestEffofday']['Eff'][0].append(TimeDatDict[key0][key]['Eff'][0][ind])
+                        TimeDatDict[key0]['bestEffofday']['Eff'][1].append(TimeDatDict[key0][key]['Eff'][1][ind])
+                
+                minx=min(TimeDatDict[newkey]['bestEffofday'][self.TimeChoice.get()][0])
+                maxx=max(TimeDatDict[newkey]['bestEffofday'][self.TimeChoice.get()][0])
+                
+                for key in list(TimeDatDict.keys()):
+                    partdatatime=[[],[],[],[],[],[],[],[]]
+                    if minx>min(TimeDatDict[key]['bestEffofday'][self.TimeChoice.get()][0]):
+                        minx=min(TimeDatDict[key]['bestEffofday'][self.TimeChoice.get()][0])
+                    if maxx<max(TimeDatDict[key]['bestEffofday'][self.TimeChoice.get()][0]):
+                        maxx=max(TimeDatDict[key]['bestEffofday'][self.TimeChoice.get()][0])
+                    try:
+                        xfor, yfor=zip(*sorted(zip(TimeDatDict[key]['bestEffofday'][self.TimeChoice.get()][0],TimeDatDict[key]['bestEffofday'][self.TimeChoice.get()][1]), key = lambda x: x[1]))
+                        xfor=list(xfor)
+                        yfor=list(yfor)
+                        yfor.sort(key=dict(zip(yfor, xfor)).get)
+                        xfor=sorted(xfor)
+                        partdatatime[0]=xfor
+                        partdatatime[1]=[(m-xfor[0]).total_seconds()/3600 for m in xfor]
+                        partdatatime[2]=yfor
+                        if self.normalsettimegraph.get()==-1:
+                            partdatatime[3]=[(m)/(yfor[0]) for m in yfor]
+                        else:
+                            foundnormalsetpt=0
+                            for item in range(len(partdatatime[1])):
+                                if partdatatime[1][item]>=self.normalsettimegraph.get():
+                                    partdatatime[3]=[(m)/(partdatatime[2][item]) for m in yfor]
+                                    foundnormalsetpt=1
+                                    break
+                            if foundnormalsetpt==0:
+                                partdatatime[3]=[(m)/(yfor[0]) for m in yfor]
+                    except ValueError:
+                        pass
+                    
+                    DATAtimeevolforexport[key]=partdatatime
+                 
+                color1=0 
+                for key in list(DATAtimeevolforexport.keys()):
+                    xfor=DATAtimeevolforexport[key][0]
+                    yfor=DATAtimeevolforexport[key][2]
+                    
+                    if self.timerelativeTimegraph.get():
+                        xfor=DATAtimeevolforexport[key][1]
+                    if self.normalTimegraph.get():
+                        yfor=DATAtimeevolforexport[key][3]
+                
+                    if self.LineornolineTimegraph.get():
+                        self.TimeEvolfig.plot(xfor, yfor, linestyle='-', marker='o',color=colorstylelist[color1],label=key+'_Best')
+                    else:
+                        self.TimeEvolfig.plot(xfor, yfor, linestyle='', marker='o',color=colorstylelist[color1],label=key+'_Best')
+                    color1=color1+1
+                    
+                
+                if self.timerelativeTimegraph.get():
+                    self.TimeEvolfig.set_xlabel('Time (hours)')
+                else:
+                    self.TimeEvolfig.set_xlim(minx-0.05*(maxx-minx),maxx+0.05*(maxx-minx))    
+                    self.TimeEvolfig.set_xlabel('Time')
+                
+                if self.minmaxtimegraphcheck.get():
+                    self.TimeEvolfig.set_ylim(self.minYtimegraph.get(),self.maxYtimegraph.get())
+                
+                self.TimeEvolfig.set_ylabel(self.TimeChoice.get())
+                for tick in self.TimeEvolfig.get_xticklabels():
+                    tick.set_rotation(20)
+                self.TimeEvolfigleg=self.TimeEvolfig.legend(loc='lower left', bbox_to_anchor=(1, 0))
+                plt.gcf().canvas.draw()
+
+                
         
     def UpdateCompGraph(self,a):
         global DATA
@@ -3718,7 +3847,7 @@ class IVApp(Toplevel):
                 partdict["PowerAvg"]=sum(mpppartdat[3])/float(len(mpppartdat[3]))
                 partdict["trackingduration"]=mpppartdat[2][-1]
                 partdict["MppData"]=mpppartdat
-                partdict["SampleName"]=partdict["SampleName"]+'_'+str(partdict["MeasDayTime"])
+                partdict["SampleName"]=partdict["SampleName"]+'_'+str(partdict["MeasDayTime"]).replace(':','').replace(' ','-')
                 DATAMPP.append(partdict)                
         
         DATA = sorted(DATA, key=itemgetter('SampleName')) 

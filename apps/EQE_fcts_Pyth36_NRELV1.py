@@ -92,6 +92,8 @@ add option to calculate the radiative limit, loss-in-potential
 
 add table with all Eg types, selectable items to plot, so user can have a direct view of all Eg&Jsc values
 
+
+
 """
 #%%
 
@@ -761,36 +763,36 @@ class EQEApp(Toplevel):
 #                    except:
 #                        datadict['EgTauc2'].append([999,[],[],999,999])
                     
-#                    try:
-                    xtauc=[1239.8/xm for xm in x]
-                    ytauc=[(y[m]*xtauc[m])**2 for m in range(len(y)) ]
-                    xtauc=xtauc[::-1]
-                    ytauc=ytauc[::-1]
-                    spl = UnivariateSpline(xtauc, ytauc, s=0)
-                    splder = spl.derivative(n=1)
-                    splderlist = []
-                    newx=[]
-                    for item in xtauc :
-                        if item <2:
-                            splderlist.append(splder(item))
-                            newx.append(item)
+                    try:
+                        xtauc=[1239.8/xm for xm in x]
+                        ytauc=[(y[m]*xtauc[m])**2 for m in range(len(y)) ]
+                        xtauc=xtauc[::-1]
+                        ytauc=ytauc[::-1]
+                        spl = UnivariateSpline(xtauc, ytauc, s=0)
+                        splder = spl.derivative(n=1)
+                        splderlist = []
+                        newx=[]
+                        for item in xtauc :
+                            if item <2:
+                                splderlist.append(splder(item))
+                                newx.append(item)
+                        
+                        maxder=splderlist.index(max(splderlist))
+                        xhighslope = newx[maxder]
+                        yhighslope = spl(newx[maxder]).tolist()
+                        yprimehighslope = splder(newx[maxder]).tolist()
+                        Eg= (xhighslope - yhighslope/yprimehighslope)
+                        
+                        m=yprimehighslope
+                        h=yhighslope-yprimehighslope*xhighslope
+                        x2=Eg
+                        x=np.linspace(x2,x2+0.1,10)
+                        y=eval('m*x+h')
+                        datadict['EgTauc'].append([Eg,xtauc,ytauc,m,h])
+                    except:
+                        datadict['EgTauc'].append([999,[],[],999,999])
                     
-                    maxder=splderlist.index(max(splderlist))
-                    xhighslope = newx[maxder]
-                    yhighslope = spl(newx[maxder]).tolist()
-                    yprimehighslope = splder(newx[maxder]).tolist()
-                    Eg= (xhighslope - yhighslope/yprimehighslope)
-                    
-                    m=yprimehighslope
-                    h=yhighslope-yprimehighslope*xhighslope
-                    x2=Eg
-                    x=np.linspace(x2,x2+0.1,10)
-                    y=eval('m*x+h')
-                    datadict['EgTauc'].append([Eg,xtauc,ytauc,m,h])
-#                    except:
-#                        datadict['EgTauc2'].append([999,[],[],999,999])
-                    
-                    print('EgTauc: ', datadict['EgTauc'][0][0])                    
+#                    print('EgTauc: ', datadict['EgTauc'][0][0])                    
 
                     
                     datadict['Vbias'].append('')

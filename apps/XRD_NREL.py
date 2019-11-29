@@ -1166,13 +1166,15 @@ class XRDApp(Toplevel):
 #                            print(len(y0))
                             try:
                                 base=list(peakutils.baseline(y0,1))
+                                baselineheightatmaxpeak=base[nbofpoints]
                             except ValueError:
                                 print('valueerror: ', len(y0))
+                                baselineheightatmaxpeak=0
                             #baseline height
                             bhleft=np.mean(y0[:self.basepoints.get()])
                             bhright=np.mean(y0[-self.basepoints.get():])
 #                                baselineheightatmaxpeak=(bhleft+bhright)/2
-                            baselineheightatmaxpeak=base[nbofpoints]
+#                            baselineheightatmaxpeak=base[nbofpoints]
 #                            print(baselineheightatmaxpeak)
 #                            print("")
 #                            print(abs(bhleft-bhright))

@@ -1001,11 +1001,10 @@ class EQEApp(Toplevel):
                     filedat = file.readlines()
                     file.close()
                     datetime=modification_date(file_path[k])
-                    datadict = {'dateTime': datetime, 'filepath':file_path[k],'Name': samplename,'Jsc':[],'Eg':[],
-                                        'EgTauc':[],'lnDat':[],'EgLn':[],'EuLn':[],'stderrEgLn':[],'NbColumn':2, 
-                                        'DATA': [],'tangent': [],'tangentLn': [], 'comment': "", 'Vbias':[],
-                                        'filterbias':[],'ledbias':[],
-                                        'batchnumb': batchnumb, 'samplenumb': samplenumb}   
+                    datadict = {'dateTime': datetime, 'filepath':file_path[k],'Name': samplename,'Jsc':[],'Eg0':[],'EgIP':[],
+                                        'EgTauc':[],'EgTauc2':[],'lnDat':[],'EgLn':[],'EuLn':[],'stderrEgLn':[],'NbColumn':999, 
+                                        'DATA': [],'tangent': [],'tangentLn': [], 'comment': "", 'Vbias':[],'filterbias':[],'ledbias':[],
+                                        'batchnumb': batchnumb, 'samplenumb': samplenumb} 
     
                     #get EQE data
                     datadict['DATA']=[[],[]]
@@ -1047,10 +1046,11 @@ class EQEApp(Toplevel):
                             newx.append(item)
                     minder=splderlist.index(min(splderlist))
                     xhighslope = newx[minder]
+                    datadict['EgIP'].append(1239.8/xhighslope)
                     yhighslope = spl(newx[minder]).tolist()
                     yprimehighslope = splder(newx[minder]).tolist()
                     Eg= 1239.8/(xhighslope - yhighslope/yprimehighslope)
-                    datadict['Eg'].append(Eg)
+                    datadict['Eg0'].append(Eg)
                     datadict['tangent'].append([yprimehighslope, yhighslope-yprimehighslope*xhighslope])#[pente,ordonnee a l'origine]
         
                     #Eg calculation from ln(EQE) curve
@@ -1094,9 +1094,38 @@ class EQEApp(Toplevel):
                         datadict['stderrEgLn'].append([999,999])
                     
                     #Tauc plots
+#                    try:
+#                        xtauc=[1239.8/xm for xm in x]
+#                        ytauc=[((math.log(1-y[m]))**2)*(xtauc[m]**2) for m in range(len(y)) ]
+#                        xtauc=xtauc[::-1]
+#                        ytauc=ytauc[::-1]
+#                        spl = UnivariateSpline(xtauc, ytauc, s=0)
+#                        splder = spl.derivative(n=1)
+#                        splderlist = []
+#                        newx=[]
+#                        for item in xtauc :
+#                            if item <2:
+#                                splderlist.append(splder(item))
+#                                newx.append(item)
+#                        
+#                        maxder=splderlist.index(max(splderlist))
+#                        xhighslope = newx[maxder]
+#                        yhighslope = spl(newx[maxder]).tolist()
+#                        yprimehighslope = splder(newx[maxder]).tolist()
+#                        Eg= (xhighslope - yhighslope/yprimehighslope)
+#                        
+#                        m=yprimehighslope
+#                        h=yhighslope-yprimehighslope*xhighslope
+#                        x2=Eg
+#                        x=np.linspace(x2,x2+0.1,10)
+#                        y=eval('m*x+h')
+#                        datadict['EgTauc'].append([Eg,xtauc,ytauc,m,h])
+#                    except:
+#                        datadict['EgTauc'].append([999,[],[],999,999])
+                        
                     try:
                         xtauc=[1239.8/xm for xm in x]
-                        ytauc=[((math.log(1-y[m]))**2)*(xtauc[m]**2) for m in range(len(y)) ]
+                        ytauc=[(y[m]*xtauc[m])**2 for m in range(len(y)) ]
                         xtauc=xtauc[::-1]
                         ytauc=ytauc[::-1]
                         spl = UnivariateSpline(xtauc, ytauc, s=0)
@@ -1121,13 +1150,16 @@ class EQEApp(Toplevel):
                         y=eval('m*x+h')
                         datadict['EgTauc'].append([Eg,xtauc,ytauc,m,h])
                     except:
-                        datadict['EgTauc'].append([999,[],[],999,999])
+                        datadict['EgTauc'].append([999,[],[],999,999])    
+                        
+                        
                     datadict['Vbias'].append('')
                     datadict['filterbias'].append('')
                     datadict['ledbias'].append('')                   
                     DATA.append(datadict)
                     
                     if 'NaN' not in filedat[1].split('\t')[8]:
+                        print('')
 #                        #get IQE data
 #                        datadict = {'dateTime': datetime, 'filepath':file_path[k],'Name': samplename +'_IQE','Jsc':[],'Eg':[],
 #                                            'EgTauc':[],'lnDat':[],'EgLn':[],'EuLn':[],'stderrEgLn':[],'NbColumn':2, 
@@ -1193,44 +1225,44 @@ class EQEApp(Toplevel):
 #                        DATA.append(datadict)
 #                        
                         #get R data
-                        datadict = {'dateTime': datetime, 'filepath':file_path[k],'Name': samplename +'_R','Jsc':[],'Eg':[],
-                                            'EgTauc':[],'lnDat':[],'EgLn':[],'EuLn':[],'stderrEgLn':[],'NbColumn':2, 
-                                            'DATA': [],'tangent': [],'tangentLn': [], 'comment': "", 'Vbias':[],
-                                            'filterbias':[],'ledbias':[],
-                                            'batchnumb': batchnumb +'_R', 'samplenumb': samplenumb +'_R'} 
-                        datadict['DATA']=[[],[]]
-    #                    filedat.pop(0)
-                        for item in filedat:
-                            datadict['DATA'][0].append(float(item.split('\t')[0]))
-                            datadict['DATA'][1].append(float(item.split('\t')[9])/100)
-                        
-                        m=list(zip(*sorted(zip(datadict['DATA'][0],datadict['DATA'][1]), key=lambda pair: pair[0])))
-                        
-                        datadict['DATA'][0]=list(m[0])
-                        datadict['DATA'][1]=list(m[1])
-                        
-                        x=datadict['DATA'][0]
-                        y=datadict['DATA'][1]
-        #                print(x)
-                        spl = UnivariateSpline(x, y, s=0)
-                        f = interp1d(x, y, kind='cubic')
-                        x2 = lambda x0: self.AM15GParticlesinnm(x0)*f(x0)
-                        integral = echarge/10*integrate.quad(x2,datadict['DATA'][0][0],datadict['DATA'][0][-1])[0]
-                        datadict['Jsc'].append(integral)
-                        
-                        datadict['integJsclist']=[[],[]]
-                        datadict['EgTauc'].append([99,[],[],99,99])
-                        datadict['Eg'].append(99)
-                        datadict['tangent'].append([99, 99])#[pente,ordonnee a l'origine]
-                        datadict['EgLn'].append(99)
-                        datadict['EuLn'].append(99)#Eu calculation from ln(EQE) curve slope at band edge
-                        datadict['tangentLn'].append([99, 99,[99],[99]])#[pente,ordonnee a l'origine]
-                        datadict['stderrEgLn'].append([99,99])
-                        datadict['lnDat'].append([[99],[99]])                
-                        datadict['Vbias'].append('')
-                        datadict['filterbias'].append('')
-                        datadict['ledbias'].append('')
-                        DATA.append(datadict)                
+#                        datadict = {'dateTime': datetime, 'filepath':file_path[k],'Name': samplename +'_R','Jsc':[],'Eg':[],
+#                                            'EgTauc':[],'lnDat':[],'EgLn':[],'EuLn':[],'stderrEgLn':[],'NbColumn':2, 
+#                                            'DATA': [],'tangent': [],'tangentLn': [], 'comment': "", 'Vbias':[],
+#                                            'filterbias':[],'ledbias':[],
+#                                            'batchnumb': batchnumb +'_R', 'samplenumb': samplenumb +'_R'} 
+#                        datadict['DATA']=[[],[]]
+#    #                    filedat.pop(0)
+#                        for item in filedat:
+#                            datadict['DATA'][0].append(float(item.split('\t')[0]))
+#                            datadict['DATA'][1].append(float(item.split('\t')[9])/100)
+#                        
+#                        m=list(zip(*sorted(zip(datadict['DATA'][0],datadict['DATA'][1]), key=lambda pair: pair[0])))
+#                        
+#                        datadict['DATA'][0]=list(m[0])
+#                        datadict['DATA'][1]=list(m[1])
+#                        
+#                        x=datadict['DATA'][0]
+#                        y=datadict['DATA'][1]
+#        #                print(x)
+#                        spl = UnivariateSpline(x, y, s=0)
+#                        f = interp1d(x, y, kind='cubic')
+#                        x2 = lambda x0: self.AM15GParticlesinnm(x0)*f(x0)
+#                        integral = echarge/10*integrate.quad(x2,datadict['DATA'][0][0],datadict['DATA'][0][-1])[0]
+#                        datadict['Jsc'].append(integral)
+#                        
+#                        datadict['integJsclist']=[[],[]]
+#                        datadict['EgTauc'].append([99,[],[],99,99])
+#                        datadict['Eg'].append(99)
+#                        datadict['tangent'].append([99, 99])#[pente,ordonnee a l'origine]
+#                        datadict['EgLn'].append(99)
+#                        datadict['EuLn'].append(99)#Eu calculation from ln(EQE) curve slope at band edge
+#                        datadict['tangentLn'].append([99, 99,[99],[99]])#[pente,ordonnee a l'origine]
+#                        datadict['stderrEgLn'].append([99,99])
+#                        datadict['lnDat'].append([[99],[99]])                
+#                        datadict['Vbias'].append('')
+#                        datadict['filterbias'].append('')
+#                        datadict['ledbias'].append('')
+#                        DATA.append(datadict)                
 #                        #get SR data
 #                        datadict = {'dateTime': datetime, 'filepath':file_path[k],'Name': samplename +'_SR','Jsc':[],'Eg':[],
 #                                            'EgTauc':[],'lnDat':[],'EgLn':[],'EuLn':[],'stderrEgLn':[],'NbColumn':2, 

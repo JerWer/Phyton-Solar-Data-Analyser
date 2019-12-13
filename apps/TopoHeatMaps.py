@@ -8,22 +8,10 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 	
-#data = np.random.rand(4, 6)
-#print(data)
-#heat_map = sb.heatmap(data, cmap='Greys',vmin=0, vmax=2)
-#	
-#plt.show()
-
-
-#x,y,z = np.loadtxt('C:\\Users\\jwerner\\Documents\\DATA\\interferometer Profilo\\191120-taylor-PbSn\\DEE_Anneal_p3.asc',skiprows =116, delimiter="\t", usecols=(0,1,2),unpack=True)
-
-#print(x)
-#data = pd.DataFrame(data={'x':x, 'y':y, 'z':z})
-#data = data.pivot(index='x', columns='y', values='z')
-#sb.heatmap(data)
-#plt.show()
-
-filetoread = open('C:\\Users\\jwerner\\Documents\\DATA\\interferometer Profilo\\191120-taylor-PbSn\\NoAnti_Anneal_p4.asc',"r", encoding='ISO-8859-1')
+#############################################################################################
+#for three graph with same scale
+"""
+filetoread = open('C:\\Users\\jwerner\\Documents\\DATA\\interferometer Profilo\\191211\\9316_VSI_20x_02.asc',"r", encoding='ISO-8859-1')
 filerawdata = list(filetoread.readlines())
 x=[]
 y=[]
@@ -32,6 +20,8 @@ data=[]
 for i in range(116,len(filerawdata)):
     if 'Intensity' in filerawdata[i].split('\t')[0]:
         break
+    elif 'OPD' in filerawdata[i].split('\t')[0]:
+        pass
     else:
         x.append(float(filerawdata[i].split('\t')[0]))
         y.append(float(filerawdata[i].split('\t')[1]))
@@ -64,7 +54,7 @@ z_arr0 = z.reshape(shape)
 
 
 
-filetoread = open('C:\\Users\\jwerner\\Documents\\DATA\\interferometer Profilo\\191120-taylor-PbSn\\DEE_Anneal_p4.asc',"r", encoding='ISO-8859-1')
+filetoread = open('C:\\Users\\jwerner\\Documents\\DATA\\interferometer Profilo\\191211\\9315_VSI_20x_01.asc',"r", encoding='ISO-8859-1')
 filerawdata = list(filetoread.readlines())
 x=[]
 y=[]
@@ -73,6 +63,8 @@ data=[]
 for i in range(116,len(filerawdata)):
     if 'Intensity' in filerawdata[i].split('\t')[0]:
         break
+    elif 'OPD' in filerawdata[i].split('\t')[0]:
+        pass
     else:
         x.append(float(filerawdata[i].split('\t')[0]))
         y.append(float(filerawdata[i].split('\t')[1]))
@@ -106,7 +98,7 @@ z_arr = z.reshape(shape)
 
 
 
-filetoread = open('C:\\Users\\jwerner\\Documents\\DATA\\interferometer Profilo\\191120-taylor-PbSn\\N2_Anneal_p3.asc',"r", encoding='ISO-8859-1')
+filetoread = open('C:\\Users\\jwerner\\Documents\\DATA\\interferometer Profilo\\191211\\9314_VSI_20x_02.asc',"r", encoding='ISO-8859-1')
 filerawdata = list(filetoread.readlines())
 x=[]
 y=[]
@@ -115,6 +107,8 @@ data=[]
 for i in range(116,len(filerawdata)):
     if 'Intensity' in filerawdata[i].split('\t')[0]:
         break
+    elif 'OPD' in filerawdata[i].split('\t')[0]:
+        pass
     else:
         x.append(float(filerawdata[i].split('\t')[0]))
         y.append(float(filerawdata[i].split('\t')[1]))
@@ -189,68 +183,72 @@ cb_ax.set_ylabel("Height (um)")
 #plt.tight_layout()
 plt.show()
 
-fig.savefig('C:\\Users\\jwerner\\Documents\\DATA\\interferometer Profilo\\191120-taylor-PbSn\\noVSdeeVSn2.tiff', dpi=300) 
+fig.savefig('C:\\Users\\jwerner\\Documents\\DATA\\interferometer Profilo\\191211\\noVSdeeVSn2.tiff', dpi=300) 
 
+"""
 
+#############################################################################################
+#for 1 graph
 
-
-
-#filetoread = open('C:\\Users\\jwerner\\Documents\\DATA\\interferometer Profilo\\dataZach\\IZOMvH50xVSI.asc',"r", encoding='ISO-8859-1')
-#filerawdata = list(filetoread.readlines())
-#x=[]
-#y=[]
-#z=[]
-#data=[]
-#for i in range(140,len(filerawdata)):
+filetoread = open('C:\\Users\\jwerner\\Documents\\DATA\\interferometer Profilo\\191211\\9313_VSI_20x_01.asc',"r", encoding='ISO-8859-1')
+filerawdata = list(filetoread.readlines())
+x=[]
+y=[]
+z=[]
+data=[]
+for i in range(116,len(filerawdata)):
+    if 'Intensity' in filerawdata[i].split('\t')[0]:
+        break
+    elif 'OPD' in filerawdata[i].split('\t')[0]:
+        pass
+    else:
+        x.append(float(filerawdata[i].split('\t')[0]))
+        y.append(float(filerawdata[i].split('\t')[1]))
+        if filerawdata[i].split('\t')[2] !='\n':
+            z.append(0.514*0.163*float(filerawdata[i].split('\t')[2]))
+        else:
+            z.append(0)
+            
+#for i in range(116,len(filerawdata)):
 #    if 'Intensity' in filerawdata[i].split('\t')[0]:
-#        break
-#    else:
-#        x.append(float(filerawdata[i].split('\t')[0]))
-#        y.append(float(filerawdata[i].split('\t')[1]))
-#        if filerawdata[i].split('\t')[2] !='\n':
-#            z.append(0.163*float(filerawdata[i].split('\t')[2]))
-#        else:
-#            z.append(0)
-#            
-##for i in range(116,len(filerawdata)):
-##    if 'Intensity' in filerawdata[i].split('\t')[0]:
-##        for j in range(i+1,len(filerawdata)):
-##            x.append(float(filerawdata[j].split('\t')[0]))
-##            y.append(float(filerawdata[j].split('\t')[1]))
-##            if filerawdata[j].split('\t')[2] !='\n':
-##                z.append(0.163*float(filerawdata[j].split('\t')[2]))
-##            else:
-##                z.append(0)
-#
-#x=np.array(x)
-#y=np.array(y)
-#z=np.array(z)
-#zmin=min(z)
-#zmax=max(z)
-#print(zmin)
-#print(zmax)
-#shape = np.unique(x).shape[0],np.unique(y).shape[0]
-#x_arr0 = x.reshape(shape)
-#y_arr0 = y.reshape(shape)
-#z_arr0 = z.reshape(shape)
-#
-#
-#fig, ax0 = plt.subplots(nrows=1, ncols=1,figsize=(10, 10))
-#im = ax0.pcolormesh(x_arr0,y_arr0,z_arr0,vmin=zmin,vmax=zmax,cmap='Greys')
-#divider = make_axes_locatable(ax0)
-#cax1 = divider.append_axes("right", size="5%", pad=0.05)
-#fig.colorbar(im, cax=cax1)
-#ax0.set_aspect(aspect=1)
-##ax0.set_axis_off()
-#
-#
-#plt.show()
+#        for j in range(i+1,len(filerawdata)):
+#            x.append(float(filerawdata[j].split('\t')[0]))
+#            y.append(float(filerawdata[j].split('\t')[1]))
+#            if filerawdata[j].split('\t')[2] !='\n':
+#                z.append(0.163*float(filerawdata[j].split('\t')[2]))
+#            else:
+#                z.append(0)
 
+x=np.array(x)
+y=np.array(y)
+z=np.array(z)
+zmin=min(z)
+zmax=max(z)
+print(zmin)
+print(zmax)
+shape = np.unique(x).shape[0],np.unique(y).shape[0]
+x_arr0 = x.reshape(shape)
+y_arr0 = y.reshape(shape)
+z_arr0 = z.reshape(shape)
 
+fig, (ax0) = plt.subplots(nrows=1, ncols=1,figsize=(18, 23))
 
+im = ax0.pcolormesh(x_arr0,y_arr0,z_arr0,vmin=zmin,vmax=zmax,cmap='Greys')
+divider = make_axes_locatable(ax0)
+cax1 = divider.append_axes("right", size="2%", pad=0.05)
+fig.colorbar(im, cax=cax1)
+ax0.set_aspect(aspect=1)
+#ax0.set_axis_off()
+#ax0.text(5,85,"Untreated, annealed", fontsize=18, color='white')
 
+#fig.subplots_adjust(right=0.94,
+#                    wspace=0.01, hspace=0)
+#cb_ax = fig.add_axes([0.95, 0.423, 0.01, 0.16])
+#cbar = fig.colorbar(im, cax=cb_ax)
+#cb_ax.set_ylabel("Height (um)")
 
+plt.show()
 
-
+fig.savefig('C:\\Users\\jwerner\\Documents\\DATA\\interferometer Profilo\\191211\\9313_VSI_20x.tiff', dpi=300) 
 
 

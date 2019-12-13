@@ -66,6 +66,7 @@ TODOLIST
 
 - histogram graph for the big4 parameters VS number of devices. with overlayed gaussian or other fit curve
 similar to groupgraph, can select count only reverse, or only forward; only best measurement of each cell. or average of each cell?
+best pixel of substrate, or all pixels
 
 
 - time graph if load data from different batches: for degradation data, add button to export only this graph, so can make a session where I can add regularly new data and export directly the updated evolution graph. 

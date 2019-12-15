@@ -11,7 +11,7 @@ from scipy.interpolate import interp1d
 import peakutils
 from peakutils.plot import plot as pplot
 from PIL import Image as ImageTk
-
+import six
 
 """
 
@@ -177,8 +177,11 @@ def PLSummary():
                 height=[]
                 positions=[]
                 spectcentroid=[]
+                dataforexport=[]
                 
                 for key2 in sortedlistofkeys:
+                    dataforexport.append(DATA[key][key3][key2][0])
+                    dataforexport.append(DATA[key][key3][key2][1])
                     if key2==sortedlistofkeys[0]:   
                         minX=min(DATA[key][key3][key2][0]) 
                         maxY=max(DATA[key][key3][key2][1])
@@ -205,7 +208,19 @@ def PLSummary():
                             ycentr.append(DATA[key][key3][key2][1][item])
                     spectcentroid.append(sum([a*b for a,b in zip(xcentr,ycentr)])/sum(ycentr))
                             
-                
+                DATAforexport=map(list, six.moves.zip_longest(*dataforexport, fillvalue=' '))
+
+                DATAforexport1=[]
+                for item in DATAforexport:
+                    line=""
+                    for item1 in item:
+                        line=line+str(item1)+"\t"
+                    line=line[:-1]+"\n"
+                    DATAforexport1.append(line)
+                    
+                file = open(key+key3+'_time.txt','w', encoding='ISO-8859-1')
+                file.writelines("%s" % item for item in DATAforexport1)
+                file.close() 
                     
                 plt.text(minX,maxY,tottime, fontsize=8)      
                 plt.xlabel('Wavelength (nm)')

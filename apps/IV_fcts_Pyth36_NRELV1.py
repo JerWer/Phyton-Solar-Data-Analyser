@@ -63,25 +63,9 @@ TODOLIST
 
 - bring back DtoL and changeArea
 
-
-- histogram graph for the big4 parameters VS number of devices. with overlayed gaussian or other fit curve
-similar to groupgraph, can select count only reverse, or only forward; only best measurement of each cell. or average of each cell?
-best pixel of substrate, or all pixels
-
-
-- time graph if load data from different batches: for degradation data, add button to export only this graph, so can make a session where I can add regularly new data and export directly the updated evolution graph. 
-different colors for different cells, but recognise same cell from different day of meas
-full dots for rev, empty dots for forward
-modifiable legends color and name, same as iv
-normalize by single or by all, 
-add time plot to autoanalysis if span over 5hrs
-
-
 - exception with the default group empty => just remove the default group, annoying to fix...
 
 - add HI group plot to autoanalysis
-
-- add reminder to save session when quit the window
 
 
 Plottime graph:
@@ -97,11 +81,6 @@ mpp graph:
 - for CIGS station: dark file makes some errors...
 
 
-GraphCompsave_as, add text file
-ChangeLegendTimegraph
-
-
-
 
 
 """
@@ -112,6 +91,7 @@ DATAJVforexport=[]
 DATAJVtabforexport=[]
 DATAmppforexport=[]
 DATAgroupforexport=[]
+DATAHistforexport=[]
 DATAcompforexport=[]
 DATAtimeevolforexport={}#key: [[realtimeF, relativetimeF, valueF, normalizedvaluetot0F, realtimeR, relativetimeR, valueR, normalizedvaluetot0R]]
 takenforplot=[]
@@ -202,31 +182,34 @@ class IVApp(Toplevel):
         self.superframe.bind("<Configure>", self.onFrameConfigure)
         
         ############ the figures #################
-        self.fig = plt.figure(figsize=(18, 23))
+        self.fig = plt.figure(figsize=(35, 30))
         self.fig.patch.set_facecolor('white')
         canvas = FigureCanvasTkAgg(self.fig, self.superframe)
-        canvas.get_tk_widget().grid(row=0,column=0,rowspan=80,columnspan=100)
-        self.IVsubfig = self.fig.add_subplot(531)        
-        self.mppsubfig = self.fig.add_subplot(533) 
-        self.GroupStatfig = self.fig.add_subplot(537)  
-        self.TimeEvolfig = self.fig.add_subplot(5,3,13) 
-        self.CompParamGroupfig = self.fig.add_subplot(5,3,15) 
+        canvas.get_tk_widget().grid(row=0,column=0,rowspan=80,columnspan=130)
+        
+        
+        self.IVsubfig = self.fig.add_subplot(551)        
+        self.mppsubfig = self.fig.add_subplot(553) 
+        self.GroupStatfig = self.fig.add_subplot(5,5,11)  
+        self.TimeEvolfig = self.fig.add_subplot(5,5,21) 
+        self.CompParamGroupfig = self.fig.add_subplot(5,5,23) 
+        self.Histofig = self.fig.add_subplot(5,5,25)
          
-        label = tk.Label(self.superframe, text="IV & MPPT DATA Analyzer", bg="black",fg="white")
-        label.grid(row = 0, column = 0, rowspan = 2, columnspan = 100, sticky = "wens")
+        label = tk.Label(self.superframe, text="Solar Simulator DATA Analyzer", bg="black",fg="white")
+        label.grid(row = 0, column = 0, rowspan = 2, columnspan = 130, sticky = "wens")
               
         self.Frame2 = Frame(self.superframe, bg="white")
-        self.Frame2.grid(row = 23, column = 0, rowspan = 10, columnspan = 100, sticky = "wens") 
+        self.Frame2.grid(row = 22, column = 0, rowspan = 10, columnspan = 130, sticky = "wens") 
 
         for r in range(10):
             self.Frame2.rowconfigure(r, weight=1)    
-        for c in range(100):
+        for c in range(130):
             self.Frame2.columnconfigure(c, weight=1)
         
         #### Comparison of parameters ####
         
         self.Frame31 = Frame(self.superframe, bg="white")
-        self.Frame31.grid(row = 55, column = 60, rowspan = 5, columnspan = 30)
+        self.Frame31.grid(row = 55, column = 50, rowspan = 5, columnspan = 30)
         
         self.saveCompgraph = Button(self.Frame31, text="Save graph",
                             command = self.GraphCompsave_as)
@@ -276,10 +259,11 @@ class IVApp(Toplevel):
 #                           onvalue=1,offvalue=0,height=1, width=6, command = lambda: self.UpdateCompGraph(1),fg='black',background='white')
 #        aftermppcheck.grid(row=1, column=18, columnspan=6)
         
+        
         #### TimeEvol ####
         
         self.Frame3 = Frame(self.superframe, bg="white")
-        self.Frame3.grid(row = 54, column = 8, rowspan = 5, columnspan = 30)
+        self.Frame3.grid(row = 54, column = 11, rowspan = 5, columnspan = 30)
         
         self.saveTimegraph = Button(self.Frame3, text="Save graph",
                             command = self.GraphTimesave_as)
@@ -366,12 +350,70 @@ class IVApp(Toplevel):
         lineTime.grid(row=3, column=7, columnspan=8)
         self.BestPixofDayTimegraph.set(0)
         
+        
+        #### Histogram ####
+        self.Frame5 = Frame(self.superframe, bg="white")
+        self.Frame5.grid(row = 54, column = 90, rowspan = 5, columnspan = 30)
+        
+        self.saveHistgraph = Button(self.Frame5, text="Save graph",
+                            command = self.GraphHistsave_as)
+        self.saveHistgraph.grid(row=0, column=0, columnspan=5)
+        
+        HistparamChoiceList = ["Voc","Jsc","FF", "Eff", "Roc", "Rsc","Vmpp","Jmpp"]
+        self.HistparamChoice=StringVar()
+        self.HistparamChoice.set("Eff") # default choice
+        self.dropMenuHist = OptionMenu(self.Frame5, self.HistparamChoice, *HistparamChoiceList, command=self.UpdateHistGraph)
+        self.dropMenuHist.grid(row=0, column=6, columnspan=5)
+        
+        self.Histgrouptoplotbutton = tk.Menubutton(self.Frame5, text="grouptoplot", 
+                                   indicatoron=True, borderwidth=1, relief="raised")
+        self.Histgrouptoplotmenu = tk.Menu(self.Histgrouptoplotbutton, tearoff=False)
+        self.Histgrouptoplotbutton.configure(menu=self.Histgrouptoplotmenu)
+        self.Histgrouptoplotbutton.grid(row=0, column=12, columnspan=6)
+        
+        self.updateHistgrouptoplotdropbutton()
+        
+        HistWhichMeasList = ["OnlyRev","OnlyForw","Bestof/pix", "Bestof/subst", "Allmeas"]
+        self.HistWhichMeasChoice=StringVar()
+        self.HistWhichMeasChoice.set("Bestof/pix") # default choice
+        self.dropMenuHistWhichMeas = OptionMenu(self.Frame5, self.HistWhichMeasChoice, *HistWhichMeasList, command=self.UpdateHistGraph)
+        self.dropMenuHistWhichMeas.grid(row=1, column=0, columnspan=5)
+        
+        self.HistFitGaussian = IntVar()
+        Big4=Checkbutton(self.Frame5,text="Fit",variable=self.HistFitGaussian, 
+                           onvalue=1,offvalue=0,height=1, width=3, command = (),fg='black',background='white')
+        Big4.grid(row=1, column=6, columnspan=3)
+        
+        self.NumbBinsHist = tk.DoubleVar()
+        entry=Entry(self.Frame5, textvariable=self.NumbBinsHist,width=3)
+        entry.grid(row=1,column=10,columnspan=3)
+        tk.Label(self.Frame5, text="#bins",fg='black',background='white').grid(row=1,column=13,columnspan=2)
+        self.NumbBinsHist.set(2)
+        
+        HistTypeList = ['bar', 'barstacked', 'step', 'stepfilled']
+        self.HistTypeChoice=StringVar()
+        self.HistTypeChoice.set("bar") # default choice
+        self.dropMenuHistType = OptionMenu(self.Frame5, self.HistTypeChoice, *HistTypeList, command=self.UpdateHistGraph)
+        self.dropMenuHistType.grid(row=1, column=15, columnspan=5)
+        
+        self.minXHistgraph = tk.DoubleVar()
+        entry=Entry(self.Frame5, textvariable=self.minXHistgraph,width=3)
+        entry.grid(row=2,column=0,columnspan=2)
+        self.minXHistgraph.set(0)
+        self.maxXHistgraph = tk.DoubleVar()
+        entry=Entry(self.Frame5, textvariable=self.maxXHistgraph,width=3)
+        entry.grid(row=2,column=3,columnspan=2)
+        self.maxXHistgraph.set(1)
+        self.minmaxHistgraphcheck = IntVar()
+        Checkbutton(self.Frame5,text="Xscale",variable=self.minmaxHistgraphcheck, 
+                           onvalue=1,offvalue=0,height=1, width=6, command = lambda: self.UpdateHistGraph(1)
+                           ,fg='black',background='white').grid(row=2, column=6, columnspan=3)
+        
+        
         #### Group ####
-        columnpos = 8
-        rowpos = 51
         
         self.Frame4 = Frame(self.superframe, bg="white")
-        self.Frame4.grid(row = 47, column = 8, rowspan = 5, columnspan = 30)
+        self.Frame4.grid(row = 47, column = 10, rowspan = 5, columnspan = 30)
         
         self.saveGroupgraph = Button(self.Frame4, text="Save graph",
                             command = self.GraphGroupsave_as)
@@ -445,7 +487,7 @@ class IVApp(Toplevel):
         
         #### JV ####
 
-        columnpos = 24
+        columnpos = 20
         rowpos = 0
         
         self.saveIVgraph = Button(self.Frame2, text="Save graph",
@@ -522,7 +564,7 @@ class IVApp(Toplevel):
         
         #### MPP ###
         
-        columnpos = 72
+        columnpos = 55
         rowpos = 0
         
         self.mppmenubutton = tk.Menubutton(self.Frame2, text="Choose mpp data", 
@@ -602,11 +644,14 @@ class IVApp(Toplevel):
         global testdata
         global DATA
         
+        rowspantable=30
+        columnspantable=70
+        
         self.frame0 = Frame(self.superframe,bg='white')
-        self.frame0.grid(row=28,column=40,rowspan=25,columnspan=65) #,sticky='wens'
-        for r in range(25):
+        self.frame0.grid(row=26,column=37,rowspan=rowspantable,columnspan=columnspantable) #,sticky='wens'
+        for r in range(rowspantable):
             self.frame0.rowconfigure(r, weight=1)    
-        for c in range(65):
+        for c in range(columnspantable):
             self.frame0.columnconfigure(c, weight=1)
         
         self.import_button = Button(self.frame0, text = "Import Data", command = self.importdata)
@@ -631,7 +676,7 @@ class IVApp(Toplevel):
         self.plotTimefromtable.grid(row=0, column=11, columnspan=1,rowspan=1)
 
         self.frame01 = Frame(self.frame0,bg='black')
-        self.frame01.grid(row=1,column=0,rowspan=25,columnspan=65)
+        self.frame01.grid(row=1,column=0,rowspan=rowspantable-1,columnspan=columnspantable)
         
         
         self.TableBuilder()
@@ -831,7 +876,157 @@ class IVApp(Toplevel):
             self.updateTable()
             
 #%%######################################################################
+     
+    def UpdateHistGraph(self, a):
+        global DATA
+        global DATAHistforexport, groupstoplot
+
+        
+        DATAHistforexport=[]
+        numbbins=int(self.NumbBinsHist.get())
+        DATAx=copy.deepcopy(DATA)
+        
+        samplesgroups=[]
+        for name, var in self.choicesgroupHisttoplot.items():
+            samplesgroups.append(var.get())
+        m=[]
+        for i in range(len(samplesgroups)):
+            if samplesgroups[i]==1:
+                m.append(groupstoplot[i])
+        samplesgroups=m
+        groupnames=[]
+        #sorting data
+        if samplesgroups==[]:
+            self.Histofig.clear()
+        else:
+            grouplistdict=[]
+            if self.HistWhichMeasChoice.get()=="Allmeas":    #select all data points
+                for item in range(len(samplesgroups)):
+                    listdata=[]
+                    for item1 in range(len(DATAx)):
+                        if DATAx[item1]["Group"]==samplesgroups[item] and DATAx[item1]["Illumination"]=='Light':
+                            listdata.append(DATAx[item1][self.HistparamChoice.get()])
+                    groupnames.append(samplesgroups[item])        
+                    grouplistdict.append(listdata)
             
+            elif self.HistWhichMeasChoice.get()=="OnlyRev":
+                for item in range(len(samplesgroups)):
+                    listdata=[]
+                    for item1 in range(len(DATAx)):
+                        if DATAx[item1]["Group"]==samplesgroups[item] and DATAx[item1]["Illumination"]=='Light' and DATAx[item1]["ScanDirection"]=="Reverse":
+                            listdata.append(DATAx[item1][self.HistparamChoice.get()])
+                    groupnames.append(samplesgroups[item])        
+                    grouplistdict.append(listdata)
+                    
+            elif self.HistWhichMeasChoice.get()=="OnlyForw":
+                for item in range(len(samplesgroups)):
+                    listdata=[]
+                    for item1 in range(len(DATAx)):
+                        if DATAx[item1]["Group"]==samplesgroups[item] and DATAx[item1]["Illumination"]=='Light' and DATAx[item1]["ScanDirection"]=="Forward":
+                            listdata.append(DATAx[item1][self.HistparamChoice.get()])
+                    groupnames.append(samplesgroups[item])        
+                    grouplistdict.append(listdata)
+                    
+            elif self.HistWhichMeasChoice.get()=="Bestof/pix":  
+                for item in range(len(samplesgroups)):
+                    groupdict={}
+                    groupdict["Group"]=samplesgroups[item]
+                    listofthegroup=[]
+                    for item1 in range(len(DATAx)):
+                        if DATAx[item1]["Group"]==groupdict["Group"] and DATAx[item1]["Illumination"]=='Light':
+                            listofthegroup.append(DATAx[item1])
+                    if len(listofthegroup)!=0:
+                        grouper = itemgetter("DepID", "Cellletter")
+                        result = []
+                        keylist=[]
+                        for key, grp in groupby(sorted(listofthegroup, key = grouper), grouper):
+                            result.append(list(grp))
+                            keylist.append(key)
+                        
+                        listdata=[]
+                        for item1 in range(len(keylist)):
+                            listdata1=[]
+                            for item2 in range(len(result[item1])):
+                                listdata1.append(result[item1][item2][self.HistparamChoice.get()])
+                            listdata.append(max(listdata1))
+                            
+                        groupnames.append(samplesgroups[item])        
+                        grouplistdict.append(listdata)
+                    
+                    
+            elif self.HistWhichMeasChoice.get()=="Bestof/subst":  
+                for item in range(len(samplesgroups)):
+                    groupdict={}
+                    groupdict["Group"]=samplesgroups[item]
+                    listofthegroup=[]
+                    for item1 in range(len(DATAx)):
+                        if DATAx[item1]["Group"]==groupdict["Group"] and DATAx[item1]["Illumination"]=='Light':
+                            listofthegroup.append(DATAx[item1])
+                    if len(listofthegroup)!=0:
+                        grouper = itemgetter("DepID")
+                        result = []
+                        keylist=[]
+                        for key, grp in groupby(sorted(listofthegroup, key = grouper), grouper):
+                            result.append(list(grp))
+#                            print(len(result))
+                            keylist.append(key)
+                        
+                        listdata=[]
+                        for item1 in range(len(keylist)):
+                            listdata1=[]
+                            for item2 in range(len(result[item1])):
+                                listdata1.append(result[item1][item2][self.HistparamChoice.get()])
+                            listdata.append(max(listdata1))
+                            
+                        groupnames.append(samplesgroups[item])        
+                        grouplistdict.append(listdata)
+        
+        #ploting data   "Bestof/pix", "Bestof/subst"
+        
+        
+            self.Histofig.clear()
+            if self.minmaxHistgraphcheck.get():
+                self.Histofig.hist(grouplistdict,bins=numbbins,range=[self.minXHistgraph.get(), self.maxXHistgraph.get()],histtype= self.HistTypeChoice.get(), density=False, cumulative=False, alpha=0.6, edgecolor='black', linewidth=1.2, label=groupnames)
+            else:
+                self.Histofig.hist(grouplistdict,bins=numbbins,histtype= self.HistTypeChoice.get(), density=False, cumulative=False, alpha=0.6, edgecolor='black', linewidth=1.2, label=groupnames)
+                
+            self.Histofig.set_xlabel(self.HistparamChoice.get())
+            self.Histofig.set_ylabel('counts')
+            self.Histofig.legend()
+        
+            DATAHistforexport=list(map(list, six.moves.zip_longest(*grouplistdict, fillvalue=' ')))
+            DATAHistforexport=[groupnames]+DATAHistforexport
+
+        
+        plt.gcf().canvas.draw()
+        
+        
+        
+    def GraphHistsave_as(self):
+        global DATA, DATAHistforexport
+        
+        try:
+            f = filedialog.asksaveasfilename(defaultextension=".png", filetypes = (("graph file", "*.png"),("All Files", "*.*")))
+            extent = self.Histofig.get_window_extent().transformed(self.fig.dpi_scale_trans.inverted())
+            self.fig.savefig(f, dpi=300, bbox_inches=extent.expanded(1.3, 1.3))#, transparent=True)
+                           
+            DATAHistforexport1=[]            
+            for item in DATAHistforexport:
+                line=""
+                for item1 in item:
+                    line=line+str(item1)+"\t"
+                line=line[:-1]+"\n"
+                DATAHistforexport1.append(line)
+                
+            file = open(str(f[:-4]+"_dat.txt"),'w', encoding='ISO-8859-1')
+            file.writelines("%s" % item for item in DATAHistforexport1)
+            file.close()
+        
+        except:
+            print("there is an exception") 
+        
+        
+        
     def UpdateGroupGraph(self,a):
         global DATA
         global DATAdark
@@ -2710,7 +2905,7 @@ class IVApp(Toplevel):
                 maxx=max(TimeDatDict[newkey]['bestEffofday'][self.TimeChoice.get()][0])
                 
                 for key in list(TimeDatDict.keys()):
-                    partdatatime=[[],[],[],[],[],[],[],[]]
+                    partdatatime=[[],[],[],[]]
                     if minx>min(TimeDatDict[key]['bestEffofday'][self.TimeChoice.get()][0]):
                         minx=min(TimeDatDict[key]['bestEffofday'][self.TimeChoice.get()][0])
                     if maxx<max(TimeDatDict[key]['bestEffofday'][self.TimeChoice.get()][0]):
@@ -3918,6 +4113,7 @@ class IVApp(Toplevel):
         
         self.updategrouptoplotdropbutton()
         self.updateCompgrouptoplotdropbutton()
+        self.updateHistgrouptoplotdropbutton()
         self.UpdateGroupGraph(1)
         self.UpdateCompGraph(1)
         
@@ -4471,6 +4667,7 @@ class IVApp(Toplevel):
         
         self.updategrouptoplotdropbutton()
         self.updateCompgrouptoplotdropbutton()
+        self.updateHistgrouptoplotdropbutton()
         self.UpdateGroupGraph(1)
         self.UpdateCompGraph(1)
         
@@ -4576,11 +4773,10 @@ class IVApp(Toplevel):
                 else:
                     self.fig.savefig(f, dpi=300, bbox_inches=extent.expanded(1.8, 2), transparent=False)
                 
-                
-                
+                                
                 for key in list(DATAtimeevolforexport.keys()):
                     DATAgroupforexport1=["realtimeF\trelativetimeF\tvalueF\tnormalizedvaluetot0F\trealtimeR\trelativetimeR\tvalueR\tnormalizedvaluetot0R\n"] 
-                    templist=map(list, zip(*DATAtimeevolforexport[key]))
+                    templist=map(list, six.moves.zip_longest(*DATAtimeevolforexport[key], fillvalue=' '))
                     for item in templist:
                         line=""
                         for item1 in item:
@@ -4604,7 +4800,7 @@ class IVApp(Toplevel):
                     
                 for key in list(DATAtimeevolforexport.keys()):
                     DATAgroupforexport1=["realtimeF\trelativetimeF\tvalueF\tnormalizedvaluetot0F\trealtimeR\trelativetimeR\tvalueR\tnormalizedvaluetot0R\n"] 
-                    templist=map(list, zip(*DATAtimeevolforexport[key]))
+                    templist=map(list, six.moves.zip_longest(*DATAtimeevolforexport[key], fillvalue=' '))
                     for item in templist:
                         line=""
                         for item1 in item:
@@ -4626,7 +4822,7 @@ class IVApp(Toplevel):
                 
                 for key in list(DATAtimeevolforexport.keys()):
                     DATAgroupforexport1=["realtimeF\trelativetimeF\tvalueF\tnormalizedvaluetot0F\trealtimeR\trelativetimeR\tvalueR\tnormalizedvaluetot0R\n"] 
-                    templist=map(list, zip(*DATAtimeevolforexport[key]))
+                    templist=map(list, six.moves.zip_longest(*DATAtimeevolforexport[key], fillvalue=' '))
                     for item in templist:
                         line=""
                         for item1 in item:
@@ -4647,7 +4843,7 @@ class IVApp(Toplevel):
                 
                 for key in list(DATAtimeevolforexport.keys()):
                     DATAgroupforexport1=["realtimeF\trelativetimeF\tvalueF\tnormalizedvaluetot0F\trealtimeR\trelativetimeR\tvalueR\tnormalizedvaluetot0R\n"] 
-                    templist=map(list, zip(*DATAtimeevolforexport[key]))
+                    templist=map(list, six.moves.zip_longest(*DATAtimeevolforexport[key], fillvalue=' '))
                     for item in templist:
                         line=""
                         for item1 in item:
@@ -4668,7 +4864,7 @@ class IVApp(Toplevel):
                 
                 for key in list(DATAtimeevolforexport.keys()):
                     DATAgroupforexport1=["realtimeF\trelativetimeF\tvalueF\tnormalizedvaluetot0F\trealtimeR\trelativetimeR\tvalueR\tnormalizedvaluetot0R\n"] 
-                    templist=map(list, zip(*DATAtimeevolforexport[key]))
+                    templist=map(list, six.moves.zip_longest(*DATAtimeevolforexport[key], fillvalue=' '))
                     for item in templist:
                         line=""
                         for item1 in item:
@@ -6776,6 +6972,7 @@ class IVApp(Toplevel):
             self.UpdateIVGraph()
             self.updategrouptoplotdropbutton()
             self.updateCompgrouptoplotdropbutton()
+            self.updateHistgrouptoplotdropbutton()
             self.UpdateGroupGraph(1)
             self.UpdateCompGraph(1)
 #%%######################################################################
@@ -7371,14 +7568,14 @@ class IVApp(Toplevel):
         for col in self.tableheaders:
             self.tree.heading(col, text=col.title(), command=lambda c=col: self.sortby(self.tree, c, 0))
             #self.tree.column(col,stretch=tkinter.YES)
-            self.tree.column(col, width=int(round(1.3*tkFont.Font().measure(col.title()))), anchor='n')   
+            self.tree.column(col, width=int(round(2*tkFont.Font().measure(col.title()))), anchor='n')   
             #print(int(round(1.2*tkFont.Font().measure(col.title()))))
         
         vsb = Scrollbar(self.frame01, orient="vertical", command=self.tree.yview)
         #hsb = ttk.Scrollbar(orient="horizontal",command=self.tree.xview)
         self.tree.configure(yscrollcommand=vsb.set, xscrollcommand=())
-        self.tree.grid(row=1,column=0, columnspan=15,rowspan=10, sticky='nsew', in_=self.frame01)
-        vsb.grid(column=20, row=1,rowspan=10, sticky='ns', in_=self.frame01)
+        self.tree.grid(row=1,column=0, columnspan=15,rowspan=15, sticky='nsew', in_=self.frame01)
+        vsb.grid(column=20, row=1,rowspan=15, sticky='ns', in_=self.frame01)
         #hsb.grid(column=0, row=11, sticky='ew', in_=self.parent)
         self.treeview = self.tree
         
@@ -7590,6 +7787,16 @@ class IVApp(Toplevel):
             self.Compgrouptoplotmenu.add_checkbutton(label=groupstoplot[choice], variable=self.choicesgroupcomptoplot[choice], 
                                  onvalue=1, offvalue=0, command = lambda: self.UpdateCompGraph(1))
 
+    def updateHistgrouptoplotdropbutton(self):
+        global groupstoplot
+        
+        self.Histgrouptoplotmenu = tk.Menu(self.Histgrouptoplotbutton, tearoff=False)
+        self.Histgrouptoplotbutton.configure(menu=self.Histgrouptoplotmenu)
+        self.choicesgroupHisttoplot = {}
+        for choice in range(len(groupstoplot)):
+            self.choicesgroupHisttoplot[choice] = tk.IntVar(value=1)
+            self.Histgrouptoplotmenu.add_checkbutton(label=groupstoplot[choice], variable=self.choicesgroupHisttoplot[choice], 
+                                 onvalue=1, offvalue=0, command = lambda: self.UpdateHistGraph(1))
         
     def printlist2(self):
         global samplesgroups,groupstoplot
@@ -7600,6 +7807,7 @@ class IVApp(Toplevel):
         self.window.destroy()
         self.updategrouptoplotdropbutton()
         self.updateCompgrouptoplotdropbutton()
+        self.updateHistgrouptoplotdropbutton()
         self.UpdateGroupGraph(1)
         self.UpdateCompGraph(1)
         #self.groupfromTable()
@@ -7630,6 +7838,7 @@ class IVApp(Toplevel):
         self.TableBuilder()
         self.updategrouptoplotdropbutton()
         self.updateCompgrouptoplotdropbutton()
+        self.updateHistgrouptoplotdropbutton()
         self.UpdateGroupGraph(1)
         self.UpdateCompGraph(1)
         self.window.destroy()
@@ -7648,6 +7857,7 @@ class IVApp(Toplevel):
         self.TableBuilder()
         self.updategrouptoplotdropbutton()
         self.updateCompgrouptoplotdropbutton()
+        self.updateHistgrouptoplotdropbutton()
         self.UpdateGroupGraph(1)
         self.UpdateCompGraph(1)
         self.window.destroy()

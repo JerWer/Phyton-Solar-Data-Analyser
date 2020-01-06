@@ -93,6 +93,7 @@ add option to calculate the radiative limit, loss-in-potential
 add table with all Eg types, selectable items to plot, so user can have a direct view of all Eg&Jsc values
 
 
+export normalized eqe, txt files empty
 
 """
 #%%

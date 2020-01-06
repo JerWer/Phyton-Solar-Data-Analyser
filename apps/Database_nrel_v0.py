@@ -23,8 +23,8 @@ import math
 
 import sqlite3
 import datetime
-from creatingTables import CreateAllTables
-from DatabaseReading_v0 import DBReadingapp
+from creatingTables_nrel import CreateAllTables
+from DatabaseReading_nrel_v0 import DBReadingapp
 from mergingDBs_v1 import mergingapp
 #%% 
 
@@ -45,6 +45,13 @@ TODOLIST
 
 modified tables: (still need to modify the mergingdb app)
     PkAbsorberMethod
+    
+    
+samples entry:  
+- for single junction, remove recombjct
+- for tandem, have entire stack for pk/pk tandem
+- substrate: limit to glass, quartz and silicon, PET, PEN
+    
     
 """
 #%% 
@@ -257,7 +264,7 @@ class DBapp(Toplevel):
         
         frame1=Frame(self.newbatchwindow,borderwidth=0,  bg="white")
         frame1.pack()
-        tk.Label(frame1, text="Batch name, e.g. P999", font=("Verdana", 10)).pack(side="left",fill=tk.BOTH,expand=1)
+        tk.Label(frame1, text="Batch #", font=("Verdana", 10)).pack(side="left",fill=tk.BOTH,expand=1)
         self.batchname = tk.StringVar()
         self.entry1=Entry(frame1, textvariable=self.batchname,width=10)
         self.entry1.pack(side="left",fill=tk.BOTH,expand=1)
@@ -266,9 +273,9 @@ class DBapp(Toplevel):
         frame1=Frame(self.newbatchwindow,borderwidth=0,  bg="white")
         frame1.pack()
         tk.Label(frame1, text="General topic", font=("Verdana", 10)).pack(side="left",fill=tk.BOTH,expand=1)
-        self.topiclist=["nip", "pin","2TT","3TT","4TT","triple","layer charac"]
+        self.topiclist=["lowgap", "widegap","tandem2T-allPk","tandem2T-PkSi"]
         self.topicChoice=StringVar()
-        self.topicChoice.set(self.topiclist[0])
+        self.topicChoice.set("lowgap")
         self.dropMenuFrame = OptionMenu(frame1, self.topicChoice, *self.topiclist, command=())
         self.dropMenuFrame.pack(side="left",fill=tk.BOTH,expand=1)
         
@@ -293,7 +300,7 @@ class DBapp(Toplevel):
         
         frame1=Frame(self.newbatchwindow,borderwidth=0,  bg="white")
         frame1.pack()
-        tk.Label(frame1, text="start date", font=("Verdana", 10)).pack(side="left",fill=tk.BOTH,expand=1)
+        tk.Label(frame1, text="start date (D/M/Y)", font=("Verdana", 10)).pack(side="left",fill=tk.BOTH,expand=1)
         
         todaydate=datetime.date.today().strftime ("%Y-%m-%d")
         self.startbatchday = tk.StringVar()
@@ -311,10 +318,10 @@ class DBapp(Toplevel):
         
         frame1=Frame(self.newbatchwindow,borderwidth=0,  bg="white")
         frame1.pack()
-        self.environmentalchecked=0
+#        self.environmentalchecked=0
         self.selectCharacSetupschecked=0
-        Button(frame1, text="Environment",
-               command = self.addEnvironmentData).pack(side="left", fill=tk.Y,expand=0)
+#        Button(frame1, text="Environment",
+#               command = self.addEnvironmentData).pack(side="left", fill=tk.Y,expand=0)
         Button(frame1, text="CharacSetupsUsed",
                command = self.selectCharacSetups).pack(side="left", fill=tk.Y,expand=0)
 
@@ -336,7 +343,7 @@ class DBapp(Toplevel):
                command = self.backtomain).pack(side="left", fill=tk.BOTH,expand=1)
         
     def newbatchvalidate(self):
-        if self.batchname.get()!="" and self.environmentalchecked==1 and self.selectCharacSetupschecked==1:
+        if self.batchname.get()!="" and self.selectCharacSetupschecked==1: #self.environmentalchecked==1 and 
             #check the username, find its id in DB
             self.theCursor.execute("SELECT id FROM users WHERE username=?",(self.UserChoice.get(),))
             id_exists = self.theCursor.fetchone()
@@ -351,9 +358,9 @@ class DBapp(Toplevel):
             #print(max_id)
             if max_id==None:
                 max_id=0
-#            try:
-            self.db_conn.execute("INSERT INTO batch (batchname, topic, startdate, commentbatch, users_id, environment_id, takencharacsetups_id) VALUES (?,?,?,?,?,?,?)",
-                            (str(self.batchname.get()), str(self.topicChoice.get()), str(self.startbatchyear.get()+"-"+self.startbatchmonth.get()+"-"+self.startbatchday.get()), str(self.commentbatch.get()), id_exists[0], max_id+1, max_id+1))
+#            try:# environment_id, 
+            self.db_conn.execute("INSERT INTO batch (batchname, topic, startdate, commentbatch, users_id,takencharacsetups_id) VALUES (?,?,?,?,?,?)",
+                            (str(self.batchname.get()), str(self.topicChoice.get()), str(self.startbatchyear.get()+"-"+self.startbatchmonth.get()+"-"+self.startbatchday.get()), str(self.commentbatch.get()), id_exists[0], max_id+1))
             self.db_conn.commit()
             goodtogo=1
 #            except sqlite3.OperationalError:
@@ -365,16 +372,16 @@ class DBapp(Toplevel):
                 
             #get last id of batch table
             #insert data into environment
-            goodtogo2=0
-            try:
-                self.db_conn.execute("INSERT INTO environment (RHyellowroom, Tempyellowroom, RHMC162, Tempmc162, gloveboxsolvent, solventGBwatervalue, solventGBoxygenvalue, evapGBwatervalue, evapGBoxygenvalue, commentenvir) VALUES (?,?,?,?,?,?,?,?,?,?)",
-                                (self.rhyellowroom.get(), self.tempyellowroom.get(), self.rhmc162.get(), self.tempmc162.get(), self.GBsollev.get(),self.sGBwatlevel.get(),self.sGBo2level.get(),self.eGBwatlevel.get(),self.eGBo2level.get(),self.commentenvironment.get()))
-                self.db_conn.commit()
-                goodtogo2=1
-            except sqlite3.OperationalError:
-                print("data couldn't be added to environment")
-            except sqlite3.TypeError:
-                print("typeerror in environment")
+#            goodtogo2=0
+#            try:
+#                self.db_conn.execute("INSERT INTO environment (RHyellowroom, Tempyellowroom, RHMC162, Tempmc162, gloveboxsolvent, solventGBwatervalue, solventGBoxygenvalue, evapGBwatervalue, evapGBoxygenvalue, commentenvir) VALUES (?,?,?,?,?,?,?,?,?,?)",
+#                                (self.rhyellowroom.get(), self.tempyellowroom.get(), self.rhmc162.get(), self.tempmc162.get(), self.GBsollev.get(),self.sGBwatlevel.get(),self.sGBo2level.get(),self.eGBwatlevel.get(),self.eGBo2level.get(),self.commentenvironment.get()))
+#                self.db_conn.commit()
+#                goodtogo2=1
+#            except sqlite3.OperationalError:
+#                print("data couldn't be added to environment")
+#            except sqlite3.TypeError:
+#                print("typeerror in environment")
             
             goodtogo3=0
             try:
@@ -387,7 +394,7 @@ class DBapp(Toplevel):
             except sqlite3.TypeError:
                 print("typeerror in takencharacsetupsname")
                         
-            if goodtogo and goodtogo2 and goodtogo3:
+            if goodtogo and goodtogo3:#goodtogo2 and 
                 #close the batch window
                 self.newbatchwindow.destroy()
                 #move to the next window
@@ -395,9 +402,9 @@ class DBapp(Toplevel):
         elif self.batchname.get()=="":
             print("enter a batch name")
             messagebox.showinfo("", "enter a batch name")
-        elif self.environmentalchecked==0:
-            print("enter environmental data")
-            messagebox.showinfo("", "enter environmental data")
+#        elif self.environmentalchecked==0:
+#            print("enter environmental data")
+#            messagebox.showinfo("", "enter environmental data")
         elif self.selectCharacSetupschecked==0:
             print("enter CharacSetups")
             messagebox.showinfo("", "enter CharacSetups")
@@ -441,77 +448,77 @@ class DBapp(Toplevel):
 #        print(self.CharacSetupsSelection)
         self.selectCharacSetupswin.destroy()
         
-    def addEnvironmentData(self):
-        self.Environmentwin = tk.Toplevel()
-        center(self.Environmentwin)
-        self.Environmentwin.wm_geometry("400x270")
-        self.Environmentwin.wm_title("Environment")
-        
-        frame0=Frame(self.Environmentwin,borderwidth=0,  bg="white")
-        frame0.pack()
-        frame01=Frame(frame0,borderwidth=0,  bg="white")
-        frame01.pack(side="left",fill=tk.BOTH,expand=1)
-        tk.Label(frame01, text="RHyellowroom", font=("Verdana", 10)).pack(fill=tk.X,expand=1)
-        tk.Label(frame01, text="Temp.yellowroom", font=("Verdana", 10)).pack(fill=tk.X,expand=1)
-        tk.Label(frame01, text="RHmc162", font=("Verdana", 10)).pack(fill=tk.X,expand=1)
-        tk.Label(frame01, text="Temp.mc162", font=("Verdana", 10)).pack(fill=tk.X,expand=1)
-        tk.Label(frame01, text="GB solvent level", font=("Verdana", 10)).pack(fill=tk.X,expand=1)
-        tk.Label(frame01, text="solvent GB water value", font=("Verdana", 10)).pack(fill=tk.X,expand=1)
-        tk.Label(frame01, text="solvent GB oxygen value", font=("Verdana", 10)).pack(fill=tk.X,expand=1)
-        tk.Label(frame01, text="evap GB water value", font=("Verdana", 10)).pack(fill=tk.X,expand=1)
-        tk.Label(frame01, text="evap GB oxygen value", font=("Verdana", 10)).pack(fill=tk.X,expand=1)
-        tk.Label(frame01, text="comment", font=("Verdana", 10)).pack(fill=tk.X,expand=1)
-
-        
-        frame02=Frame(frame0,borderwidth=0,  bg="white")
-        frame02.pack(side="left",fill=tk.BOTH,expand=1)
-        self.rhyellowroom = tk.DoubleVar()
-        self.entry1=Entry(frame02, textvariable=self.rhyellowroom,width=4)
-        self.rhyellowroom.set(-1)
-        self.entry1.pack(fill=tk.X,expand=1)
-        self.tempyellowroom = tk.DoubleVar()
-        self.entry3=Entry(frame02, textvariable=self.tempyellowroom,width=30)
-        self.entry3.pack(fill=tk.X,expand=1)
-        self.tempyellowroom.set(-1)
-        self.rhmc162 = tk.DoubleVar()
-        self.entry1=Entry(frame02, textvariable=self.rhmc162,width=4)
-        self.rhmc162.set(-1)
-        self.entry1.pack(fill=tk.X,expand=1)
-        self.tempmc162 = tk.DoubleVar()
-        self.entry3=Entry(frame02, textvariable=self.tempmc162,width=30)
-        self.entry3.pack(fill=tk.X,expand=1)
-        self.tempmc162.set(-1)
-        self.GBsollev = tk.DoubleVar()
-        self.entry4=Entry(frame02, textvariable=self.GBsollev,width=30)
-        self.entry4.pack(fill=tk.X,expand=1)
-        self.GBsollev.set(-1)
-        self.sGBwatlevel = tk.DoubleVar()
-        self.entry4=Entry(frame02, textvariable=self.sGBwatlevel,width=30)
-        self.entry4.pack(fill=tk.X,expand=1)
-        self.sGBwatlevel.set(-1)
-        self.sGBo2level = tk.DoubleVar()
-        self.entry4=Entry(frame02, textvariable=self.sGBo2level,width=30)
-        self.entry4.pack(fill=tk.X,expand=1)
-        self.sGBo2level.set(-1)
-        self.eGBwatlevel = tk.DoubleVar()
-        self.entry4=Entry(frame02, textvariable=self.eGBwatlevel,width=30)
-        self.entry4.pack(fill=tk.X,expand=1)
-        self.eGBwatlevel.set(-1)
-        self.eGBo2level = tk.DoubleVar()
-        self.entry4=Entry(frame02, textvariable=self.eGBo2level,width=30)
-        self.entry4.pack(fill=tk.X,expand=1)
-        self.eGBo2level.set(-1)
-        self.commentenvironment = tk.StringVar()
-        self.entry6=Entry(frame02, textvariable=self.commentenvironment,width=30)
-        self.entry6.pack(fill=tk.X,expand=1)
-        self.commentenvironment.set("")
-
-        self.environmentalchecked=1
-
-        frame1=Frame(self.Environmentwin,borderwidth=0,  bg="white")
-        frame1.pack()
-        Button(frame1, text="Validate",
-               command = self.Environmentwin.destroy).pack(fill=tk.X,expand=0)
+#    def addEnvironmentData(self):
+#        self.Environmentwin = tk.Toplevel()
+#        center(self.Environmentwin)
+#        self.Environmentwin.wm_geometry("400x270")
+#        self.Environmentwin.wm_title("Environment")
+#        
+#        frame0=Frame(self.Environmentwin,borderwidth=0,  bg="white")
+#        frame0.pack()
+#        frame01=Frame(frame0,borderwidth=0,  bg="white")
+#        frame01.pack(side="left",fill=tk.BOTH,expand=1)
+#        tk.Label(frame01, text="RHyellowroom", font=("Verdana", 10)).pack(fill=tk.X,expand=1)
+#        tk.Label(frame01, text="Temp.yellowroom", font=("Verdana", 10)).pack(fill=tk.X,expand=1)
+#        tk.Label(frame01, text="RHmc162", font=("Verdana", 10)).pack(fill=tk.X,expand=1)
+#        tk.Label(frame01, text="Temp.mc162", font=("Verdana", 10)).pack(fill=tk.X,expand=1)
+#        tk.Label(frame01, text="GB solvent level", font=("Verdana", 10)).pack(fill=tk.X,expand=1)
+#        tk.Label(frame01, text="solvent GB water value", font=("Verdana", 10)).pack(fill=tk.X,expand=1)
+#        tk.Label(frame01, text="solvent GB oxygen value", font=("Verdana", 10)).pack(fill=tk.X,expand=1)
+#        tk.Label(frame01, text="evap GB water value", font=("Verdana", 10)).pack(fill=tk.X,expand=1)
+#        tk.Label(frame01, text="evap GB oxygen value", font=("Verdana", 10)).pack(fill=tk.X,expand=1)
+#        tk.Label(frame01, text="comment", font=("Verdana", 10)).pack(fill=tk.X,expand=1)
+#
+#        
+#        frame02=Frame(frame0,borderwidth=0,  bg="white")
+#        frame02.pack(side="left",fill=tk.BOTH,expand=1)
+#        self.rhyellowroom = tk.DoubleVar()
+#        self.entry1=Entry(frame02, textvariable=self.rhyellowroom,width=4)
+#        self.rhyellowroom.set(-1)
+#        self.entry1.pack(fill=tk.X,expand=1)
+#        self.tempyellowroom = tk.DoubleVar()
+#        self.entry3=Entry(frame02, textvariable=self.tempyellowroom,width=30)
+#        self.entry3.pack(fill=tk.X,expand=1)
+#        self.tempyellowroom.set(-1)
+#        self.rhmc162 = tk.DoubleVar()
+#        self.entry1=Entry(frame02, textvariable=self.rhmc162,width=4)
+#        self.rhmc162.set(-1)
+#        self.entry1.pack(fill=tk.X,expand=1)
+#        self.tempmc162 = tk.DoubleVar()
+#        self.entry3=Entry(frame02, textvariable=self.tempmc162,width=30)
+#        self.entry3.pack(fill=tk.X,expand=1)
+#        self.tempmc162.set(-1)
+#        self.GBsollev = tk.DoubleVar()
+#        self.entry4=Entry(frame02, textvariable=self.GBsollev,width=30)
+#        self.entry4.pack(fill=tk.X,expand=1)
+#        self.GBsollev.set(-1)
+#        self.sGBwatlevel = tk.DoubleVar()
+#        self.entry4=Entry(frame02, textvariable=self.sGBwatlevel,width=30)
+#        self.entry4.pack(fill=tk.X,expand=1)
+#        self.sGBwatlevel.set(-1)
+#        self.sGBo2level = tk.DoubleVar()
+#        self.entry4=Entry(frame02, textvariable=self.sGBo2level,width=30)
+#        self.entry4.pack(fill=tk.X,expand=1)
+#        self.sGBo2level.set(-1)
+#        self.eGBwatlevel = tk.DoubleVar()
+#        self.entry4=Entry(frame02, textvariable=self.eGBwatlevel,width=30)
+#        self.entry4.pack(fill=tk.X,expand=1)
+#        self.eGBwatlevel.set(-1)
+#        self.eGBo2level = tk.DoubleVar()
+#        self.entry4=Entry(frame02, textvariable=self.eGBo2level,width=30)
+#        self.entry4.pack(fill=tk.X,expand=1)
+#        self.eGBo2level.set(-1)
+#        self.commentenvironment = tk.StringVar()
+#        self.entry6=Entry(frame02, textvariable=self.commentenvironment,width=30)
+#        self.entry6.pack(fill=tk.X,expand=1)
+#        self.commentenvironment.set("")
+#
+#        self.environmentalchecked=1
+#
+#        frame1=Frame(self.Environmentwin,borderwidth=0,  bg="white")
+#        frame1.pack()
+#        Button(frame1, text="Validate",
+#               command = self.Environmentwin.destroy).pack(fill=tk.X,expand=0)
         
     def addnewUser(self):
         self.newUserwin = tk.Toplevel()
@@ -598,279 +605,488 @@ class DBapp(Toplevel):
             #if tandem, should add bottom cell reference number to link to SiliconDB: bottomCellDBRef in samples table
         
     def newsamples(self):
-        self.newsampleswindow = tk.Toplevel()
-        center(self.newsampleswindow)
-        self.newsampleswindow.protocol("WM_DELETE_WINDOW", self.backtomain)
-        if self.topicChoice.get()!="triple":
+        
+        if self.topicChoice.get()=="tandem2T-PkSi":
+            print("PkSi")
+        elif self.topicChoice.get()=="tandem2T-allPk":
+            print("PkPk")
+        else:
+            self.newsampleswindow = tk.Toplevel()
+            center(self.newsampleswindow)
+            self.newsampleswindow.protocol("WM_DELETE_WINDOW", self.backtomain)
             self.newsampleswindow.wm_geometry("650x500")
-        elif self.topicChoice.get()=="triple":
-            self.newsampleswindow.wm_geometry("830x500")
-        self.newsampleswindow.wm_title("New samples")
-
-        frame0=Frame(self.newsampleswindow,borderwidth=0,  bg="white")
-        frame0.pack()
-        frame01=Frame(frame0,borderwidth=0,  bg="white")
-        frame01.pack(side="left",fill=tk.BOTH,expand=1)
-        tk.Label(frame01, text="Sample number", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
-        tk.Label(frame01, text="Substrate type", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
-        tk.Label(frame01, text="Device architecture", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
-        tk.Label(frame01, text="bottomSiDBref", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
-        tk.Label(frame01, text="Polarity", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
-        tk.Label(frame01, text="#ofcells", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
-
-        frame02=Frame(frame0,borderwidth=0,  bg="white")
-        frame02.pack(side="left",fill=tk.BOTH,expand=1)
-        #sample number
-        self.samplenumber = tk.StringVar()
-        self.entry1=Entry(frame02, textvariable=self.samplenumber,width=5)
-        self.entry1.pack(fill=tk.BOTH,expand=1)
-        self.samplenumber.set("")
-        #substrate type
-        self.subtypelist=[]
-        result = self.theCursor.execute("SELECT substratetype FROM substtype")
-        for row in result:
-            self.subtypelist.append(row[0])
-        if self.subtypelist==[]:
-            self.subtypelist=[""]
-        self.subtypelist=tuple(self.subtypelist)
-        self.substChoice=StringVar()
-        self.substChoice.set(self.subtypelist[0])
-        self.dropMenuFramesubst = OptionMenu(frame02, self.substChoice, *self.subtypelist, command=())
-        self.dropMenuFramesubst.pack(fill=tk.BOTH,expand=1)
-        #device architecture
-        self.cellarchitlist=["planar", "mesoporous","NULL"]
-        self.cellarchitChoice=StringVar()
-        self.cellarchitChoice.set(self.cellarchitlist[0])
-        self.dropMenuFrame = OptionMenu(frame02, self.cellarchitChoice, *self.cellarchitlist, command=())
-        self.dropMenuFrame.pack(fill=tk.BOTH,expand=1)
-        #bottom si DB ref
-        self.bottomDBref = tk.StringVar()
-        self.entry2=Entry(frame02, textvariable=self.bottomDBref,width=5)
-        self.entry2.pack(fill=tk.BOTH,expand=1)
-        self.bottomDBref.set("")
-        #polarity
-        self.polaritylist=["nip", "pin","NULL"]
-        self.polarityChoice=StringVar()
-        self.polarityChoice.set(self.polaritylist[1])
-        self.dropMenuFrame = OptionMenu(frame02, self.polarityChoice, *self.polaritylist, command=())
-        self.dropMenuFrame.pack(fill=tk.BOTH,expand=1)
-        ##ofcells
-        self.numbofcell = tk.IntVar()
-        self.entry2=Entry(frame02, textvariable=self.numbofcell,width=5)
-        self.entry2.pack(fill=tk.BOTH,expand=1)
-        self.numbofcell.set(1)
+            self.newsampleswindow.wm_title("New samples")
+            
+            frame0=Frame(self.newsampleswindow,borderwidth=0,  bg="white")
+            frame0.pack()
+            frame01=Frame(frame0,borderwidth=0,  bg="white")
+            frame01.pack(side="left",fill=tk.BOTH,expand=1)
+            tk.Label(frame01, text="Sample number", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
+            tk.Label(frame01, text="Substrate type", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
+            tk.Label(frame01, text="Device architecture", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
+            tk.Label(frame01, text="Polarity", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)          
+            tk.Label(frame01, text="#ofpixels", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
+            tk.Label(frame01, text="PixelArea", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
         
-        frame06=Frame(frame0,borderwidth=0,  bg="white")
-        frame06.pack(side="left",fill=tk.BOTH,expand=1)
-        tk.Label(frame06, text=" ", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
-        Button(frame06, text="Add",
-               command = self.addnewSubstratetype).pack(fill=tk.BOTH,expand=1)
-        tk.Label(frame06, text=" ", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
-        tk.Label(frame06, text=" ", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
-        tk.Label(frame06, text=" ", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
-        tk.Label(frame06, text=" ", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
-
-        
-        frame03=Frame(frame0,borderwidth=0,  bg="white")
-        frame03.pack(side="left",fill=tk.BOTH,expand=1)
-        tk.Label(frame03, text="recombjct", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
-        tk.Label(frame03, text="p-side", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
-        tk.Label(frame03, text="n-side", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
-        tk.Label(frame03, text="Absorber", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
-        tk.Label(frame03, text="Method", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
-        tk.Label(frame03, text="topelectrode", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
-        
-        
-        frame04=Frame(frame0,borderwidth=0,  bg="white")
-        frame04.pack(side="left",fill=tk.BOTH,expand=1)
-        #recombjct
-        self.recombjctlist=[]
-        result = self.theCursor.execute("SELECT recombjctstack FROM recombjct")
-        for row in result:
-            self.recombjctlist.append(row[0])
-        if self.recombjctlist==[]:
-            self.recombjctlist=[""]
-        self.recombjctlist=tuple(self.recombjctlist)
-        self.recombjctChoice=StringVar()
-        self.recombjctChoice.set(self.recombjctlist[0])
-        self.dropMenuFramerecombjct = OptionMenu(frame04, self.recombjctChoice, *self.recombjctlist, command=())
-        self.dropMenuFramerecombjct.pack(fill=tk.BOTH,expand=1)
-        #p-side
-        self.psidelist=[]
-        result = self.theCursor.execute("SELECT contactstackP FROM Pcontact")
-        for row in result:
-            self.psidelist.append(row[0])
-        if self.psidelist==[]:
-            self.psidelist=[""]
-        self.psidelist=tuple(self.psidelist)
-        self.psideChoice=StringVar()
-        self.psideChoice.set(self.psidelist[0])
-        self.dropMenuFramepside = OptionMenu(frame04, self.psideChoice, *self.psidelist, command=())
-        self.dropMenuFramepside.pack(fill=tk.BOTH,expand=1)
-        #n-side
-        self.nsidelist=[]
-        result = self.theCursor.execute("SELECT contactstackN FROM Ncontact")
-        for row in result:
-            self.nsidelist.append(row[0])
-        if self.nsidelist==[]:
-            self.nsidelist=[""]
-        self.nsidelist=tuple(self.nsidelist)
-        self.nsideChoice=StringVar()
-        self.nsideChoice.set(self.nsidelist[0])
-        self.dropMenuFramenside = OptionMenu(frame04, self.nsideChoice, *self.nsidelist, command=())
-        self.dropMenuFramenside.pack(fill=tk.BOTH,expand=1)        
-        #absorber
-        self.absorberlist=[]
-        result = self.theCursor.execute("SELECT absorbercomposition FROM PkAbsorber")
-        for row in result:
-            self.absorberlist.append(row[0])
-        if self.absorberlist==[]:
-            self.absorberlist=[""]
-        self.absorberlist=tuple(self.absorberlist)
-        self.absorberChoice=StringVar()
-        self.absorberChoice.set(self.absorberlist[0])
-        self.dropMenuFrameabsorber = OptionMenu(frame04, self.absorberChoice, *self.absorberlist, command=())
-        self.dropMenuFrameabsorber.pack(fill=tk.BOTH,expand=1) 
-        self.absorberMethodlist=[]
-        result = self.theCursor.execute("SELECT absorberMethod FROM PkAbsorberMethod")
-        for row in result:
-            self.absorberMethodlist.append(row[0])
-        if self.absorberMethodlist==[]:
-            self.absorberMethodlist=[""]
-        self.absorberMethodlist=tuple(self.absorberMethodlist)
-        self.absorberMethodChoice=StringVar()
-        self.absorberMethodChoice.set(self.absorberMethodlist[0])
-        self.dropMenuFrameabsorberMethod = OptionMenu(frame04, self.absorberMethodChoice, *self.absorberMethodlist, command=())
-        self.dropMenuFrameabsorberMethod.pack(fill=tk.BOTH,expand=1)
-        #electrode
-        self.electrodelist=[]
-        result = self.theCursor.execute("SELECT electrodestack FROM electrode")
-        for row in result:
-            self.electrodelist.append(row[0])
-        if self.electrodelist==[]:
-            self.electrodelist=[""]
-        self.electrodelist=tuple(self.electrodelist)
-        self.electrodeChoice=StringVar()
-        self.electrodeChoice.set(self.electrodelist[0])
-        self.dropMenuFrameelectrode = OptionMenu(frame04, self.electrodeChoice, *self.electrodelist, command=())
-        self.dropMenuFrameelectrode.pack(fill=tk.BOTH,expand=1) 
-        
-
-        frame05=Frame(frame0,borderwidth=0,  bg="white")
-        frame05.pack(side="left",fill=tk.BOTH,expand=1)
-        Button(frame05, text="Add",
-               command = self.addnewrecombjct).pack(fill=tk.BOTH,expand=1)
-        Button(frame05, text="Add",
-               command = self.addnewPcontact).pack(fill=tk.BOTH,expand=1)
-        Button(frame05, text="Add",
-               command = self.addnewNcontact).pack(fill=tk.BOTH,expand=1)
-        Button(frame05, text="Add",
-               command = self.addnewabsorber).pack(fill=tk.BOTH,expand=1)
-        Button(frame05, text="Add",
-               command = self.addnewabsorberMethod).pack(fill=tk.BOTH,expand=1)
-        Button(frame05, text="Add",
-               command = self.addnewelectrode).pack(fill=tk.BOTH,expand=1)
-
-        if self.topicChoice.get()=="triple":   
-    
-            frame07=Frame(frame0,borderwidth=0,  bg="white")
-            frame07.pack(side="left",fill=tk.BOTH,expand=1)
-            tk.Label(frame07, text="tripletop", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
+            frame02=Frame(frame0,borderwidth=0,  bg="white")
+            frame02.pack(side="left",fill=tk.BOTH,expand=1)
+            #sample number
+            self.samplenumber = tk.StringVar()
+            self.entry1=Entry(frame02, textvariable=self.samplenumber,width=5)
+            self.entry1.pack(fill=tk.BOTH,expand=1)
+            self.samplenumber.set("")
+            #substrate type
+            self.subtypelist=[]
+            result = self.theCursor.execute("SELECT substratetype FROM substtype")
+            for row in result:
+                self.subtypelist.append(row[0])
+            if self.subtypelist==[]:
+                self.subtypelist=[""]
+            self.subtypelist=tuple(self.subtypelist)
+            self.substChoice=StringVar()
+            self.substChoice.set('glass')
+            self.dropMenuFramesubst = OptionMenu(frame02, self.substChoice, *self.subtypelist, command=())
+            self.dropMenuFramesubst.pack(fill=tk.BOTH,expand=1)
+            #device architecture
+            self.cellarchitlist=["planar", "mesoporous","NULL"]
+            self.cellarchitChoice=StringVar()
+            self.cellarchitChoice.set(self.cellarchitlist[0])
+            self.dropMenuFrame = OptionMenu(frame02, self.cellarchitChoice, *self.cellarchitlist, command=())
+            self.dropMenuFrame.pack(fill=tk.BOTH,expand=1)
+            #polarity
+            self.polaritylist=["nip", "pin","NULL"]
+            self.polarityChoice=StringVar()
+            self.polarityChoice.set(self.polaritylist[1])
+            self.dropMenuFrame = OptionMenu(frame02, self.polarityChoice, *self.polaritylist, command=())
+            self.dropMenuFrame.pack(fill=tk.BOTH,expand=1)
+            ##ofpixels
+            self.numbofcell = tk.IntVar()
+            self.entry2=Entry(frame02, textvariable=self.numbofcell,width=5)
+            self.entry2.pack(fill=tk.BOTH,expand=1)
+            self.numbofcell.set(6)
+            #pixel area
+            self.pixelarea = tk.DoubleVar()
+            self.entry2=Entry(frame02, textvariable=self.pixelarea,width=5)
+            self.entry2.pack(fill=tk.BOTH,expand=1)
+            self.pixelarea.set(0.058)
+            
+            frame06=Frame(frame0,borderwidth=0,  bg="white")
+            frame06.pack(side="left",fill=tk.BOTH,expand=1)
+            tk.Label(frame06, text=" ", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
+            Button(frame06, text="Add",
+                   command = self.addnewSubstratetype).pack(fill=tk.BOTH,expand=1)
+            tk.Label(frame06, text=" ", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
+            tk.Label(frame06, text=" ", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
+            tk.Label(frame06, text=" ", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
+            tk.Label(frame06, text=" ", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
+            
+            frame03=Frame(frame0,borderwidth=0,  bg="white")
+            frame03.pack(side="left",fill=tk.BOTH,expand=1)
+            tk.Label(frame03, text="Electrode on substrate", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
+            tk.Label(frame03, text="P-contact", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
+            tk.Label(frame03, text="Absorber", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
+            tk.Label(frame03, text="Dep. Method", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
+            tk.Label(frame03, text="N-contact", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
+            tk.Label(frame03, text="Electrode on films", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
+            
+            frame04=Frame(frame0,borderwidth=0,  bg="white")
+            frame04.pack(side="left",fill=tk.BOTH,expand=1)
+            #recombjct
+            self.recombjctlist=[]
+            result = self.theCursor.execute("SELECT recombjctstack FROM recombjct")
+            for row in result:
+                self.recombjctlist.append(row[0])
+            if self.recombjctlist==[]:
+                self.recombjctlist=[""]
+            self.recombjctlist=tuple(self.recombjctlist)
+            self.recombjctChoice=StringVar()
+            self.recombjctChoice.set(self.recombjctlist[0])
+            self.dropMenuFramerecombjct = OptionMenu(frame04, self.recombjctChoice, *self.recombjctlist, command=())
+            self.dropMenuFramerecombjct.pack(fill=tk.BOTH,expand=1)
             #p-side
-            self.psidelisttop=[]
+            self.psidelist=[]
             result = self.theCursor.execute("SELECT contactstackP FROM Pcontact")
             for row in result:
-                self.psidelisttop.append(row[0])
-            if self.psidelisttop==[]:
-                self.psidelisttop=[""]
-            self.psidelisttop=tuple(self.psidelisttop)
-            self.psidetopChoice=StringVar()
-            self.psidetopChoice.set(self.psidelisttop[0])
-            self.dropMenuFramepsidetop = OptionMenu(frame07, self.psidetopChoice, *self.psidelisttop, command=())
-            self.dropMenuFramepsidetop.pack(fill=tk.BOTH,expand=1)
-            #n-side
-            self.nsidelisttop=[]
-            result = self.theCursor.execute("SELECT contactstackN FROM Ncontact")
-            for row in result:
-                self.nsidelisttop.append(row[0])
-            if self.nsidelisttop==[]:
-                self.nsidelisttop=[""]
-            self.nsidelisttop=tuple(self.nsidelisttop)
-            self.nsidetopChoice=StringVar()
-            self.nsidetopChoice.set(self.nsidelisttop[0])
-            self.dropMenuFramensidetop = OptionMenu(frame07, self.nsidetopChoice, *self.nsidelisttop, command=())
-            self.dropMenuFramensidetop.pack(fill=tk.BOTH,expand=1)        
+                self.psidelist.append(row[0])
+            if self.psidelist==[]:
+                self.psidelist=[""]
+            self.psidelist=tuple(self.psidelist)
+            self.psideChoice=StringVar()
+            self.psideChoice.set(self.psidelist[0])
+            self.dropMenuFramepside = OptionMenu(frame04, self.psideChoice, *self.psidelist, command=())
+            self.dropMenuFramepside.pack(fill=tk.BOTH,expand=1)
             #absorber
-            self.absorberlisttop=[]
+            self.absorberlist=[]
             result = self.theCursor.execute("SELECT absorbercomposition FROM PkAbsorber")
             for row in result:
-                self.absorberlisttop.append(row[0])
-            if self.absorberlisttop==[]:
-                self.absorberlisttop=[""]
-            self.absorberlisttop=tuple(self.absorberlisttop)
-            self.absorbertopChoice=StringVar()
-            self.absorbertopChoice.set(self.absorberlisttop[0])
-            self.dropMenuFrameabsorbertop = OptionMenu(frame07, self.absorbertopChoice, *self.absorberlisttop, command=())
-            self.dropMenuFrameabsorbertop.pack(fill=tk.BOTH,expand=1) 
-            self.absorberMethodlisttop=[]
+                self.absorberlist.append(row[0])
+            if self.absorberlist==[]:
+                self.absorberlist=[""]
+            self.absorberlist=tuple(self.absorberlist)
+            self.absorberChoice=StringVar()
+            self.absorberChoice.set(self.absorberlist[0])
+            self.dropMenuFrameabsorber = OptionMenu(frame04, self.absorberChoice, *self.absorberlist, command=())
+            self.dropMenuFrameabsorber.pack(fill=tk.BOTH,expand=1) 
+            self.absorberMethodlist=[]
             result = self.theCursor.execute("SELECT absorberMethod FROM PkAbsorberMethod")
             for row in result:
-                self.absorberMethodlisttop.append(row[0])
-            if self.absorberMethodlisttop==[]:
-                self.absorberMethodlisttop=[""]
-            self.absorberMethodlisttop=tuple(self.absorberMethodlisttop)
-            self.absorberMethodtopChoice=StringVar()
-            self.absorberMethodtopChoice.set(self.absorberMethodlisttop[0])
-            self.dropMenuFrameabsorberMethodtop = OptionMenu(frame07, self.absorberMethodtopChoice, *self.absorberMethodlisttop, command=())
-            self.dropMenuFrameabsorberMethodtop.pack(fill=tk.BOTH,expand=1) 
+                self.absorberMethodlist.append(row[0])
+            if self.absorberMethodlist==[]:
+                self.absorberMethodlist=[""]
+            self.absorberMethodlist=tuple(self.absorberMethodlist)
+            self.absorberMethodChoice=StringVar()
+            self.absorberMethodChoice.set(self.absorberMethodlist[0])
+            self.dropMenuFrameabsorberMethod = OptionMenu(frame04, self.absorberMethodChoice, *self.absorberMethodlist, command=())
+            self.dropMenuFrameabsorberMethod.pack(fill=tk.BOTH,expand=1)
+            #n-side
+            self.nsidelist=[]
+            result = self.theCursor.execute("SELECT contactstackN FROM Ncontact")
+            for row in result:
+                self.nsidelist.append(row[0])
+            if self.nsidelist==[]:
+                self.nsidelist=[""]
+            self.nsidelist=tuple(self.nsidelist)
+            self.nsideChoice=StringVar()
+            self.nsideChoice.set(self.nsidelist[0])
+            self.dropMenuFramenside = OptionMenu(frame04, self.nsideChoice, *self.nsidelist, command=())
+            self.dropMenuFramenside.pack(fill=tk.BOTH,expand=1)  
             #electrode
-            self.electrodelisttop=[]
+            self.electrodelist=[]
             result = self.theCursor.execute("SELECT electrodestack FROM electrode")
             for row in result:
-                self.electrodelisttop.append(row[0])
-            if self.electrodelisttop==[]:
-                self.electrodelisttop=[""]
-            self.electrodelisttop=tuple(self.electrodelisttop)
-            self.electrodetopChoice=StringVar()
-            self.electrodetopChoice.set(self.electrodelisttop[0])
-            self.dropMenuFrameelectrodetop = OptionMenu(frame07, self.electrodetopChoice, *self.electrodelisttop, command=())
-            self.dropMenuFrameelectrodetop.pack(fill=tk.BOTH,expand=1) 
+                self.electrodelist.append(row[0])
+            if self.electrodelist==[]:
+                self.electrodelist=[""]
+            self.electrodelist=tuple(self.electrodelist)
+            self.electrodeChoice=StringVar()
+            self.electrodeChoice.set(self.electrodelist[0])
+            self.dropMenuFrameelectrode = OptionMenu(frame04, self.electrodeChoice, *self.electrodelist, command=())
+            self.dropMenuFrameelectrode.pack(fill=tk.BOTH,expand=1) 
             
+    
+            frame05=Frame(frame0,borderwidth=0,  bg="white")
+            frame05.pack(side="left",fill=tk.BOTH,expand=1)
+            Button(frame05, text="Add",
+                   command = self.addnewrecombjct).pack(fill=tk.BOTH,expand=1)
+            Button(frame05, text="Add",
+                   command = self.addnewPcontact).pack(fill=tk.BOTH,expand=1)
+            Button(frame05, text="Add",
+                   command = self.addnewabsorber).pack(fill=tk.BOTH,expand=1)
+            Button(frame05, text="Add",
+                   command = self.addnewabsorberMethod).pack(fill=tk.BOTH,expand=1)
+            Button(frame05, text="Add",
+                   command = self.addnewNcontact).pack(fill=tk.BOTH,expand=1)
+            Button(frame05, text="Add",
+                   command = self.addnewelectrode).pack(fill=tk.BOTH,expand=1)
+            
+            frame1=Frame(self.newsampleswindow,borderwidth=0,  bg="white")
+            frame1.pack()
+            tk.Label(frame1, text="comment", font=("Verdana", 10)).pack(side="left",fill=tk.BOTH,expand=1)
+            self.commentsamples = tk.StringVar()
+            self.entry1=Entry(frame1, textvariable=self.commentsamples,width=50)
+            self.entry1.pack(side="left",fill=tk.BOTH,expand=1)
+            self.commentsamples.set("")
+    
+            frame4=Frame(self.newsampleswindow,borderwidth=0,  bg="white")
+            frame4.pack()
+            Button(frame4, text="Add new sample",
+                   command = self.addnewsamplestolist).pack(side="left", fill=tk.BOTH,expand=1)
+            Button(frame4, text="Delete selected sample",
+                   command = self.deletesamplesfromlist).pack(side="left", fill=tk.BOTH,expand=1)
+            self.newsampleswindow.bind('<Return>', self.onclickenter)#allows to call the addsamples by just clicking the enter key (faster)
+            
+            
+            frame2=Frame(self.newsampleswindow,borderwidth=0,  bg="white")
+            frame2.pack(fill=tk.BOTH, expand=1)
+            
+            self.listboxsamples=Listbox(frame2,width=20, height=5, selectmode=tk.EXTENDED)
+            self.listboxsamples.pack(side="left", fill=tk.BOTH, expand=1)
+            scrollbar = tk.Scrollbar(frame2, orient="vertical")
+            scrollbar.config(command=self.listboxsamples.yview)
+            scrollbar.pack(side="right", fill="y")
+            self.listboxsamples.config(yscrollcommand=scrollbar.set)
+    
+            
+            frame3=Frame(self.newsampleswindow,borderwidth=0,  bg="white")
+            frame3.pack()
+            Button(frame3, text="Validate",
+                   command = self.validatesampleslist).pack(side="left", fill=tk.BOTH,expand=1)
+            Button(frame3, text="Cancel",
+                   command = self.backtomain).pack(side="left", fill=tk.BOTH,expand=1)
+            
+#        self.newsampleswindow = tk.Toplevel()
+#        center(self.newsampleswindow)
+#        self.newsampleswindow.protocol("WM_DELETE_WINDOW", self.backtomain)
+#        if self.topicChoice.get()!="triple":
+#            self.newsampleswindow.wm_geometry("650x500")
+#        elif self.topicChoice.get()=="triple":
+#            self.newsampleswindow.wm_geometry("830x500")
+#        self.newsampleswindow.wm_title("New samples")
 
-        frame1=Frame(self.newsampleswindow,borderwidth=0,  bg="white")
-        frame1.pack()
-        tk.Label(frame1, text="comment", font=("Verdana", 10)).pack(side="left",fill=tk.BOTH,expand=1)
-        self.commentsamples = tk.StringVar()
-        self.entry1=Entry(frame1, textvariable=self.commentsamples,width=50)
-        self.entry1.pack(side="left",fill=tk.BOTH,expand=1)
-        self.commentsamples.set("")
+#        frame0=Frame(self.newsampleswindow,borderwidth=0,  bg="white")
+#        frame0.pack()
+#        frame01=Frame(frame0,borderwidth=0,  bg="white")
+#        frame01.pack(side="left",fill=tk.BOTH,expand=1)
+#        tk.Label(frame01, text="Sample number", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
+#        tk.Label(frame01, text="Substrate type", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
+#        tk.Label(frame01, text="Device architecture", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
+#        tk.Label(frame01, text="bottomSiDBref", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
+#        tk.Label(frame01, text="Polarity", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
+#        tk.Label(frame01, text="#ofcells", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
 
-        frame4=Frame(self.newsampleswindow,borderwidth=0,  bg="white")
-        frame4.pack()
-        Button(frame4, text="Add new sample",
-               command = self.addnewsamplestolist).pack(side="left", fill=tk.BOTH,expand=1)
-        Button(frame4, text="Delete selected sample",
-               command = self.deletesamplesfromlist).pack(side="left", fill=tk.BOTH,expand=1)
-        self.newsampleswindow.bind('<Return>', self.onclickenter)#allows to call the addsamples by just clicking the enter key (faster)
+#        frame02=Frame(frame0,borderwidth=0,  bg="white")
+#        frame02.pack(side="left",fill=tk.BOTH,expand=1)
+#        #sample number
+#        self.samplenumber = tk.StringVar()
+#        self.entry1=Entry(frame02, textvariable=self.samplenumber,width=5)
+#        self.entry1.pack(fill=tk.BOTH,expand=1)
+#        self.samplenumber.set("")
+#        #substrate type
+#        self.subtypelist=[]
+#        result = self.theCursor.execute("SELECT substratetype FROM substtype")
+#        for row in result:
+#            self.subtypelist.append(row[0])
+#        if self.subtypelist==[]:
+#            self.subtypelist=[""]
+#        self.subtypelist=tuple(self.subtypelist)
+#        self.substChoice=StringVar()
+#        self.substChoice.set(self.subtypelist[0])
+#        self.dropMenuFramesubst = OptionMenu(frame02, self.substChoice, *self.subtypelist, command=())
+#        self.dropMenuFramesubst.pack(fill=tk.BOTH,expand=1)
+#        #device architecture
+#        self.cellarchitlist=["planar", "mesoporous","NULL"]
+#        self.cellarchitChoice=StringVar()
+#        self.cellarchitChoice.set(self.cellarchitlist[0])
+#        self.dropMenuFrame = OptionMenu(frame02, self.cellarchitChoice, *self.cellarchitlist, command=())
+#        self.dropMenuFrame.pack(fill=tk.BOTH,expand=1)
+#        #bottom si DB ref
+#        self.bottomDBref = tk.StringVar()
+#        self.entry2=Entry(frame02, textvariable=self.bottomDBref,width=5)
+#        self.entry2.pack(fill=tk.BOTH,expand=1)
+#        self.bottomDBref.set("")
+#        #polarity
+#        self.polaritylist=["nip", "pin","NULL"]
+#        self.polarityChoice=StringVar()
+#        self.polarityChoice.set(self.polaritylist[1])
+#        self.dropMenuFrame = OptionMenu(frame02, self.polarityChoice, *self.polaritylist, command=())
+#        self.dropMenuFrame.pack(fill=tk.BOTH,expand=1)
+#        ##ofcells
+#        self.numbofcell = tk.IntVar()
+#        self.entry2=Entry(frame02, textvariable=self.numbofcell,width=5)
+#        self.entry2.pack(fill=tk.BOTH,expand=1)
+#        self.numbofcell.set(1)
         
-        
-        frame2=Frame(self.newsampleswindow,borderwidth=0,  bg="white")
-        frame2.pack(fill=tk.BOTH, expand=1)
-        
-        self.listboxsamples=Listbox(frame2,width=20, height=5, selectmode=tk.EXTENDED)
-        self.listboxsamples.pack(side="left", fill=tk.BOTH, expand=1)
-        scrollbar = tk.Scrollbar(frame2, orient="vertical")
-        scrollbar.config(command=self.listboxsamples.yview)
-        scrollbar.pack(side="right", fill="y")
-        self.listboxsamples.config(yscrollcommand=scrollbar.set)
+#        frame06=Frame(frame0,borderwidth=0,  bg="white")
+#        frame06.pack(side="left",fill=tk.BOTH,expand=1)
+#        tk.Label(frame06, text=" ", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
+#        Button(frame06, text="Add",
+#               command = self.addnewSubstratetype).pack(fill=tk.BOTH,expand=1)
+#        tk.Label(frame06, text=" ", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
+#        tk.Label(frame06, text=" ", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
+#        tk.Label(frame06, text=" ", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
+#        tk.Label(frame06, text=" ", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
 
         
-        frame3=Frame(self.newsampleswindow,borderwidth=0,  bg="white")
-        frame3.pack()
-        Button(frame3, text="Validate",
-               command = self.validatesampleslist).pack(side="left", fill=tk.BOTH,expand=1)
-        Button(frame3, text="Cancel",
-               command = self.backtomain).pack(side="left", fill=tk.BOTH,expand=1)
+#        frame03=Frame(frame0,borderwidth=0,  bg="white")
+#        frame03.pack(side="left",fill=tk.BOTH,expand=1)
+#        tk.Label(frame03, text="recombjct", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
+#        tk.Label(frame03, text="p-side", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
+#        tk.Label(frame03, text="n-side", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
+#        tk.Label(frame03, text="Absorber", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
+#        tk.Label(frame03, text="Method", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
+#        tk.Label(frame03, text="topelectrode", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
+        
+        
+#        frame04=Frame(frame0,borderwidth=0,  bg="white")
+#        frame04.pack(side="left",fill=tk.BOTH,expand=1)
+#        #recombjct
+#        self.recombjctlist=[]
+#        result = self.theCursor.execute("SELECT recombjctstack FROM recombjct")
+#        for row in result:
+#            self.recombjctlist.append(row[0])
+#        if self.recombjctlist==[]:
+#            self.recombjctlist=[""]
+#        self.recombjctlist=tuple(self.recombjctlist)
+#        self.recombjctChoice=StringVar()
+#        self.recombjctChoice.set(self.recombjctlist[0])
+#        self.dropMenuFramerecombjct = OptionMenu(frame04, self.recombjctChoice, *self.recombjctlist, command=())
+#        self.dropMenuFramerecombjct.pack(fill=tk.BOTH,expand=1)
+#        #p-side
+#        self.psidelist=[]
+#        result = self.theCursor.execute("SELECT contactstackP FROM Pcontact")
+#        for row in result:
+#            self.psidelist.append(row[0])
+#        if self.psidelist==[]:
+#            self.psidelist=[""]
+#        self.psidelist=tuple(self.psidelist)
+#        self.psideChoice=StringVar()
+#        self.psideChoice.set(self.psidelist[0])
+#        self.dropMenuFramepside = OptionMenu(frame04, self.psideChoice, *self.psidelist, command=())
+#        self.dropMenuFramepside.pack(fill=tk.BOTH,expand=1)
+#        #n-side
+#        self.nsidelist=[]
+#        result = self.theCursor.execute("SELECT contactstackN FROM Ncontact")
+#        for row in result:
+#            self.nsidelist.append(row[0])
+#        if self.nsidelist==[]:
+#            self.nsidelist=[""]
+#        self.nsidelist=tuple(self.nsidelist)
+#        self.nsideChoice=StringVar()
+#        self.nsideChoice.set(self.nsidelist[0])
+#        self.dropMenuFramenside = OptionMenu(frame04, self.nsideChoice, *self.nsidelist, command=())
+#        self.dropMenuFramenside.pack(fill=tk.BOTH,expand=1)        
+#        #absorber
+#        self.absorberlist=[]
+#        result = self.theCursor.execute("SELECT absorbercomposition FROM PkAbsorber")
+#        for row in result:
+#            self.absorberlist.append(row[0])
+#        if self.absorberlist==[]:
+#            self.absorberlist=[""]
+#        self.absorberlist=tuple(self.absorberlist)
+#        self.absorberChoice=StringVar()
+#        self.absorberChoice.set(self.absorberlist[0])
+#        self.dropMenuFrameabsorber = OptionMenu(frame04, self.absorberChoice, *self.absorberlist, command=())
+#        self.dropMenuFrameabsorber.pack(fill=tk.BOTH,expand=1) 
+#        self.absorberMethodlist=[]
+#        result = self.theCursor.execute("SELECT absorberMethod FROM PkAbsorberMethod")
+#        for row in result:
+#            self.absorberMethodlist.append(row[0])
+#        if self.absorberMethodlist==[]:
+#            self.absorberMethodlist=[""]
+#        self.absorberMethodlist=tuple(self.absorberMethodlist)
+#        self.absorberMethodChoice=StringVar()
+#        self.absorberMethodChoice.set(self.absorberMethodlist[0])
+#        self.dropMenuFrameabsorberMethod = OptionMenu(frame04, self.absorberMethodChoice, *self.absorberMethodlist, command=())
+#        self.dropMenuFrameabsorberMethod.pack(fill=tk.BOTH,expand=1)
+#        #electrode
+#        self.electrodelist=[]
+#        result = self.theCursor.execute("SELECT electrodestack FROM electrode")
+#        for row in result:
+#            self.electrodelist.append(row[0])
+#        if self.electrodelist==[]:
+#            self.electrodelist=[""]
+#        self.electrodelist=tuple(self.electrodelist)
+#        self.electrodeChoice=StringVar()
+#        self.electrodeChoice.set(self.electrodelist[0])
+#        self.dropMenuFrameelectrode = OptionMenu(frame04, self.electrodeChoice, *self.electrodelist, command=())
+#        self.dropMenuFrameelectrode.pack(fill=tk.BOTH,expand=1) 
+#        
+#
+#        frame05=Frame(frame0,borderwidth=0,  bg="white")
+#        frame05.pack(side="left",fill=tk.BOTH,expand=1)
+#        Button(frame05, text="Add",
+#               command = self.addnewrecombjct).pack(fill=tk.BOTH,expand=1)
+#        Button(frame05, text="Add",
+#               command = self.addnewPcontact).pack(fill=tk.BOTH,expand=1)
+#        Button(frame05, text="Add",
+#               command = self.addnewNcontact).pack(fill=tk.BOTH,expand=1)
+#        Button(frame05, text="Add",
+#               command = self.addnewabsorber).pack(fill=tk.BOTH,expand=1)
+#        Button(frame05, text="Add",
+#               command = self.addnewabsorberMethod).pack(fill=tk.BOTH,expand=1)
+#        Button(frame05, text="Add",
+#               command = self.addnewelectrode).pack(fill=tk.BOTH,expand=1)
+
+#        if self.topicChoice.get()=="triple":   
+#    
+#            frame07=Frame(frame0,borderwidth=0,  bg="white")
+#            frame07.pack(side="left",fill=tk.BOTH,expand=1)
+#            tk.Label(frame07, text="tripletop", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
+#            #p-side
+#            self.psidelisttop=[]
+#            result = self.theCursor.execute("SELECT contactstackP FROM Pcontact")
+#            for row in result:
+#                self.psidelisttop.append(row[0])
+#            if self.psidelisttop==[]:
+#                self.psidelisttop=[""]
+#            self.psidelisttop=tuple(self.psidelisttop)
+#            self.psidetopChoice=StringVar()
+#            self.psidetopChoice.set(self.psidelisttop[0])
+#            self.dropMenuFramepsidetop = OptionMenu(frame07, self.psidetopChoice, *self.psidelisttop, command=())
+#            self.dropMenuFramepsidetop.pack(fill=tk.BOTH,expand=1)
+#            #n-side
+#            self.nsidelisttop=[]
+#            result = self.theCursor.execute("SELECT contactstackN FROM Ncontact")
+#            for row in result:
+#                self.nsidelisttop.append(row[0])
+#            if self.nsidelisttop==[]:
+#                self.nsidelisttop=[""]
+#            self.nsidelisttop=tuple(self.nsidelisttop)
+#            self.nsidetopChoice=StringVar()
+#            self.nsidetopChoice.set(self.nsidelisttop[0])
+#            self.dropMenuFramensidetop = OptionMenu(frame07, self.nsidetopChoice, *self.nsidelisttop, command=())
+#            self.dropMenuFramensidetop.pack(fill=tk.BOTH,expand=1)        
+#            #absorber
+#            self.absorberlisttop=[]
+#            result = self.theCursor.execute("SELECT absorbercomposition FROM PkAbsorber")
+#            for row in result:
+#                self.absorberlisttop.append(row[0])
+#            if self.absorberlisttop==[]:
+#                self.absorberlisttop=[""]
+#            self.absorberlisttop=tuple(self.absorberlisttop)
+#            self.absorbertopChoice=StringVar()
+#            self.absorbertopChoice.set(self.absorberlisttop[0])
+#            self.dropMenuFrameabsorbertop = OptionMenu(frame07, self.absorbertopChoice, *self.absorberlisttop, command=())
+#            self.dropMenuFrameabsorbertop.pack(fill=tk.BOTH,expand=1) 
+#            self.absorberMethodlisttop=[]
+#            result = self.theCursor.execute("SELECT absorberMethod FROM PkAbsorberMethod")
+#            for row in result:
+#                self.absorberMethodlisttop.append(row[0])
+#            if self.absorberMethodlisttop==[]:
+#                self.absorberMethodlisttop=[""]
+#            self.absorberMethodlisttop=tuple(self.absorberMethodlisttop)
+#            self.absorberMethodtopChoice=StringVar()
+#            self.absorberMethodtopChoice.set(self.absorberMethodlisttop[0])
+#            self.dropMenuFrameabsorberMethodtop = OptionMenu(frame07, self.absorberMethodtopChoice, *self.absorberMethodlisttop, command=())
+#            self.dropMenuFrameabsorberMethodtop.pack(fill=tk.BOTH,expand=1) 
+#            #electrode
+#            self.electrodelisttop=[]
+#            result = self.theCursor.execute("SELECT electrodestack FROM electrode")
+#            for row in result:
+#                self.electrodelisttop.append(row[0])
+#            if self.electrodelisttop==[]:
+#                self.electrodelisttop=[""]
+#            self.electrodelisttop=tuple(self.electrodelisttop)
+#            self.electrodetopChoice=StringVar()
+#            self.electrodetopChoice.set(self.electrodelisttop[0])
+#            self.dropMenuFrameelectrodetop = OptionMenu(frame07, self.electrodetopChoice, *self.electrodelisttop, command=())
+#            self.dropMenuFrameelectrodetop.pack(fill=tk.BOTH,expand=1) 
+#            
+
+#        frame1=Frame(self.newsampleswindow,borderwidth=0,  bg="white")
+#        frame1.pack()
+#        tk.Label(frame1, text="comment", font=("Verdana", 10)).pack(side="left",fill=tk.BOTH,expand=1)
+#        self.commentsamples = tk.StringVar()
+#        self.entry1=Entry(frame1, textvariable=self.commentsamples,width=50)
+#        self.entry1.pack(side="left",fill=tk.BOTH,expand=1)
+#        self.commentsamples.set("")
+#
+#        frame4=Frame(self.newsampleswindow,borderwidth=0,  bg="white")
+#        frame4.pack()
+#        Button(frame4, text="Add new sample",
+#               command = self.addnewsamplestolist).pack(side="left", fill=tk.BOTH,expand=1)
+#        Button(frame4, text="Delete selected sample",
+#               command = self.deletesamplesfromlist).pack(side="left", fill=tk.BOTH,expand=1)
+#        self.newsampleswindow.bind('<Return>', self.onclickenter)#allows to call the addsamples by just clicking the enter key (faster)
+#        
+#        
+#        frame2=Frame(self.newsampleswindow,borderwidth=0,  bg="white")
+#        frame2.pack(fill=tk.BOTH, expand=1)
+#        
+#        self.listboxsamples=Listbox(frame2,width=20, height=5, selectmode=tk.EXTENDED)
+#        self.listboxsamples.pack(side="left", fill=tk.BOTH, expand=1)
+#        scrollbar = tk.Scrollbar(frame2, orient="vertical")
+#        scrollbar.config(command=self.listboxsamples.yview)
+#        scrollbar.pack(side="right", fill="y")
+#        self.listboxsamples.config(yscrollcommand=scrollbar.set)
+#
+#        
+#        frame3=Frame(self.newsampleswindow,borderwidth=0,  bg="white")
+#        frame3.pack()
+#        Button(frame3, text="Validate",
+#               command = self.validatesampleslist).pack(side="left", fill=tk.BOTH,expand=1)
+#        Button(frame3, text="Cancel",
+#               command = self.backtomain).pack(side="left", fill=tk.BOTH,expand=1)
     def onclickenter(self,a):
         self.addnewsamplestolist()
     def addnewrecombjct(self):

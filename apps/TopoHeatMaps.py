@@ -10,7 +10,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 	
 #############################################################################################
 #for three graph with same scale
-"""
+
 filetoread = open('C:\\Users\\jwerner\\Documents\\DATA\\interferometer Profilo\\191211\\9316_VSI_20x_02.asc',"r", encoding='ISO-8859-1')
 filerawdata = list(filetoread.readlines())
 x=[]
@@ -149,7 +149,7 @@ im = ax0.pcolormesh(x_arr0,y_arr0,z_arr0,vmin=zmin,vmax=zmax,cmap='Greys')
 #fig.colorbar(im, cax=cax1)
 ax0.set_aspect(aspect=1)
 ax0.set_axis_off()
-ax0.text(5,85,"Untreated, annealed", fontsize=18, color='white')
+ax0.text(5,210,"Untreated, annealed", fontsize=18, color='black', bbox=dict(facecolor='white', alpha=0.8))
 
 
 im = ax.pcolormesh(x_arr,y_arr,z_arr,vmin=zmin,vmax=zmax,cmap='Greys')
@@ -159,7 +159,7 @@ im = ax.pcolormesh(x_arr,y_arr,z_arr,vmin=zmin,vmax=zmax,cmap='Greys')
 ax.set_aspect(aspect=1)
 #ax.get_yaxis().set_visible(False)
 ax.set_axis_off()
-ax.text(5,85,"DEE, annealed", fontsize=18, color='white')
+ax.text(5,210,"DEE, annealed", fontsize=18, color='black', bbox=dict(facecolor='white', alpha=0.8))
 
 
 im1 = ax1.pcolormesh(x_arr1,y_arr1,z_arr1,vmin=zmin,vmax=zmax,cmap='Greys')
@@ -169,7 +169,7 @@ im1 = ax1.pcolormesh(x_arr1,y_arr1,z_arr1,vmin=zmin,vmax=zmax,cmap='Greys')
 ax1.set_aspect(aspect=1)
 #ax1.get_yaxis().tick_right()
 ax1.set_axis_off()
-ax1.text(5,85,"N2, annealed", fontsize=18, color='white')
+ax1.text(5,210,"N2, annealed", fontsize=18, color='black', bbox=dict(facecolor='white', alpha=0.8))
 
 
 fig.subplots_adjust(right=0.94,
@@ -183,72 +183,72 @@ cb_ax.set_ylabel("Height (um)")
 #plt.tight_layout()
 plt.show()
 
-fig.savefig('C:\\Users\\jwerner\\Documents\\DATA\\interferometer Profilo\\191211\\noVSdeeVSn2.tiff', dpi=300) 
+fig.savefig('C:\\Users\\jwerner\\Documents\\DATA\\interferometer Profilo\\191211\\noVSdeeVSn2-1.tiff', dpi=300) 
 
-"""
 
-#############################################################################################
-#for 1 graph
 
-filetoread = open('C:\\Users\\jwerner\\Documents\\DATA\\interferometer Profilo\\191211\\9313_VSI_20x_01.asc',"r", encoding='ISO-8859-1')
-filerawdata = list(filetoread.readlines())
-x=[]
-y=[]
-z=[]
-data=[]
-for i in range(116,len(filerawdata)):
-    if 'Intensity' in filerawdata[i].split('\t')[0]:
-        break
-    elif 'OPD' in filerawdata[i].split('\t')[0]:
-        pass
-    else:
-        x.append(float(filerawdata[i].split('\t')[0]))
-        y.append(float(filerawdata[i].split('\t')[1]))
-        if filerawdata[i].split('\t')[2] !='\n':
-            z.append(0.514*0.163*float(filerawdata[i].split('\t')[2]))
-        else:
-            z.append(0)
-            
+##############################################################################################
+##for 1 graph
+#
+#filetoread = open('C:\\Users\\jwerner\\Documents\\DATA\\interferometer Profilo\\191211\\9313_VSI_20x_01.asc',"r", encoding='ISO-8859-1')
+#filerawdata = list(filetoread.readlines())
+#x=[]
+#y=[]
+#z=[]
+#data=[]
 #for i in range(116,len(filerawdata)):
 #    if 'Intensity' in filerawdata[i].split('\t')[0]:
-#        for j in range(i+1,len(filerawdata)):
-#            x.append(float(filerawdata[j].split('\t')[0]))
-#            y.append(float(filerawdata[j].split('\t')[1]))
-#            if filerawdata[j].split('\t')[2] !='\n':
-#                z.append(0.163*float(filerawdata[j].split('\t')[2]))
-#            else:
-#                z.append(0)
-
-x=np.array(x)
-y=np.array(y)
-z=np.array(z)
-zmin=min(z)
-zmax=max(z)
-print(zmin)
-print(zmax)
-shape = np.unique(x).shape[0],np.unique(y).shape[0]
-x_arr0 = x.reshape(shape)
-y_arr0 = y.reshape(shape)
-z_arr0 = z.reshape(shape)
-
-fig, (ax0) = plt.subplots(nrows=1, ncols=1,figsize=(18, 23))
-
-im = ax0.pcolormesh(x_arr0,y_arr0,z_arr0,vmin=zmin,vmax=zmax,cmap='Greys')
-divider = make_axes_locatable(ax0)
-cax1 = divider.append_axes("right", size="2%", pad=0.05)
-fig.colorbar(im, cax=cax1)
-ax0.set_aspect(aspect=1)
-#ax0.set_axis_off()
-#ax0.text(5,85,"Untreated, annealed", fontsize=18, color='white')
-
-#fig.subplots_adjust(right=0.94,
-#                    wspace=0.01, hspace=0)
-#cb_ax = fig.add_axes([0.95, 0.423, 0.01, 0.16])
-#cbar = fig.colorbar(im, cax=cb_ax)
-#cb_ax.set_ylabel("Height (um)")
-
-plt.show()
-
-fig.savefig('C:\\Users\\jwerner\\Documents\\DATA\\interferometer Profilo\\191211\\9313_VSI_20x.tiff', dpi=300) 
+#        break
+#    elif 'OPD' in filerawdata[i].split('\t')[0]:
+#        pass
+#    else:
+#        x.append(float(filerawdata[i].split('\t')[0]))
+#        y.append(float(filerawdata[i].split('\t')[1]))
+#        if filerawdata[i].split('\t')[2] !='\n':
+#            z.append(0.514*0.163*float(filerawdata[i].split('\t')[2]))
+#        else:
+#            z.append(0)
+#            
+##for i in range(116,len(filerawdata)):
+##    if 'Intensity' in filerawdata[i].split('\t')[0]:
+##        for j in range(i+1,len(filerawdata)):
+##            x.append(float(filerawdata[j].split('\t')[0]))
+##            y.append(float(filerawdata[j].split('\t')[1]))
+##            if filerawdata[j].split('\t')[2] !='\n':
+##                z.append(0.163*float(filerawdata[j].split('\t')[2]))
+##            else:
+##                z.append(0)
+#
+#x=np.array(x)
+#y=np.array(y)
+#z=np.array(z)
+#zmin=min(z)
+#zmax=max(z)
+#print(zmin)
+#print(zmax)
+#shape = np.unique(x).shape[0],np.unique(y).shape[0]
+#x_arr0 = x.reshape(shape)
+#y_arr0 = y.reshape(shape)
+#z_arr0 = z.reshape(shape)
+#
+#fig, (ax0) = plt.subplots(nrows=1, ncols=1,figsize=(18, 23))
+#
+#im = ax0.pcolormesh(x_arr0,y_arr0,z_arr0,vmin=zmin,vmax=zmax,cmap='Greys')
+#divider = make_axes_locatable(ax0)
+#cax1 = divider.append_axes("right", size="2%", pad=0.05)
+#fig.colorbar(im, cax=cax1)
+#ax0.set_aspect(aspect=1)
+##ax0.set_axis_off()
+##ax0.text(5,85,"Untreated, annealed", fontsize=18, color='white')
+#
+##fig.subplots_adjust(right=0.94,
+##                    wspace=0.01, hspace=0)
+##cb_ax = fig.add_axes([0.95, 0.423, 0.01, 0.16])
+##cbar = fig.colorbar(im, cax=cb_ax)
+##cb_ax.set_ylabel("Height (um)")
+#
+#plt.show()
+#
+#fig.savefig('C:\\Users\\jwerner\\Documents\\DATA\\interferometer Profilo\\191211\\9313_VSI_20x.tiff', dpi=300) 
 
 

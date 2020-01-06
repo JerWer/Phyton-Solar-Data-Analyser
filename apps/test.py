@@ -1,21 +1,21 @@
-##! python3
-#
-#import os
-#from tkinter import filedialog
-#import csv
-#import math
-#from tkinter import Tk, messagebox
-#import matplotlib.pyplot as plt
-#from scipy.optimize import curve_fit
-#import numpy as np
-#from scipy import integrate
-#from scipy.interpolate import interp1d
-#import peakutils
-#from peakutils.plot import plot as pplot
-#import xlsxwriter
-#import xlrd
-#from matplotlib import colors as mcolors
-#
+#! python3
+
+import os
+from tkinter import filedialog
+import csv
+import math
+from tkinter import Tk, messagebox
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
+import numpy as np
+from scipy import integrate
+from scipy.interpolate import interp1d
+import peakutils
+from peakutils.plot import plot as pplot
+import xlsxwriter
+import xlrd
+from matplotlib import colors as mcolors
+
 #def listofpeakinfo(x,y,indexes,samplename):#x and y are np.arrays
 #
 #    peakdata=[]
@@ -355,4 +355,16 @@
 
 
 
+#plt.hist([[1,1,4,5,6,6,6,8,8,8,8],[2,2,2,3,3,7,7]],bins=5, alpha=0.6, histtype= 'barstacked', range=[0,10], density=False, cumulative=False, edgecolor='black', linewidth=1.2, color=['red','blue'], label=["one", 'two'])
+#plt.xlabel('Efficiency')
+#plt.ylabel('counts')
+#plt.legend()
+#plt.show()
+
+
+a=[1,1,1]
+b=[[2],[2],[2],[2]]
+
+c=[a]+b
+print(c)
 

@@ -41,10 +41,8 @@ def CreateAllTables(db_conn,new):
                 startdate TEXT NOT NULL,
                 commentbatch TEXT,
                 users_id INTEGER,
-                environment_id INTEGER,
                 takencharacsetups_id INTEGER,
                 FOREIGN KEY(users_id) REFERENCES users(id),
-                FOREIGN KEY(environment_id) REFERENCES environment(id),
                 FOREIGN KEY(takencharacsetups_id) REFERENCES takencharacsetups(id)
                 );""")
         db_conn.commit()
@@ -107,8 +105,7 @@ def CreateAllTables(db_conn,new):
                 )""")
         if new:
             theCursor.executemany("INSERT INTO Pcontact (contactstackP) VALUES (?)",
-                            (("NULL",), ("spiro-OMeTAD",),("spiro-OMeTAD/MoOx",),("spiro-OMeTAD/WOx",),("NPB",),("NPB/MoOx",),
-                            ("spiro-TTB",),("spiro-TTB/MoOx",),("PTAA",),("MoOx/spiro-TTB",)))
+                            (("NULL",), ("spiro-OMeTAD",),("Poly-TPD/PFN",),("PTAA/PFN",),("Poly-TPD",),("PTAA",),("F4TCNQ-PTAA",),("PTAA/PMMA",),("F4TCNQ-PTAA/PMMA",),("acidicPedot",),("neutralPedot",),("sol-NiOx",),("sput-NiOx",)))
         db_conn.commit()
     except sqlite3.OperationalError:
         print("Table Pcontact couldn't be created")    
@@ -121,7 +118,7 @@ def CreateAllTables(db_conn,new):
                 );""")
         if new:
             theCursor.executemany("INSERT INTO substtype (substratetype) VALUES (?)",
-                            (("glass", ),("glass/ITO", ),("glass/FTO", ),("shjDSP", ),("shjSST", ),("shjDST", ),("htpcDST", )))
+                            (("glass", ),("quartz", ),("silicon", ),("PET", ),("PEN", )))
         db_conn.commit()
         
     except sqlite3.OperationalError:
@@ -134,8 +131,9 @@ def CreateAllTables(db_conn,new):
                 );""")
         if new:
             theCursor.executemany("INSERT INTO Ncontact (contactstackN) VALUES (?)",
-                            (("NULL",), ("cTiO2", ),("sputSnO2", ),("cTiO2/mTiO2", ),("SnO2/PCBM", ),("PCBM", ),("PEIE/PCBM", ),("PEIE/C60", ),("C60",),
-                            ("C60/aldSnO2",),("LiF/C60",),("LiF/C60/SnO2",),("LiF/C60/TmPyPB",),("C60/TmPyPB",),("TmPyPB/C60",)))
+                            (("NULL",), ("C60", ),("LiF/C60",),("C60/PEIE", ),("C60/BCP", ),("LiF/C60/PEIE",),
+                             ("C60/aldSnO2/ZTO", ),("LiF/C60/aldSnO2/ZTO",),("C60/PEIE/aldSnO2/ZTO", ),("LiF/C60/PEIE/aldSnO2/ZTO",),
+                            ("C60/aldSnO2",),("C60/aldAZO",),("C60/PEIE/aldAZO",)))
         db_conn.commit()
         
     except sqlite3.OperationalError:
@@ -148,7 +146,7 @@ def CreateAllTables(db_conn,new):
                 );""")
         if new:
             theCursor.executemany("INSERT INTO PkAbsorber (absorbercomposition) VALUES (?)",
-                            (("NULL",), ("MAPbI3", ),("FAMAPbIBr", ),("CsFAMAPbIBr", ),("CsFAPbIBr-CsI", ),("CsFAPbIBr-CsBr", ),("CsFAPbIBr-CsCl", )))
+                            (("NULL",),("FA0.75Cs0.25Sn0.5Pb0.5I3", ),("DMA0.1FA0.6Cs0.3PbI2.4Br0.6", )))
         db_conn.commit()
         
     except sqlite3.OperationalError:
@@ -160,7 +158,7 @@ def CreateAllTables(db_conn,new):
                 );""")
         if new:
             theCursor.executemany("INSERT INTO PkAbsorberMethod (absorberMethod) VALUES (?)",
-                            (("NULL",), ("hybrid evap-spin sequential", ),("spin-spin sequential", ),("solution 1-step", ),("solution 1-step antisolvent drip", )))
+                            (("NULL",), ("sol-1step-DEE-drip",),("sol-1step-MeOAc-drip",),("sol-1step-N2blow",)))
         db_conn.commit()
         
     except sqlite3.OperationalError:
@@ -173,7 +171,9 @@ def CreateAllTables(db_conn,new):
                 );""")
         if new:
             theCursor.executemany("INSERT INTO electrode (electrodestack) VALUES (?)",
-                            (("NULL",), ("Au", ),("Ag", ),("Cu", ),("IZOunivex", ),("IZOdude", ),("IZOcluster", ),("ITOmrcii", ),("IOHITOmrcii", ),("ITOcluster", ),("IZrOunivex",)))
+                            (("NULL",), ("Au", ),("Ag", ),("Cu", ),
+                             ("IZO-PDIL-LowCond", ),("IZO-PDIL-HighCond", ),("ITO-denton-LowCond", ),("ITO-denton-HighCond", ),
+                             ("IZO-PDIL-LowCond/Au", ),("IZO-PDIL-HighCond/Au", ),("ITO-denton-LowCond/Au", ),("ITO-denton-HighCond/Au", )))
         db_conn.commit()
         
     except sqlite3.OperationalError:
@@ -186,7 +186,7 @@ def CreateAllTables(db_conn,new):
                 );""")
         if new:
             theCursor.executemany("INSERT INTO recombjct (recombjctstack) VALUES (?)",
-                            (("NULL",), ("IZOunivex", ),("IZOdude", ),("IZOcluster", ),("ITOmrcii", ),("ITOcluster", ),("KAIM_iasi/nasi/nuc/puc",),("KAIM_iasi/pasi/puc/nuc",)))
+                            (("NULL",), ("IZO-PDIL-LowCond", ),("ITO-denton-LowCond", ),("ITO-racetrack", ),("ITO-XY15s", ),("ITO-XY10s", ) ))
         db_conn.commit()
         
     except sqlite3.OperationalError:
@@ -204,23 +204,23 @@ def CreateAllTables(db_conn,new):
         db_conn.commit()
     except sqlite3.OperationalError:
         print("Table users couldn't be created")
-    try:
-        theCursor.execute("""CREATE TABLE IF NOT EXISTS environment(
-                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-                RHyellowroom REAL,
-                RHMC162 REAL,
-                Tempyellowroom REAL,
-                Tempmc162 REAL,
-                gloveboxsolvent REAL,
-                solventGBwatervalue REAL,
-                solventGBoxygenvalue REAL,
-                evapGBwatervalue REAL,
-                evapGBoxygenvalue REAL,
-                commentenvir TEXT
-                );""")
-        db_conn.commit()
-    except sqlite3.OperationalError:
-        print("Table environment couldn't be created")
+#    try:
+#        theCursor.execute("""CREATE TABLE IF NOT EXISTS environment(
+#                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+#                RHyellowroom REAL,
+#                RHMC162 REAL,
+#                Tempyellowroom REAL,
+#                Tempmc162 REAL,
+#                gloveboxsolvent REAL,
+#                solventGBwatervalue REAL,
+#                solventGBoxygenvalue REAL,
+#                evapGBwatervalue REAL,
+#                evapGBoxygenvalue REAL,
+#                commentenvir TEXT
+#                );""")
+#        db_conn.commit()
+#    except sqlite3.OperationalError:
+#        print("Table environment couldn't be created")
     try:
         theCursor.execute("""CREATE TABLE IF NOT EXISTS characsetups(
                 id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -229,9 +229,10 @@ def CreateAllTables(db_conn,new):
                 );""")
         if new:
             theCursor.executemany("INSERT INTO characsetups (characsetupname) VALUES (?)",
-                            (("NULL",), ("SunSimul_Malibu", ),("SunSimul_3Sun", ),("SunSimul_CellTester",),("EQE", ),("SEM", ),("TEM", ),
+                            (("NULL",), ("SunSimul_C215", ),("SunSimul_cigssetup", ),("EQE_c215", ),("EQE_stf136", ),("SEM", ),("TEM", ),("TofSIMS", ),
                              ("UV-vis-spectro",),("Raman",),("PDS",),("FTPS",),("FTIR",),("Ellipso",),("AFM",),("HallEffect",),
-                             ("PL",),("ThermoLocking",),("SunsVoc",)))
+                             ("PL",),("TRPL",),("PLQE",),("PL-imaging",),("ThermoLocking",),("SunsVoc",),("OpticalProfiloMicros.",),("TRMC",),("XRD",),
+                             ("SPA-nrel", ),("SPA-stanfordLED", ),("SPA-stanfordPlasma", ),("hotplateC215box", ),))
         db_conn.commit()
     except sqlite3.OperationalError:
         print("Table characsetups couldn't be created")

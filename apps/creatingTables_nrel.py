@@ -109,7 +109,14 @@ def CreateAllTables(db_conn,new):
         db_conn.commit()
     except sqlite3.OperationalError:
         print("Table Pcontact couldn't be created")    
-        
+    try:
+        theCursor.execute("""CREATE TABLE IF NOT EXISTS pixelarea(
+                id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                pixel_area REAL
+                )""")
+        db_conn.commit()
+    except sqlite3.OperationalError:
+        print("Table pixelarea couldn't be created")     
     try:
         theCursor.execute("""CREATE TABLE IF NOT EXISTS substtype(
                 id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -249,7 +256,9 @@ def CreateAllTables(db_conn,new):
                 id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                 cellname TEXT,
                 samples_id INTEGER,
+                pixelarea_id REAL,
                 batch_id INTEGER,
+                FOREIGN KEY(pixelarea_id) REFERENCES pixelarea(id),
                 FOREIGN KEY(batch_id) REFERENCES batch(id) ON DELETE CASCADE,
                 FOREIGN KEY(samples_id) REFERENCES samples(id)
                 );""")

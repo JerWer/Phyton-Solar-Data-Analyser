@@ -601,8 +601,7 @@ class DBapp(Toplevel):
             self.newUserwin.destroy()
         
 #%%############end batch###########################     
-##########new samples window###################### to do : compatibility with triple junction
-            #if tandem, should add bottom cell reference number to link to SiliconDB: bottomCellDBRef in samples table
+##########new samples window######################
         
     def newsamples(self):
         
@@ -648,13 +647,13 @@ class DBapp(Toplevel):
             self.dropMenuFramesubst = OptionMenu(frame02, self.substChoice, *self.subtypelist, command=())
             self.dropMenuFramesubst.pack(fill=tk.BOTH,expand=1)
             #device architecture
-            self.cellarchitlist=["planar", "mesoporous","NULL"]
+            self.cellarchitlist=["planar", "mesoporous"]
             self.cellarchitChoice=StringVar()
             self.cellarchitChoice.set(self.cellarchitlist[0])
             self.dropMenuFrame = OptionMenu(frame02, self.cellarchitChoice, *self.cellarchitlist, command=())
             self.dropMenuFrame.pack(fill=tk.BOTH,expand=1)
             #polarity
-            self.polaritylist=["nip", "pin","NULL"]
+            self.polaritylist=["nip", "pin"]
             self.polarityChoice=StringVar()
             self.polarityChoice.set(self.polaritylist[1])
             self.dropMenuFrame = OptionMenu(frame02, self.polarityChoice, *self.polaritylist, command=())
@@ -814,279 +813,6 @@ class DBapp(Toplevel):
             Button(frame3, text="Cancel",
                    command = self.backtomain).pack(side="left", fill=tk.BOTH,expand=1)
             
-#        self.newsampleswindow = tk.Toplevel()
-#        center(self.newsampleswindow)
-#        self.newsampleswindow.protocol("WM_DELETE_WINDOW", self.backtomain)
-#        if self.topicChoice.get()!="triple":
-#            self.newsampleswindow.wm_geometry("650x500")
-#        elif self.topicChoice.get()=="triple":
-#            self.newsampleswindow.wm_geometry("830x500")
-#        self.newsampleswindow.wm_title("New samples")
-
-#        frame0=Frame(self.newsampleswindow,borderwidth=0,  bg="white")
-#        frame0.pack()
-#        frame01=Frame(frame0,borderwidth=0,  bg="white")
-#        frame01.pack(side="left",fill=tk.BOTH,expand=1)
-#        tk.Label(frame01, text="Sample number", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
-#        tk.Label(frame01, text="Substrate type", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
-#        tk.Label(frame01, text="Device architecture", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
-#        tk.Label(frame01, text="bottomSiDBref", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
-#        tk.Label(frame01, text="Polarity", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
-#        tk.Label(frame01, text="#ofcells", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
-
-#        frame02=Frame(frame0,borderwidth=0,  bg="white")
-#        frame02.pack(side="left",fill=tk.BOTH,expand=1)
-#        #sample number
-#        self.samplenumber = tk.StringVar()
-#        self.entry1=Entry(frame02, textvariable=self.samplenumber,width=5)
-#        self.entry1.pack(fill=tk.BOTH,expand=1)
-#        self.samplenumber.set("")
-#        #substrate type
-#        self.subtypelist=[]
-#        result = self.theCursor.execute("SELECT substratetype FROM substtype")
-#        for row in result:
-#            self.subtypelist.append(row[0])
-#        if self.subtypelist==[]:
-#            self.subtypelist=[""]
-#        self.subtypelist=tuple(self.subtypelist)
-#        self.substChoice=StringVar()
-#        self.substChoice.set(self.subtypelist[0])
-#        self.dropMenuFramesubst = OptionMenu(frame02, self.substChoice, *self.subtypelist, command=())
-#        self.dropMenuFramesubst.pack(fill=tk.BOTH,expand=1)
-#        #device architecture
-#        self.cellarchitlist=["planar", "mesoporous","NULL"]
-#        self.cellarchitChoice=StringVar()
-#        self.cellarchitChoice.set(self.cellarchitlist[0])
-#        self.dropMenuFrame = OptionMenu(frame02, self.cellarchitChoice, *self.cellarchitlist, command=())
-#        self.dropMenuFrame.pack(fill=tk.BOTH,expand=1)
-#        #bottom si DB ref
-#        self.bottomDBref = tk.StringVar()
-#        self.entry2=Entry(frame02, textvariable=self.bottomDBref,width=5)
-#        self.entry2.pack(fill=tk.BOTH,expand=1)
-#        self.bottomDBref.set("")
-#        #polarity
-#        self.polaritylist=["nip", "pin","NULL"]
-#        self.polarityChoice=StringVar()
-#        self.polarityChoice.set(self.polaritylist[1])
-#        self.dropMenuFrame = OptionMenu(frame02, self.polarityChoice, *self.polaritylist, command=())
-#        self.dropMenuFrame.pack(fill=tk.BOTH,expand=1)
-#        ##ofcells
-#        self.numbofcell = tk.IntVar()
-#        self.entry2=Entry(frame02, textvariable=self.numbofcell,width=5)
-#        self.entry2.pack(fill=tk.BOTH,expand=1)
-#        self.numbofcell.set(1)
-        
-#        frame06=Frame(frame0,borderwidth=0,  bg="white")
-#        frame06.pack(side="left",fill=tk.BOTH,expand=1)
-#        tk.Label(frame06, text=" ", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
-#        Button(frame06, text="Add",
-#               command = self.addnewSubstratetype).pack(fill=tk.BOTH,expand=1)
-#        tk.Label(frame06, text=" ", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
-#        tk.Label(frame06, text=" ", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
-#        tk.Label(frame06, text=" ", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
-#        tk.Label(frame06, text=" ", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
-
-        
-#        frame03=Frame(frame0,borderwidth=0,  bg="white")
-#        frame03.pack(side="left",fill=tk.BOTH,expand=1)
-#        tk.Label(frame03, text="recombjct", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
-#        tk.Label(frame03, text="p-side", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
-#        tk.Label(frame03, text="n-side", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
-#        tk.Label(frame03, text="Absorber", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
-#        tk.Label(frame03, text="Method", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
-#        tk.Label(frame03, text="topelectrode", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
-        
-        
-#        frame04=Frame(frame0,borderwidth=0,  bg="white")
-#        frame04.pack(side="left",fill=tk.BOTH,expand=1)
-#        #recombjct
-#        self.recombjctlist=[]
-#        result = self.theCursor.execute("SELECT recombjctstack FROM recombjct")
-#        for row in result:
-#            self.recombjctlist.append(row[0])
-#        if self.recombjctlist==[]:
-#            self.recombjctlist=[""]
-#        self.recombjctlist=tuple(self.recombjctlist)
-#        self.recombjctChoice=StringVar()
-#        self.recombjctChoice.set(self.recombjctlist[0])
-#        self.dropMenuFramerecombjct = OptionMenu(frame04, self.recombjctChoice, *self.recombjctlist, command=())
-#        self.dropMenuFramerecombjct.pack(fill=tk.BOTH,expand=1)
-#        #p-side
-#        self.psidelist=[]
-#        result = self.theCursor.execute("SELECT contactstackP FROM Pcontact")
-#        for row in result:
-#            self.psidelist.append(row[0])
-#        if self.psidelist==[]:
-#            self.psidelist=[""]
-#        self.psidelist=tuple(self.psidelist)
-#        self.psideChoice=StringVar()
-#        self.psideChoice.set(self.psidelist[0])
-#        self.dropMenuFramepside = OptionMenu(frame04, self.psideChoice, *self.psidelist, command=())
-#        self.dropMenuFramepside.pack(fill=tk.BOTH,expand=1)
-#        #n-side
-#        self.nsidelist=[]
-#        result = self.theCursor.execute("SELECT contactstackN FROM Ncontact")
-#        for row in result:
-#            self.nsidelist.append(row[0])
-#        if self.nsidelist==[]:
-#            self.nsidelist=[""]
-#        self.nsidelist=tuple(self.nsidelist)
-#        self.nsideChoice=StringVar()
-#        self.nsideChoice.set(self.nsidelist[0])
-#        self.dropMenuFramenside = OptionMenu(frame04, self.nsideChoice, *self.nsidelist, command=())
-#        self.dropMenuFramenside.pack(fill=tk.BOTH,expand=1)        
-#        #absorber
-#        self.absorberlist=[]
-#        result = self.theCursor.execute("SELECT absorbercomposition FROM PkAbsorber")
-#        for row in result:
-#            self.absorberlist.append(row[0])
-#        if self.absorberlist==[]:
-#            self.absorberlist=[""]
-#        self.absorberlist=tuple(self.absorberlist)
-#        self.absorberChoice=StringVar()
-#        self.absorberChoice.set(self.absorberlist[0])
-#        self.dropMenuFrameabsorber = OptionMenu(frame04, self.absorberChoice, *self.absorberlist, command=())
-#        self.dropMenuFrameabsorber.pack(fill=tk.BOTH,expand=1) 
-#        self.absorberMethodlist=[]
-#        result = self.theCursor.execute("SELECT absorberMethod FROM PkAbsorberMethod")
-#        for row in result:
-#            self.absorberMethodlist.append(row[0])
-#        if self.absorberMethodlist==[]:
-#            self.absorberMethodlist=[""]
-#        self.absorberMethodlist=tuple(self.absorberMethodlist)
-#        self.absorberMethodChoice=StringVar()
-#        self.absorberMethodChoice.set(self.absorberMethodlist[0])
-#        self.dropMenuFrameabsorberMethod = OptionMenu(frame04, self.absorberMethodChoice, *self.absorberMethodlist, command=())
-#        self.dropMenuFrameabsorberMethod.pack(fill=tk.BOTH,expand=1)
-#        #electrode
-#        self.electrodelist=[]
-#        result = self.theCursor.execute("SELECT electrodestack FROM electrode")
-#        for row in result:
-#            self.electrodelist.append(row[0])
-#        if self.electrodelist==[]:
-#            self.electrodelist=[""]
-#        self.electrodelist=tuple(self.electrodelist)
-#        self.electrodeChoice=StringVar()
-#        self.electrodeChoice.set(self.electrodelist[0])
-#        self.dropMenuFrameelectrode = OptionMenu(frame04, self.electrodeChoice, *self.electrodelist, command=())
-#        self.dropMenuFrameelectrode.pack(fill=tk.BOTH,expand=1) 
-#        
-#
-#        frame05=Frame(frame0,borderwidth=0,  bg="white")
-#        frame05.pack(side="left",fill=tk.BOTH,expand=1)
-#        Button(frame05, text="Add",
-#               command = self.addnewrecombjct).pack(fill=tk.BOTH,expand=1)
-#        Button(frame05, text="Add",
-#               command = self.addnewPcontact).pack(fill=tk.BOTH,expand=1)
-#        Button(frame05, text="Add",
-#               command = self.addnewNcontact).pack(fill=tk.BOTH,expand=1)
-#        Button(frame05, text="Add",
-#               command = self.addnewabsorber).pack(fill=tk.BOTH,expand=1)
-#        Button(frame05, text="Add",
-#               command = self.addnewabsorberMethod).pack(fill=tk.BOTH,expand=1)
-#        Button(frame05, text="Add",
-#               command = self.addnewelectrode).pack(fill=tk.BOTH,expand=1)
-
-#        if self.topicChoice.get()=="triple":   
-#    
-#            frame07=Frame(frame0,borderwidth=0,  bg="white")
-#            frame07.pack(side="left",fill=tk.BOTH,expand=1)
-#            tk.Label(frame07, text="tripletop", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
-#            #p-side
-#            self.psidelisttop=[]
-#            result = self.theCursor.execute("SELECT contactstackP FROM Pcontact")
-#            for row in result:
-#                self.psidelisttop.append(row[0])
-#            if self.psidelisttop==[]:
-#                self.psidelisttop=[""]
-#            self.psidelisttop=tuple(self.psidelisttop)
-#            self.psidetopChoice=StringVar()
-#            self.psidetopChoice.set(self.psidelisttop[0])
-#            self.dropMenuFramepsidetop = OptionMenu(frame07, self.psidetopChoice, *self.psidelisttop, command=())
-#            self.dropMenuFramepsidetop.pack(fill=tk.BOTH,expand=1)
-#            #n-side
-#            self.nsidelisttop=[]
-#            result = self.theCursor.execute("SELECT contactstackN FROM Ncontact")
-#            for row in result:
-#                self.nsidelisttop.append(row[0])
-#            if self.nsidelisttop==[]:
-#                self.nsidelisttop=[""]
-#            self.nsidelisttop=tuple(self.nsidelisttop)
-#            self.nsidetopChoice=StringVar()
-#            self.nsidetopChoice.set(self.nsidelisttop[0])
-#            self.dropMenuFramensidetop = OptionMenu(frame07, self.nsidetopChoice, *self.nsidelisttop, command=())
-#            self.dropMenuFramensidetop.pack(fill=tk.BOTH,expand=1)        
-#            #absorber
-#            self.absorberlisttop=[]
-#            result = self.theCursor.execute("SELECT absorbercomposition FROM PkAbsorber")
-#            for row in result:
-#                self.absorberlisttop.append(row[0])
-#            if self.absorberlisttop==[]:
-#                self.absorberlisttop=[""]
-#            self.absorberlisttop=tuple(self.absorberlisttop)
-#            self.absorbertopChoice=StringVar()
-#            self.absorbertopChoice.set(self.absorberlisttop[0])
-#            self.dropMenuFrameabsorbertop = OptionMenu(frame07, self.absorbertopChoice, *self.absorberlisttop, command=())
-#            self.dropMenuFrameabsorbertop.pack(fill=tk.BOTH,expand=1) 
-#            self.absorberMethodlisttop=[]
-#            result = self.theCursor.execute("SELECT absorberMethod FROM PkAbsorberMethod")
-#            for row in result:
-#                self.absorberMethodlisttop.append(row[0])
-#            if self.absorberMethodlisttop==[]:
-#                self.absorberMethodlisttop=[""]
-#            self.absorberMethodlisttop=tuple(self.absorberMethodlisttop)
-#            self.absorberMethodtopChoice=StringVar()
-#            self.absorberMethodtopChoice.set(self.absorberMethodlisttop[0])
-#            self.dropMenuFrameabsorberMethodtop = OptionMenu(frame07, self.absorberMethodtopChoice, *self.absorberMethodlisttop, command=())
-#            self.dropMenuFrameabsorberMethodtop.pack(fill=tk.BOTH,expand=1) 
-#            #electrode
-#            self.electrodelisttop=[]
-#            result = self.theCursor.execute("SELECT electrodestack FROM electrode")
-#            for row in result:
-#                self.electrodelisttop.append(row[0])
-#            if self.electrodelisttop==[]:
-#                self.electrodelisttop=[""]
-#            self.electrodelisttop=tuple(self.electrodelisttop)
-#            self.electrodetopChoice=StringVar()
-#            self.electrodetopChoice.set(self.electrodelisttop[0])
-#            self.dropMenuFrameelectrodetop = OptionMenu(frame07, self.electrodetopChoice, *self.electrodelisttop, command=())
-#            self.dropMenuFrameelectrodetop.pack(fill=tk.BOTH,expand=1) 
-#            
-
-#        frame1=Frame(self.newsampleswindow,borderwidth=0,  bg="white")
-#        frame1.pack()
-#        tk.Label(frame1, text="comment", font=("Verdana", 10)).pack(side="left",fill=tk.BOTH,expand=1)
-#        self.commentsamples = tk.StringVar()
-#        self.entry1=Entry(frame1, textvariable=self.commentsamples,width=50)
-#        self.entry1.pack(side="left",fill=tk.BOTH,expand=1)
-#        self.commentsamples.set("")
-#
-#        frame4=Frame(self.newsampleswindow,borderwidth=0,  bg="white")
-#        frame4.pack()
-#        Button(frame4, text="Add new sample",
-#               command = self.addnewsamplestolist).pack(side="left", fill=tk.BOTH,expand=1)
-#        Button(frame4, text="Delete selected sample",
-#               command = self.deletesamplesfromlist).pack(side="left", fill=tk.BOTH,expand=1)
-#        self.newsampleswindow.bind('<Return>', self.onclickenter)#allows to call the addsamples by just clicking the enter key (faster)
-#        
-#        
-#        frame2=Frame(self.newsampleswindow,borderwidth=0,  bg="white")
-#        frame2.pack(fill=tk.BOTH, expand=1)
-#        
-#        self.listboxsamples=Listbox(frame2,width=20, height=5, selectmode=tk.EXTENDED)
-#        self.listboxsamples.pack(side="left", fill=tk.BOTH, expand=1)
-#        scrollbar = tk.Scrollbar(frame2, orient="vertical")
-#        scrollbar.config(command=self.listboxsamples.yview)
-#        scrollbar.pack(side="right", fill="y")
-#        self.listboxsamples.config(yscrollcommand=scrollbar.set)
-#
-#        
-#        frame3=Frame(self.newsampleswindow,borderwidth=0,  bg="white")
-#        frame3.pack()
-#        Button(frame3, text="Validate",
-#               command = self.validatesampleslist).pack(side="left", fill=tk.BOTH,expand=1)
-#        Button(frame3, text="Cancel",
-#               command = self.backtomain).pack(side="left", fill=tk.BOTH,expand=1)
     def onclickenter(self,a):
         self.addnewsamplestolist()
     def addnewrecombjct(self):
@@ -1109,7 +835,7 @@ class DBapp(Toplevel):
         goodtogo=0
         try:
             self.db_conn.execute("INSERT INTO recombjct (recombjctstack) VALUES (?)",
-                            (self.newsubstratetypename.get(),))
+                            (self.newrecombjctname.get(),))
             self.db_conn.commit()
             goodtogo=1
         except sqlite3.OperationalError:
@@ -1183,9 +909,6 @@ class DBapp(Toplevel):
     def addnewPcontactValidate(self):
         self.psideChoice.set(self.newPcontactname.get())
         self.dropMenuFramepside['menu'].delete(0,'end')
-        if self.topicChoice.get()=="triple":
-            self.psidetopChoice.set(self.newPcontactname.get())
-            self.dropMenuFramepsidetop['menu'].delete(0,'end')
     
         goodtogo=0
         try:
@@ -1200,21 +923,13 @@ class DBapp(Toplevel):
         
         if goodtogo:
             self.psidelist=[]
-            if self.topicChoice.get()=="triple":
-                self.psidelisttop=[]
             result = self.theCursor.execute("SELECT contactstackP FROM Pcontact")
             for row in result:
                 self.psidelist.append(row[0])
-                if self.topicChoice.get()=="triple":
-                    self.psidelisttop.append(row[0])
             self.psidelist=tuple(self.psidelist)
-            if self.topicChoice.get()=="triple":
-                self.psidelisttop=tuple(self.psidelisttop)
             for choice in self.psidelist:
                 self.dropMenuFramepside['menu'].add_command(label=choice, command=tk._setit(self.psideChoice, choice))
-                if self.topicChoice.get()=="triple":
-                    self.dropMenuFramepsidetop['menu'].add_command(label=choice, command=tk._setit(self.psidetopChoice, choice))
-    
+                    
             self.newPcontactwin.destroy()
 
     def addnewNcontact(self):
@@ -1233,10 +948,7 @@ class DBapp(Toplevel):
     def addnewNcontactValidate(self):
         self.nsideChoice.set(self.newNcontactname.get())
         self.dropMenuFramenside['menu'].delete(0,'end')
-        if self.topicChoice.get()=="triple":
-            self.nsidetopChoice.set(self.newNcontactname.get())
-            self.dropMenuFramensidetop['menu'].delete(0,'end')
-        
+                
         goodtogo=0
         try:
             self.db_conn.execute("INSERT INTO Ncontact (contactstackN) VALUES (?)",
@@ -1250,21 +962,13 @@ class DBapp(Toplevel):
         
         if goodtogo:
             self.nsidelist=[]
-            if self.topicChoice.get()=="triple":
-                self.nsidelisttop=[]
+            
             result = self.theCursor.execute("SELECT contactstackN FROM Ncontact")
             for row in result:
                 self.nsidelist.append(row[0])
-                if self.topicChoice.get()=="triple":
-                    self.nsidelisttop.append(row[0])
             self.nsidelist=tuple(self.nsidelist)
-            if self.topicChoice.get()=="triple":
-                self.nsidelisttop=tuple(self.nsidelisttop)
             for choice in self.nsidelist:
                 self.dropMenuFramenside['menu'].add_command(label=choice, command=tk._setit(self.nsideChoice, choice))
-                if self.topicChoice.get()=="triple":
-                    self.dropMenuFramensidetop['menu'].add_command(label=choice, command=tk._setit(self.nsidetopChoice, choice))
-    
             self.newNcontactwin.destroy()    
             
     def addnewabsorber(self):
@@ -1283,9 +987,6 @@ class DBapp(Toplevel):
     def addnewabsorberValidate(self):
         self.absorberChoice.set(self.newabsorbername.get())
         self.dropMenuFrameabsorber['menu'].delete(0,'end')
-        if self.topicChoice.get()=="triple":
-            self.absorbertopChoice.set(self.newabsorbername.get())
-            self.dropMenuFrameabsorbertop['menu'].delete(0,'end')
     
         goodtogo=0
         try:
@@ -1300,21 +1001,12 @@ class DBapp(Toplevel):
         
         if goodtogo:
             self.absorberlist=[]
-            if self.topicChoice.get()=="triple":
-                self.absorberlisttop=[]
             result = self.theCursor.execute("SELECT absorbercomposition FROM PkAbsorber")
             for row in result:
                 self.absorberlist.append(row[0])
-                if self.topicChoice.get()=="triple":
-                    self.absorberlisttop.append(row[0])
             self.absorberlist=tuple(self.absorberlist)
-            if self.topicChoice.get()=="triple":
-                self.absorberlisttop=tuple(self.absorberlisttop)
             for choice in self.absorberlist:
                 self.dropMenuFrameabsorber['menu'].add_command(label=choice, command=tk._setit(self.absorberChoice, choice))
-                if self.topicChoice.get()=="triple":
-                    self.dropMenuFrameabsorbertop['menu'].add_command(label=choice, command=tk._setit(self.absorbertopChoice, choice))
-    
             self.newabsorberwin.destroy()  
             
     def addnewabsorberMethod(self):
@@ -1332,9 +1024,6 @@ class DBapp(Toplevel):
     def addnewabsorberMethodValidate(self):
         self.absorberMethodChoice.set(self.newabsorberMethodname.get())
         self.dropMenuFrameabsorberMethod['menu'].delete(0,'end')
-        if self.topicChoice.get()=="triple":
-            self.absorberMethodtopChoice.set(self.newabsorberMethodname.get())
-            self.dropMenuFrameabsorberMethodtop['menu'].delete(0,'end')
     
         goodtogo=0
         try:
@@ -1349,21 +1038,12 @@ class DBapp(Toplevel):
         
         if goodtogo:
             self.absorberMethodlist=[]
-            if self.topicChoice.get()=="triple":
-                self.absorberMethodlisttop=[]
             result = self.theCursor.execute("SELECT absorberMethod FROM PkAbsorberMethod")
             for row in result:
                 self.absorberMethodlist.append(row[0])
-                if self.topicChoice.get()=="triple":
-                    self.absorberMethodlisttop.append(row[0])
             self.absorberMethodlist=tuple(self.absorberMethodlist)
-            if self.topicChoice.get()=="triple":
-                self.absorberMethodlisttop=tuple(self.absorberMethodlisttop)
             for choice in self.absorberMethodlist:
                 self.dropMenuFrameabsorberMethod['menu'].add_command(label=choice, command=tk._setit(self.absorberMethodChoice, choice))
-                if self.topicChoice.get()=="triple":
-                    self.dropMenuFrameabsorberMethodtop['menu'].add_command(label=choice, command=tk._setit(self.absorberMethodtopChoice, choice))
-    
             self.newabsorberMethodwin.destroy()  
             
             
@@ -1383,38 +1063,22 @@ class DBapp(Toplevel):
     def addnewelectrodeValidate(self):
         self.electrodeChoice.set(self.newelectrodename.get())
         self.dropMenuFrameelectrode['menu'].delete(0,'end')
-        if self.topicChoice.get()=="triple":
-            self.electrodetopChoice.set(self.newelectrodename.get())
-            self.dropMenuFrameelectrodetop['menu'].delete(0,'end')
             
         goodtogo=0
-#        try:
         self.db_conn.execute("INSERT INTO electrode (electrodestack) VALUES (?)",
                         (self.newelectrodename.get(),))
         self.db_conn.commit()
         goodtogo=1
-#        except sqlite3.OperationalError:
-#            print("name couldn't be added to electrode")
-#        except sqlite3.IntegrityError:
-#            print("the electrodestack already exists...")
         
         if goodtogo:
             self.electrodelist=[]
-            if self.topicChoice.get()=="triple":
-                self.electrodelisttop=[]
             result = self.theCursor.execute("SELECT electrodestack FROM electrode")
             for row in result:
                 self.electrodelist.append(row[0])
-                if self.topicChoice.get()=="triple":
-                    self.electrodelisttop.append(row[0])
             self.electrodelist=tuple(self.electrodelist)
-            if self.topicChoice.get()=="triple":
-                self.electrodelisttop=tuple(self.electrodelisttop)
             for choice in self.electrodelist:
                 self.dropMenuFrameelectrode['menu'].add_command(label=choice, command=tk._setit(self.electrodeChoice, choice))
-                if self.topicChoice.get()=="triple":
-                    self.dropMenuFrameelectrodetop['menu'].add_command(label=choice, command=tk._setit(self.electrodetopChoice, choice))
-    
+                  
             self.newelectrodewin.destroy()
     
         
@@ -1423,25 +1087,15 @@ class DBapp(Toplevel):
         
         if self.batchname.get()+'_'+self.samplenumber.get() not in newsampleslistnames:#check if sample name is unique
             if self.polarityChoice.get()=="nip":
-                if self.topicChoice.get()=="triple":
-                    newsampleslistforlistbox.append(self.cellarchitChoice.get()+'-'+self.batchname.get()+'_'+self.samplenumber.get()+'/'+self.substChoice.get()+'/'+self.recombjctChoice.get()+'/'+self.nsideChoice.get()+'/'+self.absorberChoice.get()+'/'+self.psideChoice.get()+'/'+self.electrodeChoice.get()+'/'+self.nsidetopChoice.get()+'/'+self.absorbertopChoice.get()+'/'+self.psidetopChoice.get()+'/'+self.electrodetopChoice.get())
-                    newsampleslist.append([newsampleslistforlistbox[-1],
-                                               self.batchname.get()+'_'+self.samplenumber.get(),self.substChoice.get(),self.cellarchitChoice.get(),self.polarityChoice.get(),self.psideChoice.get(),self.nsideChoice.get(),self.absorberChoice.get(),self.electrodeChoice.get(),self.commentsamples.get(),self.numbofcell.get(),self.bottomDBref.get(),self.recombjctChoice.get(),self.nsidetopChoice.get(),self.absorbertopChoice.get(),self.psidetopChoice.get(),self.electrodetopChoice.get(),self.absorberMethodChoice.get(),self.absorberMethodtopChoice.get()])
-                else:
-                    newsampleslistforlistbox.append(self.cellarchitChoice.get()+'-'+self.batchname.get()+'_'+self.samplenumber.get()+'/'+self.substChoice.get()+'/'+self.recombjctChoice.get()+'/'+self.nsideChoice.get()+'/'+self.absorberChoice.get()+'/'+self.psideChoice.get()+'/'+self.electrodeChoice.get())
-                    newsampleslist.append([newsampleslistforlistbox[-1],
-                                           self.batchname.get()+'_'+self.samplenumber.get(),self.substChoice.get(),self.cellarchitChoice.get(),self.polarityChoice.get(),self.psideChoice.get(),self.nsideChoice.get(),self.absorberChoice.get(),self.electrodeChoice.get(),self.commentsamples.get(),self.numbofcell.get(),self.bottomDBref.get(),self.recombjctChoice.get()],self.absorberMethodChoice.get())
+                newsampleslistforlistbox.append(self.cellarchitChoice.get()+'-'+self.batchname.get()+'_'+self.samplenumber.get()+'/'+self.substChoice.get()+'/'+self.recombjctChoice.get()+'/'+self.nsideChoice.get()+'/'+self.absorberChoice.get()+'/'+self.psideChoice.get()+'/'+self.electrodeChoice.get())
+                newsampleslist.append([newsampleslistforlistbox[-1],
+                                       self.batchname.get()+'_'+self.samplenumber.get(),self.substChoice.get(),self.cellarchitChoice.get(),self.polarityChoice.get(),self.psideChoice.get(),self.nsideChoice.get(),self.absorberChoice.get(),self.electrodeChoice.get(),self.commentsamples.get(),self.numbofcell.get(),self.recombjctChoice.get()],self.absorberMethodChoice.get())
                 newsampleslistnames.append(self.batchname.get()+'_'+self.samplenumber.get())  
                 self.listboxsamples.insert(tk.END, newsampleslistforlistbox[-1])
             else:
-                if self.topicChoice.get()=="triple":
-                    newsampleslistforlistbox.append(self.cellarchitChoice.get()+'-'+self.batchname.get()+'_'+self.samplenumber.get()+'/'+self.substChoice.get()+'/'+self.recombjctChoice.get()+'/'+self.psideChoice.get()+'/'+self.absorberChoice.get()+'/'+self.nsideChoice.get()+'/'+self.electrodeChoice.get()+'/'+self.psidetopChoice.get()+'/'+self.absorbertopChoice.get()+'/'+self.nsidetopChoice.get()+'/'+self.electrodetopChoice.get())
-                    newsampleslist.append([newsampleslistforlistbox[-1],
-                                           self.batchname.get()+'_'+self.samplenumber.get(),self.substChoice.get(),self.cellarchitChoice.get(),self.polarityChoice.get(),self.psideChoice.get(),self.nsideChoice.get(),self.absorberChoice.get(),self.electrodeChoice.get(),self.commentsamples.get(),self.numbofcell.get(),self.bottomDBref.get(),self.recombjctChoice.get(),self.nsidetopChoice.get(),self.absorbertopChoice.get(),self.psidetopChoice.get(),self.electrodetopChoice.get(),self.absorberMethodChoice.get(),self.absorberMethodtopChoice.get()])
-                else:
-                    newsampleslistforlistbox.append(self.cellarchitChoice.get()+'-'+self.batchname.get()+'_'+self.samplenumber.get()+'/'+self.substChoice.get()+'/'+self.recombjctChoice.get()+'/'+self.psideChoice.get()+'/'+self.absorberChoice.get()+'/'+self.nsideChoice.get()+'/'+self.electrodeChoice.get())
-                    newsampleslist.append([newsampleslistforlistbox[-1],
-                                           self.batchname.get()+'_'+self.samplenumber.get(),self.substChoice.get(),self.cellarchitChoice.get(),self.polarityChoice.get(),self.psideChoice.get(),self.nsideChoice.get(),self.absorberChoice.get(),self.electrodeChoice.get(),self.commentsamples.get(),self.numbofcell.get(),self.bottomDBref.get(),self.recombjctChoice.get(),self.absorberMethodChoice.get()])
+                newsampleslistforlistbox.append(self.cellarchitChoice.get()+'-'+self.batchname.get()+'_'+self.samplenumber.get()+'/'+self.substChoice.get()+'/'+self.recombjctChoice.get()+'/'+self.psideChoice.get()+'/'+self.absorberChoice.get()+'/'+self.nsideChoice.get()+'/'+self.electrodeChoice.get())
+                newsampleslist.append([newsampleslistforlistbox[-1],
+                                       self.batchname.get()+'_'+self.samplenumber.get(),self.substChoice.get(),self.cellarchitChoice.get(),self.polarityChoice.get(),self.psideChoice.get(),self.nsideChoice.get(),self.absorberChoice.get(),self.electrodeChoice.get(),self.commentsamples.get(),self.numbofcell.get(),self.recombjctChoice.get(),self.absorberMethodChoice.get()])
                 newsampleslistnames.append(self.batchname.get()+'_'+self.samplenumber.get())               
                 self.listboxsamples.insert(tk.END, newsampleslistforlistbox[-1])
         else:
@@ -1481,62 +1135,7 @@ class DBapp(Toplevel):
             
             for i in range(len(newsampleslist)):
                 #search in DB for id => foreign keys
-                if self.topicChoice.get()=="triple":
-        #            Pcontact_id
-                    self.theCursor.execute("SELECT id FROM Pcontact WHERE contactstackP=?",(newsampleslist[i][5],))
-                    Pcontact_id_exists = self.theCursor.fetchone()[0]
-                    self.theCursor.execute("SELECT id FROM Pcontact WHERE contactstackP=?",(newsampleslist[i][15],))
-                    Pcontacttop_id_exists = self.theCursor.fetchone()[0]
-        #            Ncontact_id
-                    self.theCursor.execute("SELECT id FROM Ncontact WHERE contactstackN=?",(newsampleslist[i][6],))
-                    Ncontact_id_exists = self.theCursor.fetchone()[0]
-                    self.theCursor.execute("SELECT id FROM Ncontact WHERE contactstackN=?",(newsampleslist[i][13],))
-                    Ncontacttop_id_exists = self.theCursor.fetchone()[0]
-        #            PkAbsorber_id
-                    self.theCursor.execute("SELECT id FROM PkAbsorber WHERE absorbercomposition=?",(newsampleslist[i][7],))
-                    PkAbsorber_id_exists = self.theCursor.fetchone()[0]
-                    self.theCursor.execute("SELECT id FROM PkAbsorber WHERE absorbercomposition=?",(newsampleslist[i][14],))
-                    PkAbsorbertop_id_exists = self.theCursor.fetchone()[0]
-        #            substtype_id
-                    self.theCursor.execute("SELECT id FROM substtype WHERE substratetype=?",(newsampleslist[i][2],))
-                    substtype_id_exists = self.theCursor.fetchone()[0]
-        #            electrode_id
-                    self.theCursor.execute("SELECT id FROM electrode WHERE electrodestack=?",(newsampleslist[i][8],))
-                    electrode_id_exists = self.theCursor.fetchone()[0]
-                    self.theCursor.execute("SELECT id FROM electrode WHERE electrodestack=?",(newsampleslist[i][16],))
-                    electrodetop_id_exists = self.theCursor.fetchone()[0]
-        #            recombjct_id
-                    self.theCursor.execute("SELECT id FROM recombjct WHERE recombjctstack=?",(newsampleslist[i][12],))
-                    recombjct_id_exists = self.theCursor.fetchone()[0]
-        #           absorberMethod_id
-                    self.theCursor.execute("SELECT id FROM PkAbsorberMethod WHERE absorberMethod=?",(newsampleslist[i][17],))
-                    absorberMethod_id = self.theCursor.fetchone()[0]
-                    self.theCursor.execute("SELECT id FROM PkAbsorberMethod WHERE absorberMethod=?",(newsampleslist[i][18],))
-                    absorberMethodtop_id = self.theCursor.fetchone()[0]
-                    
-                    if newsampleslist[i][4]=='nip':
-                        topstack=newsampleslist[i][13] +'/'+ newsampleslist[i][14] +'/'+ newsampleslist[i][15] +'/'+ newsampleslist[i][16]
-                    else:
-                        topstack=newsampleslist[i][15] +'/'+ newsampleslist[i][14] +'/'+ newsampleslist[i][13] +'/'+ newsampleslist[i][16]
-                    
-                    try:
-                        self.theCursor.execute("INSERT or REPLACE INTO tripletop (topstack,Pcontact_id,Ncontact_id,PkAbsorber_id,electrode_id,PkAbsorberMethod_id) VALUES (?,?,?,?,?,?)",
-                                        (topstack, Pcontacttop_id_exists, Ncontacttop_id_exists, PkAbsorbertop_id_exists, electrodetop_id_exists, absorberMethodtop_id))
-#                        self.theCursor.commit()
-                        tripletop_id_exists =self.theCursor.lastrowid
-                    except sqlite3.OperationalError:
-                        print("data couldn't be added to tripletop")
-                    
-                    try:
-                        self.db_conn.execute("INSERT INTO samples (samplename,samplefullstack,bottomCellDBRef,recombjct_id,tripletop_id,cellarchitecture,polarity,commentsamples,Pcontact_id,Ncontact_id,PkAbsorber_id,substtype_id,electrode_id,batch_id,PkAbsorberMethod_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                                        (newsampleslistnames[i],newsampleslist[i][0],newsampleslist[i][11],recombjct_id_exists,tripletop_id_exists,newsampleslist[i][3],newsampleslist[i][4],newsampleslist[i][9],
-                                         Pcontact_id_exists,Ncontact_id_exists,PkAbsorber_id_exists,substtype_id_exists,electrode_id_exists,batch_id_exists,absorberMethod_id))
-                        self.db_conn.commit()
-                    except sqlite3.OperationalError:
-                        print("data couldn't be added to samples")
-                    except sqlite3.IntegrityError:
-                        print("the samplename already exists...")
-                else:
+                if self.topicChoice.get()=="lowgap" or self.topicChoice.get()=="widegap":
         #            Pcontact_id
                     self.theCursor.execute("SELECT id FROM Pcontact WHERE contactstackP=?",(newsampleslist[i][5],))
                     Pcontact_id_exists = self.theCursor.fetchone()[0]
@@ -1553,10 +1152,10 @@ class DBapp(Toplevel):
                     self.theCursor.execute("SELECT id FROM electrode WHERE electrodestack=?",(newsampleslist[i][8],))
                     electrode_id_exists = self.theCursor.fetchone()[0]
         #            recombjct_id
-                    self.theCursor.execute("SELECT id FROM recombjct WHERE recombjctstack=?",(newsampleslist[i][12],))
+                    self.theCursor.execute("SELECT id FROM recombjct WHERE recombjctstack=?",(newsampleslist[i][11],))
                     recombjct_id_exists = self.theCursor.fetchone()[0]    
         #           absorberMethod_id
-                    self.theCursor.execute("SELECT id FROM PkAbsorberMethod WHERE absorberMethod=?",(newsampleslist[i][13],))
+                    self.theCursor.execute("SELECT id FROM PkAbsorberMethod WHERE absorberMethod=?",(newsampleslist[i][12],))
                     absorberMethod_id = self.theCursor.fetchone()[0]
                     
                     try:
@@ -1576,7 +1175,7 @@ class DBapp(Toplevel):
                 if newsampleslist[i][10]==1:
                     self.db_conn.execute("INSERT INTO cells (cellname, samples_id, batch_id) VALUES (?,?,?)",('SingleCell',sample_id_exists,batch_id_exists))
                 else:
-                    cellpossiblename=["A","B","C","D","E"]
+                    cellpossiblename=["A","B","C","D","E", "F"]
                     for j in range(newsampleslist[i][10]):
                         self.db_conn.execute("INSERT INTO cells (cellname, samples_id, batch_id) VALUES (?,?,?)",(cellpossiblename[j],sample_id_exists,batch_id_exists))
                 

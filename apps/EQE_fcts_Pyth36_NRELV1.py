@@ -1348,15 +1348,15 @@ class EQEApp(Toplevel):
             for j in range(len(DATA[i]['Jsc'])):
 #                print(DATA[i]['Name']+'_'+str(j)+'_'+ '%.2f' % DATA[i]['Jsc'][j])
 #                if DATA[i]['Name']+'_'+str(j)+'_'+ '%.2f' % DATA[i]['Jsc'][j] in selectedtoexport:
-                Summary.append([DATA[i]['Name'],DATA[i]['Jsc'][j],DATA[i]['Eg'][j],DATA[i]['EgLn'][j],
+                Summary.append([DATA[i]['Name'],DATA[i]['Jsc'][j],DATA[i]['Eg0'][j],DATA[i]['EgLn'][j],
                                 DATA[i]['EuLn'][j],DATA[i]['stderrEgLn'][j][0],DATA[i]['stderrEgLn'][j][1],
-                                DATA[i]['EgTauc'][j][0],DATA[i]['comment'],DATA[i]['Vbias'][j],
+                                DATA[i]['EgTauc'][j][0],DATA[i]['EgIP'][j],DATA[i]['comment'],DATA[i]['Vbias'][j],
                                 DATA[i]['filterbias'][j],DATA[i]['ledbias'][j],DATA[i]['dateTime']])
-        Summary.insert(0,['Sample Name','Jsc','Eg','EgLn','EuLn','stderrEgLn','nbptsEgLn','EgTauc','comment','Vbias','filterbias','ledbias','datetimeMod'])
+        Summary.insert(0,['Sample Name','Jsc','Eg0','EgLn','EuLn','stderrEgLn','nbptsEgLn','EgTauc','EgIP','comment','Vbias','filterbias','ledbias','datetimeMod'])
         workbook = xlsxwriter.Workbook('Summary.xlsx')
         worksheet = workbook.add_worksheet()
         row=0
-        for name, jsc, eg, egln, euln, stderr, nbptEgLn, EgTauc, comment, Vbias, filterbias, ledbias, dateandtime in Summary:
+        for name, jsc, eg, egln, euln, stderr, nbptEgLn, EgTauc, EgIP, comment, Vbias, filterbias, ledbias, dateandtime in Summary:
             worksheet.write(row, 0, name)
             if jsc!=999:
                 worksheet.write(row, 1, jsc)
@@ -1386,11 +1386,16 @@ class EQEApp(Toplevel):
                 worksheet.write(row, 7, EgTauc)
             else:
                 worksheet.write(row, 7, ' ')
-            worksheet.write(row, 8, comment)
-            worksheet.write(row, 9, Vbias)
-            worksheet.write(row, 10, filterbias)
-            worksheet.write(row, 11, ledbias)
-            worksheet.write(row, 12, dateandtime)
+            if EgIP!=999:
+                worksheet.write(row, 8, EgIP)
+            else:
+                worksheet.write(row, 8, ' ')    
+                
+            worksheet.write(row, 9, comment)
+            worksheet.write(row, 10, Vbias)
+            worksheet.write(row, 11, filterbias)
+            worksheet.write(row, 12, ledbias)
+            worksheet.write(row, 13, dateandtime)
             row += 1
         workbook.close()
         

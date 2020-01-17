@@ -626,6 +626,7 @@ class DBapp(Toplevel):
             tk.Label(frame01, text="Polarity", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)          
             tk.Label(frame01, text="#ofpixels", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
             tk.Label(frame01, text="PixelArea", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
+            tk.Label(frame01, text="Ref?", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
         
             frame02=Frame(frame0,borderwidth=0,  bg="white")
             frame02.pack(side="left",fill=tk.BOTH,expand=1)
@@ -668,12 +669,19 @@ class DBapp(Toplevel):
             self.entry2=Entry(frame02, textvariable=self.pixelarea,width=5)
             self.entry2.pack(fill=tk.BOTH,expand=1)
             self.pixelarea.set(0.058)
+            #pixel area
+            self.Reflist=["yes", "no"]
+            self.RefChoice=StringVar()
+            self.RefChoice.set("no")
+            self.dropMenuFrame = OptionMenu(frame02, self.RefChoice, *self.Reflist, command=())
+            self.dropMenuFrame.pack(fill=tk.BOTH,expand=1)
             
             frame06=Frame(frame0,borderwidth=0,  bg="white")
             frame06.pack(side="left",fill=tk.BOTH,expand=1)
             tk.Label(frame06, text=" ", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
             Button(frame06, text="Add",
                    command = self.addnewSubstratetype).pack(fill=tk.BOTH,expand=1)
+            tk.Label(frame06, text=" ", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
             tk.Label(frame06, text=" ", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
             tk.Label(frame06, text=" ", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
             tk.Label(frame06, text=" ", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
@@ -1159,9 +1167,9 @@ class DBapp(Toplevel):
                     absorberMethod_id = self.theCursor.fetchone()[0]
                     
                     try:
-                        self.db_conn.execute("INSERT INTO samples (samplename,samplefullstack,bottomCellDBRef,recombjct_id,cellarchitecture,polarity,commentsamples,Pcontact_id,Ncontact_id,PkAbsorber_id,substtype_id,electrode_id,batch_id,PkAbsorberMethod_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                        self.db_conn.execute("INSERT INTO samples (samplename,samplefullstack,bottomCellDBRef,recombjct_id,cellarchitecture,polarity,commentsamples,Pcontact_id,Ncontact_id,PkAbsorber_id,substtype_id,electrode_id,batch_id,PkAbsorberMethod_id,reference) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                                         (newsampleslistnames[i],newsampleslist[i][0],newsampleslist[i][11],recombjct_id_exists,newsampleslist[i][3],newsampleslist[i][4],newsampleslist[i][9],
-                                         Pcontact_id_exists,Ncontact_id_exists,PkAbsorber_id_exists,substtype_id_exists,electrode_id_exists,batch_id_exists,absorberMethod_id))
+                                         Pcontact_id_exists,Ncontact_id_exists,PkAbsorber_id_exists,substtype_id_exists,electrode_id_exists,batch_id_exists,absorberMethod_id,self.RefChoice.get()))
                         self.db_conn.commit()
                     except sqlite3.OperationalError:
                         print("data couldn't be added to samples")

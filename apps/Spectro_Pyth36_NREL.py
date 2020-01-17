@@ -339,7 +339,22 @@ class SpectroApp(Toplevel):
                                 DATA[samplenames[item]] = [samplenameshort, curvetype, dataWave, dataInt,dataInt,samplenames[item],samplenames[item],'-',colorstylelist[len(DATA.keys())],int(2)]
                                 Patternsamplenameslist.append(samplenames[item])
 #                                print(samplenameshort)
-                            
+        elif os.path.splitext(file_path[0])[1] ==".txt": 
+             DATA = {}
+             for item in range(len(file_path)):
+                file = open(file_path[item], encoding='ISO-8859-1')
+                filedat = file.readlines()
+                
+                samplename=filedat[0].split(' ')[0]
+                wave=[]
+                absorb=[]
+                for item1 in range(2,len(filedat)):
+                    wave.append(float(filedat[item1].split('\t')[0]))
+                    absorb.append(float(filedat[item1].split('\t')[1]))
+                
+                DATA[samplename+'_A']=[samplename,'A',wave,absorb,absorb,samplename+'_A',samplename+'_A','-',colorstylelist[len(DATA.keys())],int(2)]
+                Patternsamplenameslist.append(samplename+'_A')
+                 
                             
 #                    dataWave=list(map(float,dataWave[1:]))
 #                    dataInt=list(map(float,dataInt[1:]))
@@ -427,37 +442,42 @@ class SpectroApp(Toplevel):
 #DATA[samplenames[item]] = [samplenameshort, curvetype, dataWave, dataInt,dataInt,samplenames[item],samplenames[item],'-',colorstylelist[len(DATA.keys())],int(2)]
         
         DATADICTtot = []
-        DATA2 = copy.deepcopy(DATA)
-        while DATA != {}:
-            listpositions = []
-            names=list(DATA.keys())
-            name = DATA[names[0]][0]
-            for i in names:
-                if DATA[i][0] == name:
-                    listpositions.append(i)
-
-            datadict = {'Name': name, 'Wave': DATA[names[0]][2], 'TR': [],'TT':[],'A':[],'DR':[],'DT':[]}
-            for i in listpositions:
-                if DATA[i][1]=='TR':
-                    datadict['TR']=DATA[i][3]
-                elif DATA[i][1]=='TT':
-                    datadict['TT']=DATA[i][3]
-                elif DATA[i][1]=='DR':
-                    datadict['DR']=DATA[i][3]
-                elif DATA[i][1]=='DT':
-                    datadict['DT']=DATA[i][3]
-            if datadict['TR']!=[] and datadict['TT']!=[]:                
-                refl = [float(i) for i in datadict['TR']]
-                trans = [float(i) for i in datadict['TT']]
-                absorpt = [float(i) for i in [100 - (x + y) for x, y in zip(refl, trans)]]
-                datadict['A']=absorpt
-                DATA2[name+'_A']=[name,'A',DATA[names[0]][2],absorpt,absorpt,name+'_A',name+'_A','-',colorstylelist[len(DATA2.keys())],int(2)]
-                Patternsamplenameslist.append(name+'_A')
-            DATADICTtot.append(datadict)
-            for index in sorted(listpositions, reverse=True):
-                del DATA[index]
-        self.DATADICTtot=DATADICTtot
-        self.DATA=DATA2
+        
+        if os.path.splitext(file_path[0])[1] !=".txt": 
+            DATA2 = copy.deepcopy(DATA)
+            while DATA != {}:
+                listpositions = []
+                names=list(DATA.keys())
+                name = DATA[names[0]][0]
+                for i in names:
+                    if DATA[i][0] == name:
+                        listpositions.append(i)
+    
+                datadict = {'Name': name, 'Wave': DATA[names[0]][2], 'TR': [],'TT':[],'A':[],'DR':[],'DT':[]}
+                for i in listpositions:
+                    if DATA[i][1]=='TR':
+                        datadict['TR']=DATA[i][3]
+                    elif DATA[i][1]=='TT':
+                        datadict['TT']=DATA[i][3]
+                    elif DATA[i][1]=='DR':
+                        datadict['DR']=DATA[i][3]
+                    elif DATA[i][1]=='DT':
+                        datadict['DT']=DATA[i][3]
+                if datadict['TR']!=[] and datadict['TT']!=[]:                
+                    refl = [float(i) for i in datadict['TR']]
+                    trans = [float(i) for i in datadict['TT']]
+                    absorpt = [float(i) for i in [100 - (x + y) for x, y in zip(refl, trans)]]
+                    datadict['A']=absorpt
+                    DATA2[name+'_A']=[name,'A',DATA[names[0]][2],absorpt,absorpt,name+'_A',name+'_A','-',colorstylelist[len(DATA2.keys())],int(2)]
+                    Patternsamplenameslist.append(name+'_A')
+                DATADICTtot.append(datadict)
+                for index in sorted(listpositions, reverse=True):
+                    del DATA[index]
+            self.DATADICTtot=DATADICTtot
+            self.DATA=DATA2
+        else:
+            self.DATA=DATA
+#        print(self.DATA.keys())
         
         #update the listbox
         self.frame51.destroy()
@@ -537,7 +557,7 @@ class SpectroApp(Toplevel):
     #            takenforplot=sampletotake
     #            if takenforplot!=[]:
     #                sampletotake=takenforplot
-            
+            print(DATAx.keys())
             self.Spectrograph.clear()
             for i in sampletotake:
                 x = DATAx[i][2]

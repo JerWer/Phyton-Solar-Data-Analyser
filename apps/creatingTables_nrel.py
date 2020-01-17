@@ -53,6 +53,7 @@ def CreateAllTables(db_conn,new):
                 id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                 samplename TEXT NOT NULL UNIQUE,
                 cellarchitecture TEXT,
+                reference TEXT,
                 samplefullstack TEXT,
                 polarity TEXT,
                 bottomCellDBRef TEXT,

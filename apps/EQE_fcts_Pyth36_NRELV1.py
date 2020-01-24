@@ -1011,8 +1011,10 @@ class EQEApp(Toplevel):
                     datadict['DATA']=[[],[]]
     #                filedat.pop(0)
                     for item in filedat:
-                        datadict['DATA'][0].append(float(item.split('\t')[0]))
-                        datadict['DATA'][1].append(float(item.split('\t')[7])/100)
+#                        print(item.split('\t')[0])
+                        if item.split('\t')[0] !='\n':
+                            datadict['DATA'][0].append(float(item.split('\t')[0]))
+                            datadict['DATA'][1].append(float(item.split('\t')[7])/100)
                     
                     m=list(zip(*sorted(zip(datadict['DATA'][0],datadict['DATA'][1]), key=lambda pair: pair[0])))
                     
@@ -1024,7 +1026,10 @@ class EQEApp(Toplevel):
                     spl = UnivariateSpline(x, y, s=0)
                     f = interp1d(x, y, kind='cubic')
                     x2 = lambda x0: self.AM15GParticlesinnm(x0)*f(x0)
-                    integral = echarge/10*integrate.quad(x2,datadict['DATA'][0][0],datadict['DATA'][0][-1])[0]
+                    if datadict['DATA'][0][0]>280:
+                        integral = echarge/10*integrate.quad(x2,datadict['DATA'][0][0],datadict['DATA'][0][-1])[0]
+                    else:
+                        integral = echarge/10*integrate.quad(x2,280,datadict['DATA'][0][-1])[0]
                     datadict['Jsc'].append(integral)
                     if integrationJscYes:
                         datadict['integJsclist']=[datadict['DATA'][0]]
@@ -1159,8 +1164,9 @@ class EQEApp(Toplevel):
                     datadict['ledbias'].append('')                   
                     DATA.append(datadict)
                     
-                    if 'NaN' not in filedat[1].split('\t')[8]:
-                        print('')
+#                    print(filedat[1].split('\t'))
+#                    if 'NaN' not in filedat[1].split('\t')[8]:
+#                        print('')
 #                        #get IQE data
 #                        datadict = {'dateTime': datetime, 'filepath':file_path[k],'Name': samplename +'_IQE','Jsc':[],'Eg':[],
 #                                            'EgTauc':[],'lnDat':[],'EgLn':[],'EuLn':[],'stderrEgLn':[],'NbColumn':2, 

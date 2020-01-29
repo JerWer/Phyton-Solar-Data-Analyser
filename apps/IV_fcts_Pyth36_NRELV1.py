@@ -71,6 +71,8 @@ TODOLIST
 Plottime graph:
 - change legend
 - best of rev and forw at every date
+
+histogram graph: relative number of device (%)
     
 
 mpp graph:
@@ -3869,6 +3871,10 @@ class IVApp(Toplevel):
                 filetype = 1 #JV file from solar simulator in SERF C215
             elif "Power (mW/cm2)" in filerawdata[0]:
                 filetype = 2
+            elif "V\tI" in filerawdata[0]:
+                filetype = 3
+                print("JVT")
+            
             
             if filetype ==1 : #J-V files of SERF C215
                               
@@ -3902,6 +3908,7 @@ class IVApp(Toplevel):
                     if "Date/Time:" in filerawdata[item]:
                         partdict["MeasDayTime2"]=parser.parse(filerawdata[item][11:-1])
                         partdict["MeasDayTime"]=filerawdata[item][11:-1]
+                        print(partdict["MeasDayTime2"])
 #                        print(partdict["MeasDayTime"].split(' ')[-2])
                         break
                 partdict["MeasComment"]="-"
@@ -4007,6 +4014,85 @@ class IVApp(Toplevel):
                     DATA.append(partdict)
                     DATAdark.append(partdict)
                     numbDarkfiles+=1
+            elif filetype ==3 : #JVT files from Taylor
+                partdict = {}
+                partdict["filepath"]=file_path[i]
+                
+                filename=os.path.splitext(os.path.basename(partdict["filepath"]))[0]
+#                print(filename)
+                
+                partdict["DepID"]=filename
+                aftername=filename
+    
+                
+                partdict["Cellletter"]='A'
+                partdict["batchname"]='batch'
+                partdict["SampleName"]=partdict["DepID"]
+                
+                partdict["Illumination"]="Light"
+                    
+                partdict["ScanDirection"]="Reverse"
+                
+                
+                partdict["MeasDayTime2"]='2020-01-29 12:55:00'
+                partdict["MeasDayTime"]='Wed, Jan 29, 2020 0:00:00'
+                        
+                partdict["MeasComment"]="-"
+                partdict["aftermpp"]=1
+                partdict["Vstart"]=0
+                partdict["Vend"]=0
+                partdict["NbPoints"]=0      
+                partdict["CellSurface"]=0.1  
+                partdict["Delay"]=0    
+                partdict["IntegTime"]=0
+                        
+                ivpartdat = [[],[]]#[voltage,current]
+                for item in range(1,len(filerawdata),1):
+                    try:
+                        ivpartdat[0].append(float(filerawdata[item].split("\t")[0]))
+                        ivpartdat[1].append(1000*float(filerawdata[item].split("\t")[1])/partdict["CellSurface"])
+                    except:
+                        break
+                partdict["IVData"]=ivpartdat
+                params=self.extract_jv_params(partdict["IVData"])
+                partdict["Voc"]=params['Voc']*1000 #mV
+                partdict["Jsc"]=params['Jsc'] #mA/cm2
+                partdict["FF"]=params['FF'] #%
+                partdict["Eff"]=params['Pmax'] #%
+                partdict["Pmpp"]=partdict["Eff"]*10 #W/cm2
+                partdict["VocFF"]=partdict["Voc"]*partdict["FF"]
+                partdict["Roc"]=params['Roc'] 
+                partdict["Rsc"]=params['Rsc'] 
+                partdict["RscJsc"]=partdict["Rsc"]*partdict["Jsc"]
+                
+                partdict["Vmpp"]=params['Vmpp']
+                partdict["Jmpp"]=params['Jmpp']
+                partdict["ImaxComp"]=-1
+                partdict["Isenserange"]=-1
+                
+                partdict["Operator"]=-1
+                              
+                try:
+                    if partdict["Illumination"]=="Light" and max(ivpartdat[0])>0.001*float(partdict["Voc"]):
+                        f = interp1d(ivpartdat[0], ivpartdat[1], kind='cubic')
+                        x2 = lambda x: f(x)
+                        partdict["AreaJV"] = integrate.quad(x2,0,0.001*float(partdict["Voc"]))[0]
+                    else:
+                        partdict["AreaJV"] =""
+                except ValueError:
+                    print("there is a ValueError on sample ",i)
+                
+                
+                partdict["Group"]="Default group"
+                partdict["Setup"]="JVT"              
+                partdict["RefNomCurr"]=999
+                partdict["RefMeasCurr"]=999
+                partdict["AirTemp"]=999
+                partdict["ChuckTemp"]=999
+                    
+#                DATA.append(partdict)
+                DATA.append(partdict)
+                numbLightfiles+=1
                 
             elif filetype ==2 : #mpp files of SERF C215 labview program
                 #assumes file name: batch_samplenumber_cellLetter_mpp

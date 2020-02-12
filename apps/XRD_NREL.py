@@ -73,7 +73,7 @@ save param and load param buttons
 - add square root, log or linear
 
 
-
+- change x-axis label to either 2theta or to X (chi)
 
 """
 #%%

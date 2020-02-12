@@ -790,9 +790,16 @@ class IVApp(Toplevel):
                         finished=1
                         break
                     elif filetype==".txt" or filetype=='':
-                        print("NREL files")
-                        self.getdatalistsfromNRELfiles(file_path)
-                        finished=1
+                        filetoread = open(file_path[0],"r", encoding='ISO-8859-1')
+                        filerawdata = filetoread.readlines()
+                        if '***' in filerawdata[0]:
+                            print("NREL files")
+                            self.getdatalistsfromNRELfiles(file_path)
+                            finished=1
+                        else:
+                            print("CUB files")
+                            self.getdatalistsfromCUBfiles(file_path)
+                            finished=1
                         break
                     elif filetype==".xls":
                         celltest=[]
@@ -3855,6 +3862,213 @@ class IVApp(Toplevel):
                     DATA.append(partdict)
                     DATAdark.append(partdict)
                     numbDarkfiles+=1
+    
+    def getdatalistsfromCUBfiles(self, file_path): #reads JV and mpp files from CUB
+        global DATA, DATAdark
+        global DATAMPP, numbLightfiles, numbDarkfiles
+        
+        for i in range(len(file_path)):
+            filetoread = open(file_path[i],"r", encoding='ISO-8859-1')
+            filerawdata = filetoread.readlines()
+            print(i)
+            filetype = 1
+#            if "HEADER START" in filerawdata[0]:
+#                filetype = 1 #JV file from solar simulator in SERF C215
+#            elif "Power (mW/cm2)" in filerawdata[0]:
+#                filetype = 2
+#            elif "V\tI" in filerawdata[0]:
+#                filetype = 3
+#                print("JVT")
+            
+            
+            if filetype ==1 : #J-V files of SERF C215
+                              
+                partdict = {}
+                partdict["filepath"]=file_path[i]
+                
+                filename=os.path.splitext(os.path.basename(partdict["filepath"]))[0]                
+                
+                partdict["Cellletter"]=filename.split('_')[2][2:]
+                partdict["batchname"]=filename.split('_')[0]
+                partdict["DepID"]=partdict["batchname"]+"_"+filename.split('_')[1]
+                partdict["SampleName"]=partdict["DepID"]+"_"+partdict["Cellletter"] #+"_"+aftername.split('_')[4]
+                
+                if "light" in filename:
+                    partdict["Illumination"]="Light"
+                else:
+                    partdict["Illumination"]="Dark"
+                    
+                if "rev" in filename:
+                    partdict["ScanDirection"]="Reverse"
+                else:
+                    partdict["ScanDirection"]="Forward" 
+                
+                
+                partdict["MeasDayTime2"]=parser.parse(filerawdata[0])
+                partdict["MeasDayTime"]=filerawdata[0]
+#                print(partdict["MeasDayTime2"])
+#                print(partdict["MeasDayTime"])
+                        
+                partdict["MeasComment"]="-"
+                for item in range(len(filerawdata)):
+                    if "Notes = " in filerawdata[item]:
+                        partdict["MeasComment"]=filerawdata[item][8:-1]
+                        break
+                if "aftermpp" in partdict["MeasComment"]:
+                    partdict["aftermpp"]=1
+                else:
+                    partdict["aftermpp"]=0
+                    
+                for item in range(len(filerawdata)):
+                    if "Device Area = " in filerawdata[item]:
+                        partdict["CellSurface"]=float(filerawdata[item][14:-5])
+#                        print(partdict["CellSurface"])
+                        break
+                for item in range(len(filerawdata)):
+                    if "Delay = " in filerawdata[item]:
+                        partdict["Delay"]=float(filerawdata[item][8:-3])
+#                        print(partdict["Delay"])
+                        break
+                for item in range(len(filerawdata)):
+                    if "NPLC = " in filerawdata[item]:
+                        partdict["IntegTime"]=float(filerawdata[item][7:-1])
+                        break     
+                
+                for item in range(len(filerawdata)):
+                    if "Voltage" in filerawdata[item]:
+                            pos=item+1
+                            break
+                        
+                ivpartdat = [[],[]]#[voltage,current]
+                for item in range(pos,len(filerawdata),1):
+                    try:
+                        ivpartdat[0].append(float(filerawdata[item].split("\t")[0]))
+                        ivpartdat[1].append(float(filerawdata[item].split("\t")[1]))
+                    except:
+                        break
+                partdict["IVData"]=ivpartdat
+                partdict["NbPoints"]=len(ivpartdat[0])
+                partdict["Vstart"]=ivpartdat[0][-1]
+                partdict["Vend"]=ivpartdat[0][0]
+                        
+                params=self.extract_jv_params(partdict["IVData"])
+                partdict["Voc"]=params['Voc']*1000 #mV
+                partdict["Jsc"]=params['Jsc'] #mA/cm2
+                partdict["FF"]=params['FF'] #%
+                partdict["Eff"]=params['Pmax'] #%
+                partdict["Pmpp"]=partdict["Eff"]*10 #W/cm2
+                partdict["VocFF"]=partdict["Voc"]*partdict["FF"]
+                partdict["Roc"]=params['Roc'] 
+                partdict["Rsc"]=params['Rsc'] 
+                partdict["RscJsc"]=partdict["Rsc"]*partdict["Jsc"]
+                
+                partdict["Vmpp"]=params['Vmpp']
+                partdict["Jmpp"]=params['Jmpp']
+                partdict["ImaxComp"]=-1
+                partdict["Isenserange"]=-1
+                
+                partdict["Operator"]=-1
+                              
+                try:
+                    if partdict["Illumination"]=="Light" and max(ivpartdat[0])>0.001*float(partdict["Voc"]):
+                        f = interp1d(ivpartdat[0], ivpartdat[1], kind='cubic')
+                        x2 = lambda x: f(x)
+                        partdict["AreaJV"] = integrate.quad(x2,0,0.001*float(partdict["Voc"]))[0]
+                    else:
+                        partdict["AreaJV"] =""
+                except ValueError:
+                    print("there is a ValueError on sample ",i)
+                
+                
+                partdict["Group"]="Default group"
+                partdict["Setup"]="CUBoulder"              
+                partdict["RefNomCurr"]=999
+                partdict["RefMeasCurr"]=999
+                partdict["AirTemp"]=999
+                partdict["ChuckTemp"]=999
+                    
+#                DATA.append(partdict)
+
+                if partdict["Illumination"]=="Light":
+                    DATA.append(partdict)
+                    numbLightfiles+=1
+                else:
+                    partdict["SampleName"]=partdict["SampleName"]+'_D'
+                    DATA.append(partdict)
+                    DATAdark.append(partdict)
+                    numbDarkfiles+=1
+            
+        
+        DATA = sorted(DATA, key=itemgetter('SampleName')) 
+        names=[d["SampleName"] for d in DATA if "SampleName" in d]
+        groupednames=[list(j) for i, j in groupby(names)]
+#        print(groupednames)
+        for item in range(len(groupednames)):
+            if len(groupednames[item])>1 and groupednames[item][0][-1]!='D':
+                positions=[]
+                effrev=0
+                efffor=0
+                for item2 in range(len(DATA)):
+                    if DATA[item2]['SampleName']==groupednames[item][0]:
+                        positions.append(item2)
+                        if DATA[item2]["ScanDirection"]=="Reverse":
+                            effrev=DATA[item2]['Eff']
+                        else:
+                            efffor=DATA[item2]['Eff']
+                    if len(positions)==len(groupednames[item]):
+                        break
+                try:
+                    hyste=100*(effrev-efffor)/effrev
+                    for item2 in range(len(positions)):
+                        DATA[positions[item2]]['HI']=hyste
+#                        print(hyste)
+                except:
+                    print("except HI")
+        
+        for item in range(len(groupednames)):
+            if len(groupednames[item])!=1:
+                k=1
+                for item0 in range(1,len(groupednames[item])):
+                    
+#                    groupednames2=copy.deepcopy(groupednames)
+#                    groupednames[item][item0]+= "_"+str(k)
+#                    print(groupednames[item][item0])
+                    while(1):
+                        groupednames2=list(chain.from_iterable(groupednames))
+#                        print(groupednames2)
+                        
+                        if groupednames[item][item0]+"_"+str(k) in groupednames2:
+                            k+=1
+                            groupednames[item][item0]+= "_"+str(k)
+#                            print(groupednames[item][item0])
+#                            print('')
+                        else:
+                            groupednames[item][item0]+= "_"+str(k)
+#                            print('notin')
+                            break
+                        
+        groupednames=list(chain.from_iterable(groupednames))
+#        print("")
+#        print(groupednames)
+        for item in range(len(DATA)):
+            DATA[item]['SampleName']=groupednames[item]
+        
+        DATAMPP = sorted(DATAMPP, key=itemgetter('SampleName')) 
+        names=[d["SampleName"] for d in DATAMPP if "SampleName" in d]
+        groupednames=[list(j) for i, j in groupby(names)]
+        for item in range(len(groupednames)):
+            if len(groupednames[item])!=1:
+                for item0 in range(1,len(groupednames[item]),1):
+                    groupednames[item][item0]+= "_"+str(item0)
+        groupednames=list(chain.from_iterable(groupednames))
+        for item in range(len(DATAMPP)):
+            DATAMPP[item]['SampleName']=groupednames[item]
+        
+        self.updategrouptoplotdropbutton()
+        self.updateCompgrouptoplotdropbutton()
+        self.updateHistgrouptoplotdropbutton()
+        self.UpdateGroupGraph(1)
+        self.UpdateCompGraph(1)
         
         
     def getdatalistsfromNRELfiles(self, file_path): #reads JV and mpp files from NREL
@@ -3908,7 +4122,7 @@ class IVApp(Toplevel):
                     if "Date/Time:" in filerawdata[item]:
                         partdict["MeasDayTime2"]=parser.parse(filerawdata[item][11:-1])
                         partdict["MeasDayTime"]=filerawdata[item][11:-1]
-                        print(partdict["MeasDayTime2"])
+#                        print(partdict["MeasDayTime2"])
 #                        print(partdict["MeasDayTime"].split(' ')[-2])
                         break
                 partdict["MeasComment"]="-"
@@ -4203,7 +4417,7 @@ class IVApp(Toplevel):
         self.UpdateGroupGraph(1)
         self.UpdateCompGraph(1)
         
-    def getdatalistsfromIVTFfiles(self, file_path):
+    def getdatalistsfromIVTFfiles(self, file_path): #EPFL files
         global DATA
         global DATAdark
         global DATAMPP

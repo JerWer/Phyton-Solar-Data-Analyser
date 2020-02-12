@@ -463,10 +463,12 @@ class SpectroApp(Toplevel):
                         datadict['DR']=DATA[i][3]
                     elif DATA[i][1]=='DT':
                         datadict['DT']=DATA[i][3]
-                if datadict['TR']!=[] and datadict['TT']!=[]:                
+                if datadict['TR']!=[] and datadict['TT']!=[]:   
+                    print(name)
                     refl = [float(i) for i in datadict['TR']]
                     trans = [float(i) for i in datadict['TT']]
                     absorpt = [float(i) for i in [100 - (x + y) for x, y in zip(refl, trans)]]
+                    print(absorpt)
                     datadict['A']=absorpt
                     DATA2[name+'_A']=[name,'A',DATA[names[0]][2],absorpt,absorpt,name+'_A',name+'_A','-',colorstylelist[len(DATA2.keys())],int(2)]
                     Patternsamplenameslist.append(name+'_A')
@@ -557,7 +559,7 @@ class SpectroApp(Toplevel):
     #            takenforplot=sampletotake
     #            if takenforplot!=[]:
     #                sampletotake=takenforplot
-            print(DATAx.keys())
+#            print(DATAx.keys())
             self.Spectrograph.clear()
             for i in sampletotake:
                 x = DATAx[i][2]

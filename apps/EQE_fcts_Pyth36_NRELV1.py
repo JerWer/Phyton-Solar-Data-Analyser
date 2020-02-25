@@ -636,7 +636,7 @@ class EQEApp(Toplevel):
                     
                     datetime=modification_date(file_path[k])
                     datadict = {'dateTime': datetime, 'filepath':file_path[k],'Name': samplename,'Jsc':[],'Eg0':[],'EgIP':[],
-                                        'EgTauc':[],'EgTauc2':[],'lnDat':[],'EgLn':[],'EuLn':[],'stderrEgLn':[],'NbColumn':999, 
+                                        'EgTauc':[],'EgTauc2':[],'lnDat':[],'EgLn':[],'EuLn':[],'stderrEgLn':[],'NbColumn':2, 
                                         'DATA': [],'tangent': [],'tangentLn': [], 'comment': "", 'Vbias':[],'filterbias':[],'ledbias':[],
                                         'batchnumb': batchnumb, 'samplenumb': samplenumb}   
                     
@@ -820,7 +820,7 @@ class EQEApp(Toplevel):
                         
                         datetime=modification_date(file_path[k])
                         datadict = {'dateTime': datetime, 'filepath':file_path[k],'Name': samplename,'Jsc':[],'Eg':[],
-                                        'EgTauc':[],'lnDat':[],'EgLn':[],'EuLn':[],'stderrEgLn':[],'NbColumn':999, 
+                                        'EgTauc':[],'lnDat':[],'EgLn':[],'EuLn':[],'stderrEgLn':[],'NbColumn':2, 
                                         'DATA': [],'tangent': [],'tangentLn': [], 'comment': "", 'Vbias':[],'filterbias':[],'ledbias':[],
                                         'batchnumb': '', 'samplenumb': ''}   
                         datadict['DATA']=[[],[]]
@@ -1003,7 +1003,7 @@ class EQEApp(Toplevel):
                     file.close()
                     datetime=modification_date(file_path[k])
                     datadict = {'dateTime': datetime, 'filepath':file_path[k],'Name': samplename,'Jsc':[],'Eg0':[],'EgIP':[],
-                                        'EgTauc':[],'EgTauc2':[],'lnDat':[],'EgLn':[],'EuLn':[],'stderrEgLn':[],'NbColumn':999, 
+                                        'EgTauc':[],'EgTauc2':[],'lnDat':[],'EgLn':[],'EuLn':[],'stderrEgLn':[],'NbColumn':2, 
                                         'DATA': [],'tangent': [],'tangentLn': [], 'comment': "", 'Vbias':[],'filterbias':[],'ledbias':[],
                                         'batchnumb': batchnumb, 'samplenumb': samplenumb} 
     
@@ -1465,8 +1465,8 @@ class EQEApp(Toplevel):
             for m in range(len(DATA[i]['Jsc'])):
                 text += '%.2f' % DATA[i]['Jsc'][m]+ '; '
             text+='Eg= '
-            for m in range(len(DATA[i]['Eg'])):
-                text += '%.2f' % DATA[i]['Eg'][m]+ '; '
+            for m in range(len(DATA[i]['Eg0'])):
+                text += '%.2f' % DATA[i]['Eg0'][m]+ '; '
             text=text[:-2]
             plt.annotate(DATA[i]['Name']+' - '+text, xy=(0.1,1.01), xycoords='axes fraction', fontsize=12,
                                                 horizontalalignment='left', verticalalignment='bottom')

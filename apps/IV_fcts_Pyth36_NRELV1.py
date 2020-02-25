@@ -792,13 +792,18 @@ class IVApp(Toplevel):
                     elif filetype==".txt" or filetype=='':
                         filetoread = open(file_path[0],"r", encoding='ISO-8859-1')
                         filerawdata = filetoread.readlines()
+                        print(filerawdata[0])
                         if '***' in filerawdata[0]:
                             print("NREL files")
                             self.getdatalistsfromNRELfiles(file_path)
                             finished=1
-                        else:
+                        elif filetype!='':
                             print("CUB files")
                             self.getdatalistsfromCUBfiles(file_path)
+                            finished=1
+                        else:
+                            print("NREL files")
+                            self.getdatalistsfromNRELfiles(file_path)
                             finished=1
                         break
                     elif filetype==".xls":

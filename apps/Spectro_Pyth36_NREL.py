@@ -22,10 +22,11 @@ from math import log, pow
 from XRD_NREL import savitzky_golay
 from tkcolorpicker import askcolor 
 from functools import partial
-
+import xlrd
 
 """
-
+problem when open different files having different extensions at same time (Eli's files)
+problem when try to open new files a second time, previous imported ones are not usable anymore
 
 
 """
@@ -292,69 +293,126 @@ class SpectroApp(Toplevel):
         else :
             os.chdir(directory)
             
-        if os.path.splitext(file_path[0])[1] ==".csv":
+        
+        try:
+            DATA=self.DATA    
+        except:
             DATA = {}
-            for item in range(len(file_path)):
-                with open(file_path[item], encoding='ISO-8859-1') as csvfile:
-                    readCSV = list(csv.reader(csvfile, delimiter=','))
-                    
-                    samplenames=readCSV[0]
-                    dataWaveInt=readCSV[2:]
-                    print(len(dataWaveInt))
-                    for item in range(len(samplenames)):
-                        if samplenames[item]!='':
-                            dataWave = []
-                            dataInt = []
-                            discard=1
-#                            print(samplenames[item])
-                            if '_TT' in samplenames[item]:
-                                curvetype="TT"
-                                samplenameshort = samplenames[item][:-3]
-                            elif '_TR' in samplenames[item]:
-                                curvetype="TR"
-                                samplenameshort = samplenames[item][:-3]
-                            elif "Baseline" in samplenames[item]:
-                                discard=0
-                            if discard:    
-#                                print(samplenames[item])
-                                for item1 in range(len(dataWaveInt)):
-#                                    print(dataWaveInt[item1])
-#                                    if dataWaveInt[item1][0]=='':
-                                    try:
-                                        if dataWaveInt[item1]==[]:
-                                            break
-                                    except:
-                                        pass
-                                    try:
-                                        if dataWaveInt[item1][0]=='':
-                                            break
-                                    except:
-                                        pass
-#                                    print(dataWaveInt[item1][item])
-                                    dataWave.append(dataWaveInt[item1][item])
-                                    dataInt.append(dataWaveInt[item1][item+1])
-                                dataWave=list(map(float,dataWave))
-                                dataInt=list(map(float,dataInt))
-                                #[0 samplenameshort, 1 curvetype, 2 dataWave, 3 dataInt, 4 dataIntorig, 5 longnameorig, 6 longnamemod, 7 linestyle, 8 linecolor, 9 linewidth]
-                                DATA[samplenames[item]] = [samplenameshort, curvetype, dataWave, dataInt,dataInt,samplenames[item],samplenames[item],'-',colorstylelist[len(DATA.keys())],int(2)]
-                                Patternsamplenameslist.append(samplenames[item])
-#                                print(samplenameshort)
-        elif os.path.splitext(file_path[0])[1] ==".txt": 
-             DATA = {}
-             for item in range(len(file_path)):
+            
+        for item in range(len(file_path)):
+            if os.path.splitext(file_path[item])[1] ==".csv":
+                if ".Sample.Raw" in file_path[item]:
+                    samplename=os.path.splitext(os.path.basename(file_path[item]))[0]
+                    with open(file_path[item], encoding='ISO-8859-1') as csvfile:
+                        readCSV = list(csv.reader(csvfile, delimiter=','))
+                        samplenames=readCSV[0]
+                        dataWaveInt=readCSV[2:]
+                        dataWave = []
+                        dataInt = []
+                        print(len(dataWaveInt))
+                        
+                        for item1 in range(len(dataWaveInt)):
+                            try:
+                                if dataWaveInt[item1]==[]:
+                                    break
+                            except:
+                                pass
+                            try:
+                                if dataWaveInt[item1][0]=='':
+                                    break
+                            except:
+                                pass
+                            dataWave.append(dataWaveInt[item1][0])
+                            dataInt.append(100*(1-pow(10,-float(dataWaveInt[item1][1]))))
+                        dataWave=list(map(float,dataWave))
+                        dataInt=list(map(float,dataInt))
+                        DATA[samplename+'_A']=[samplename,'A',dataWave,dataInt,dataInt,samplename+'_A',samplename+'_A','-',colorstylelist[len(DATA.keys())],int(2)]
+                        Patternsamplenameslist.append(samplename+'_A')
+                else:
+                    with open(file_path[item], encoding='ISO-8859-1') as csvfile:
+                        readCSV = list(csv.reader(csvfile, delimiter=','))
+                        
+                        samplenames=readCSV[0]
+                        dataWaveInt=readCSV[2:]
+                        print(len(dataWaveInt))
+                        for item in range(len(samplenames)):
+                            if samplenames[item]!='':
+                                dataWave = []
+                                dataInt = []
+                                discard=1
+    #                            print(samplenames[item])
+                                if '_TT' in samplenames[item]:
+                                    curvetype="TT"
+                                    samplenameshort = samplenames[item][:-3]
+                                elif '_TR' in samplenames[item]:
+                                    curvetype="TR"
+                                    samplenameshort = samplenames[item][:-3]
+                                elif "Baseline" in samplenames[item]:
+                                    discard=0
+                                if discard:    
+    #                                print(samplenames[item])
+                                    for item1 in range(len(dataWaveInt)):
+    #                                    print(dataWaveInt[item1])
+    #                                    if dataWaveInt[item1][0]=='':
+                                        try:
+                                            if dataWaveInt[item1]==[]:
+                                                break
+                                        except:
+                                            pass
+                                        try:
+                                            if dataWaveInt[item1][0]=='':
+                                                break
+                                        except:
+                                            pass
+    #                                    print(dataWaveInt[item1][item])
+                                        dataWave.append(dataWaveInt[item1][item])
+                                        dataInt.append(dataWaveInt[item1][item+1])
+                                    dataWave=list(map(float,dataWave))
+                                    dataInt=list(map(float,dataInt))
+                                    #[0 samplenameshort, 1 curvetype, 2 dataWave, 3 dataInt, 4 dataIntorig, 5 longnameorig, 6 longnamemod, 7 linestyle, 8 linecolor, 9 linewidth]
+                                    DATA[samplenames[item]] = [samplenameshort, curvetype, dataWave, dataInt,dataInt,samplenames[item],samplenames[item],'-',colorstylelist[len(DATA.keys())],int(2)]
+                                    Patternsamplenameslist.append(samplenames[item])
+    #                                print(samplenameshort)
+            elif os.path.splitext(file_path[item])[1] ==".txt": 
+             
                 file = open(file_path[item], encoding='ISO-8859-1')
                 filedat = file.readlines()
-                
-                samplename=filedat[0].split(' ')[0]
-                wave=[]
-                absorb=[]
-                for item1 in range(2,len(filedat)):
-                    wave.append(float(filedat[item1].split('\t')[0]))
-                    absorb.append(float(filedat[item1].split('\t')[1]))
-                
-                DATA[samplename+'_A']=[samplename,'A',wave,absorb,absorb,samplename+'_A',samplename+'_A','-',colorstylelist[len(DATA.keys())],int(2)]
-                Patternsamplenameslist.append(samplename+'_A')
-                 
+                OceanOpticsYesNo=0
+                for row in range(0, len(filedat)):
+                    if ">>>>>Begin Spectral Data<<<<<" in filedat[row]:
+                        OceanOpticsYesNo=row
+                        
+                if OceanOpticsYesNo:
+                    samplename=os.path.splitext(os.path.basename(file_path[item]))[0]
+                    wave=[]
+                    absorb=[]
+                    for item1 in range(OceanOpticsYesNo+1,len(filedat)):
+                        wave.append(float(filedat[item1].split('\t')[0]))
+                        absorb.append(1*(100-float(filedat[item1].split('\t')[1])))
+                    
+                    DATA[samplename+'_A']=[samplename,'A',wave,absorb,absorb,samplename+'_A',samplename+'_A','-',colorstylelist[len(DATA.keys())],int(2)]
+                    Patternsamplenameslist.append(samplename+'_A')
+                elif "Theta Device (for lockin measurement)" in filedat[0]: #
+                    samplename=os.path.splitext(os.path.basename(file_path[item]))[0]
+                    wave=[]
+                    absorb=[]
+                    for item1 in range(2,len(filedat)):
+                        wave.append(float(filedat[item1].split('\t')[0]))
+                        absorb.append(100*(1-float(filedat[item1].split('\t')[1])))
+                    
+                    DATA[samplename+'_A']=[samplename,'A',wave,absorb,absorb,samplename+'_A',samplename+'_A','-',colorstylelist[len(DATA.keys())],int(2)]
+                    Patternsamplenameslist.append(samplename+'_A')
+                else:
+                    samplename=filedat[0].split(' ')[0]
+                    wave=[]
+                    absorb=[]
+                    for item1 in range(2,len(filedat)):
+                        wave.append(float(filedat[item1].split('\t')[0]))
+                        absorb.append(float(filedat[item1].split('\t')[1]))
+                    
+                    DATA[samplename+'_A']=[samplename,'A',wave,absorb,absorb,samplename+'_A',samplename+'_A','-',colorstylelist[len(DATA.keys())],int(2)]
+                    Patternsamplenameslist.append(samplename+'_A')
+                     
                             
 #                    dataWave=list(map(float,dataWave[1:]))
 #                    dataInt=list(map(float,dataInt[1:]))
@@ -441,7 +499,11 @@ class SpectroApp(Toplevel):
 
 #DATA[samplenames[item]] = [samplenameshort, curvetype, dataWave, dataInt,dataInt,samplenames[item],samplenames[item],'-',colorstylelist[len(DATA.keys())],int(2)]
         
-        DATADICTtot = []
+        try:
+            DATADICTtot = self.DATADICTtot
+        except:
+#            print("exception")
+            DATADICTtot = []
         
         if os.path.splitext(file_path[0])[1] !=".txt": 
             DATA2 = copy.deepcopy(DATA)
@@ -468,7 +530,7 @@ class SpectroApp(Toplevel):
                     refl = [float(i) for i in datadict['TR']]
                     trans = [float(i) for i in datadict['TT']]
                     absorpt = [float(i) for i in [100 - (x + y) for x, y in zip(refl, trans)]]
-                    print(absorpt)
+#                    print(absorpt)
                     datadict['A']=absorpt
                     DATA2[name+'_A']=[name,'A',DATA[names[0]][2],absorpt,absorpt,name+'_A',name+'_A','-',colorstylelist[len(DATA2.keys())],int(2)]
                     Patternsamplenameslist.append(name+'_A')
@@ -765,7 +827,7 @@ class SpectroApp(Toplevel):
 #                sampletotake.append(DATAx[item][0])
                     
         self.reorderwindow = tk.Tk()
-        center(self.reorderwindow)
+#        center(self.reorderwindow)
         self.listbox = self.Drag_and_Drop_Listbox(self.reorderwindow)
         for name in takenforplot:
           self.listbox.insert(tk.END, name)
@@ -820,7 +882,7 @@ class SpectroApp(Toplevel):
         if self.CheckLegend.get()==1:
             self.window = tk.Toplevel()
             self.window.wm_title("Change Legends")
-            center(self.window)
+#            center(self.window)
             self.window.geometry("450x300")
             
             Button(self.window, text="Update",
@@ -895,7 +957,7 @@ class SpectroApp(Toplevel):
         self.AbsCoeffAndTaucWin = tk.Toplevel()
         self.AbsCoeffAndTaucWin.wm_title("AbsCoeff, Tauc plot")
         self.AbsCoeffAndTaucWin.geometry("280x250")
-        center(self.AbsCoeffAndTaucWin)
+#        center(self.AbsCoeffAndTaucWin)
         
         #names=self.SampleNames(self.DATA)
         

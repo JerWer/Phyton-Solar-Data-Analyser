@@ -993,7 +993,7 @@ class EQEApp(Toplevel):
 #                print('')
                 samplename=file_path[k].replace('\\','/') 
                 samplename=samplename.split('/')[-1].replace('-','_').split('.')[0]
-#                print(samplename)
+                print(samplename)
                 batchnumb=samplename.split('_')[0]
                 samplenumb=batchnumb
                 

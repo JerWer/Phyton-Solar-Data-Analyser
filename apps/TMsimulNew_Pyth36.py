@@ -18,7 +18,7 @@ still to be added:
     
 add current of absorber on graph after simulation
 
-
+- export layer stack with materials and thickness with every simulation
 """
 #%%
 import os

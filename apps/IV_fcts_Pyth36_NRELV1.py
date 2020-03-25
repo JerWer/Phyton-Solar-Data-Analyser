@@ -797,7 +797,7 @@ class IVApp(Toplevel):
                             print("NREL files")
                             self.getdatalistsfromNRELfiles(file_path)
                             finished=1
-                        elif filetype!='':
+                        elif 'Notes' in filerawdata[1]:
                             print("CUB files")
                             self.getdatalistsfromCUBfiles(file_path)
                             finished=1
@@ -3563,7 +3563,9 @@ class IVApp(Toplevel):
             # Extract Jsc by interpolating wrt V
             jv_interp_V = interp1d(jv[0], jv[1], bounds_error=False, fill_value=0.)
             Jsc = jv_interp_V(0.)
-            params['Jsc'] = abs(np.around(Jsc, decimals=3))
+            params['Jsc'] = abs(np.around(Jsc, decimals=8))
+#            print(Jsc)
+#            print(params['Jsc'])
         
             # Extract Voc by interpolating wrt J
             jv_interp_J = interp1d(jv[1], jv[0], bounds_error=False, fill_value=0.)

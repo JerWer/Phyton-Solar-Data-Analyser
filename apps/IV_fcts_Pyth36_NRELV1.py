@@ -7011,10 +7011,11 @@ class IVApp(Toplevel):
                                     IlluminationIntensity,
                                     commentJV,
                                     linktorawdata,
+                                    aftermpp,
                                     samples_id,
                                     batch_id,
                                     cells_id
-                                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                                    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                                 (    allDATA[i]["MeasDayTime"],
                                      allDATA[i]["Eff"],
                                      allDATA[i]["Voc"],
@@ -7040,6 +7041,7 @@ class IVApp(Toplevel):
                                      allDATA[i]["Illumination"],
                                      allDATA[i]["MeasComment"],
                                      allDATA[i]["filepath"],
+                                     allDATA[i]["aftermpp"],
                                      sample_id_exists,
                                      batch_id_exists,
                                      cellletter_id_exists))

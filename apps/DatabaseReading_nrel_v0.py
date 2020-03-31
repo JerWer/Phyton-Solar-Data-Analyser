@@ -14,7 +14,7 @@ TODOLIST
 - triplejct: top stack cannot appear in the respective tables as the tripletop_id cannot be spotted by the algo
 => info appears now only in the samples.samplefullstack column
 
-
+check jv and eqe, 1 added in each
 """
 
 

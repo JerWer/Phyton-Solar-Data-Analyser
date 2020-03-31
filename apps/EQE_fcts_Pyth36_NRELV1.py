@@ -278,9 +278,9 @@ class EQEApp(Toplevel):
         self.dropMenuFrame.pack(side=tk.LEFT,fill=tk.X,expand=1)
         
         
-#        self.EQEDBbut = Button(frame21315, text="SaveToDB",
-#                            command = self.WriteEQEtoDatabase)
-#        self.EQEDBbut.pack(side=tk.RIGHT)
+        self.EQEDBbut = Button(frame21315, text="SaveToDB",
+                            command = self.WriteEQEtoDatabase)
+        self.EQEDBbut.pack(side=tk.RIGHT)
         self.IQEbut = Button(frame21315, text="CalculateIQE",
                             command = self.CalculateIQE)
         self.IQEbut.pack(side=tk.LEFT)
@@ -994,8 +994,10 @@ class EQEApp(Toplevel):
                 samplename=file_path[k].replace('\\','/') 
                 samplename=samplename.split('/')[-1].replace('-','_').split('.')[0]
                 print(samplename)
+#                AllNames.append(samplename)
                 batchnumb=samplename.split('_')[0]
-                samplenumb=batchnumb
+                samplenumb=samplename.split('_')[1]
+                
                 
                 if 'header' not in samplename:
                     file = open(file_path[k], encoding='ISO-8859-1')
@@ -1513,12 +1515,14 @@ class EQEApp(Toplevel):
         
         print("EQEs...")
         
-        #only take samles highlighted in table (same process as for plotting)
         for i in range(len(DATA)):
             batchname=DATA[i]["batchnumb"]
+#            print(batchname)
             samplenumber=DATA[i]["samplenumb"]
+#            print(samplenumber)
             samplenumber = batchname+'_'+samplenumber
-            print(samplenumber)
+#            samplenumber = DATA[i]["Name"]
+#            print(samplenumber)
             
             self.theCursor.execute("SELECT id FROM batch WHERE batchname=?",(batchname,))
             batch_id_exists = self.theCursor.fetchone()[0]
@@ -1526,7 +1530,7 @@ class EQEApp(Toplevel):
             sample_id_exists = self.theCursor.fetchone()[0]
             self.theCursor.execute("SELECT id FROM cells WHERE samples_id=? AND batch_id=?",(sample_id_exists, batch_id_exists))            
             cellletter_id_exists = self.theCursor.fetchall()[0][0]
-            print(cellletter_id_exists)
+#            print(cellletter_id_exists)
 
             if batch_id_exists and sample_id_exists and cellletter_id_exists:
                 for j in range(len(DATA[i]['Jsc'])):
@@ -1546,14 +1550,15 @@ class EQEApp(Toplevel):
                                 filter,
                                 LEDbias,
                                 integJsc,
-                                Eg,
+                                Eg0,
+                                EgIP,
                                 EgTauc,
                                 EgLn,
                                 linktofile,
                                 samples_id,
                                 batch_id,
                                 cells_id
-                            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                             (DATA[i]['Name'],
                              uniquedatentry,
                              DATA[i]['comment'],
@@ -1562,7 +1567,8 @@ class EQEApp(Toplevel):
                              DATA[i]['filterbias'][j],
                              DATA[i]['ledbias'][j],
                              DATA[i]['Jsc'][j],
-                             DATA[i]['Eg'][j],
+                             DATA[i]['Eg0'][j],
+                             DATA[i]['EgIP'][j],
                              DATA[i]['EgTauc'][j][0],
                              DATA[i]['EgLn'][j],
                              DATA[i]['filepath'],

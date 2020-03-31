@@ -273,7 +273,7 @@ class DBapp(Toplevel):
         frame1=Frame(self.newbatchwindow,borderwidth=0,  bg="white")
         frame1.pack()
         tk.Label(frame1, text="General topic", font=("Verdana", 10)).pack(side="left",fill=tk.BOTH,expand=1)
-        self.topiclist=["lowgap", "widegap","tandem2T-allPk","tandem2T-PkSi"]
+        self.topiclist=["lowgap", "widegap"]#,"tandem2T-allPk"]#,"tandem2T-PkSi"]
         self.topicChoice=StringVar()
         self.topicChoice.set("lowgap")
         self.dropMenuFrame = OptionMenu(frame1, self.topicChoice, *self.topiclist, command=())
@@ -608,13 +608,13 @@ class DBapp(Toplevel):
         if self.topicChoice.get()=="tandem2T-PkSi":
             print("PkSi")
         elif self.topicChoice.get()=="tandem2T-allPk":
-            print("PkPk")
+            print("PkPk")            
         else:
             self.newsampleswindow = tk.Toplevel()
             center(self.newsampleswindow)
             self.newsampleswindow.protocol("WM_DELETE_WINDOW", self.backtomain)
             self.newsampleswindow.wm_geometry("650x500")
-            self.newsampleswindow.wm_title("New samples")
+            self.newsampleswindow.wm_title("New single samples")
             
             frame0=Frame(self.newsampleswindow,borderwidth=0,  bg="white")
             frame0.pack()
@@ -691,9 +691,9 @@ class DBapp(Toplevel):
             frame03.pack(side="left",fill=tk.BOTH,expand=1)
             tk.Label(frame03, text="Electrode on substrate", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
             tk.Label(frame03, text="P-contact", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
+            tk.Label(frame03, text="N-contact", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
             tk.Label(frame03, text="Absorber", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
             tk.Label(frame03, text="Dep. Method", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
-            tk.Label(frame03, text="N-contact", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
             tk.Label(frame03, text="Electrode on films", font=("Verdana", 10)).pack(fill=tk.BOTH,expand=1)
             
             frame04=Frame(frame0,borderwidth=0,  bg="white")
@@ -722,6 +722,18 @@ class DBapp(Toplevel):
             self.psideChoice.set(self.psidelist[0])
             self.dropMenuFramepside = OptionMenu(frame04, self.psideChoice, *self.psidelist, command=())
             self.dropMenuFramepside.pack(fill=tk.BOTH,expand=1)
+            #n-side
+            self.nsidelist=[]
+            result = self.theCursor.execute("SELECT contactstackN FROM Ncontact")
+            for row in result:
+                self.nsidelist.append(row[0])
+            if self.nsidelist==[]:
+                self.nsidelist=[""]
+            self.nsidelist=tuple(self.nsidelist)
+            self.nsideChoice=StringVar()
+            self.nsideChoice.set(self.nsidelist[0])
+            self.dropMenuFramenside = OptionMenu(frame04, self.nsideChoice, *self.nsidelist, command=())
+            self.dropMenuFramenside.pack(fill=tk.BOTH,expand=1)  
             #absorber
             self.absorberlist=[]
             result = self.theCursor.execute("SELECT absorbercomposition FROM PkAbsorber")
@@ -745,18 +757,6 @@ class DBapp(Toplevel):
             self.absorberMethodChoice.set(self.absorberMethodlist[0])
             self.dropMenuFrameabsorberMethod = OptionMenu(frame04, self.absorberMethodChoice, *self.absorberMethodlist, command=())
             self.dropMenuFrameabsorberMethod.pack(fill=tk.BOTH,expand=1)
-            #n-side
-            self.nsidelist=[]
-            result = self.theCursor.execute("SELECT contactstackN FROM Ncontact")
-            for row in result:
-                self.nsidelist.append(row[0])
-            if self.nsidelist==[]:
-                self.nsidelist=[""]
-            self.nsidelist=tuple(self.nsidelist)
-            self.nsideChoice=StringVar()
-            self.nsideChoice.set(self.nsidelist[0])
-            self.dropMenuFramenside = OptionMenu(frame04, self.nsideChoice, *self.nsidelist, command=())
-            self.dropMenuFramenside.pack(fill=tk.BOTH,expand=1)  
             #electrode
             self.electrodelist=[]
             result = self.theCursor.execute("SELECT electrodestack FROM electrode")
@@ -778,11 +778,11 @@ class DBapp(Toplevel):
             Button(frame05, text="Add",
                    command = self.addnewPcontact).pack(fill=tk.BOTH,expand=1)
             Button(frame05, text="Add",
+                   command = self.addnewNcontact).pack(fill=tk.BOTH,expand=1)
+            Button(frame05, text="Add",
                    command = self.addnewabsorber).pack(fill=tk.BOTH,expand=1)
             Button(frame05, text="Add",
                    command = self.addnewabsorberMethod).pack(fill=tk.BOTH,expand=1)
-            Button(frame05, text="Add",
-                   command = self.addnewNcontact).pack(fill=tk.BOTH,expand=1)
             Button(frame05, text="Add",
                    command = self.addnewelectrode).pack(fill=tk.BOTH,expand=1)
             

@@ -771,7 +771,7 @@ class IVApp(Toplevel):
                 filetypes=[os.path.splitext(item)[1] for item in file_path]
 #                print(list(set(filetypes)))
                 if len(list(set(filetypes)))==1 or (''in list(set(filetypes)) and '.txt'in list(set(filetypes))) or (".itx" in list(set(filetypes)) and '.txt'in list(set(filetypes))):
-                    directory = str(Path(file_path[0]).parent.parent)+'\\resultFilesIV'
+                    directory = os.path.join(str(Path(file_path[0]).parent.parent),'resultFilesIV')
                     if not os.path.exists(directory):
                         os.makedirs(directory)
                         os.chdir(directory)
@@ -3595,23 +3595,8 @@ class IVApp(Toplevel):
             params['FF'] = abs(100*np.around(pmax/(Jsc*Voc), decimals=4))
             
             # Calculate Rsc&Roc 
-            x= [x0 for x0,y0 in sorted(zip(jv[0],jv[1]))]
-            y= [0.001*y0 for x0,y0 in sorted(zip(jv[0],jv[1]))]
-    
-#            spl = UnivariateSpline(x,y, s=0)
-    #        plt.plot(x, spl(x))
-    #        plt.plot(x,y,'ro')
-    #        plt.show()
-    #        splder = spl.derivative(n=1)
-    #        plt.plot(x,1/splder(x))
-    #        plt.show()
-    #        params['Roc']=1./splder(params['Voc'])
-    #        params['Rsc']=1./splder(0.)
-            
-            
-    #        print('Rsc')
-    #        print(params['Rsc'])
-    #        print(params['Roc'])
+            x= [x0 for x0,y0 in sorted(zip(params['Voltage'],params['CurrentDensity']))]
+            y= [0.001*y0 for x0,y0 in sorted(zip(params['Voltage'],params['CurrentDensity']))]
             
             xSC=[]
             ySC=[]
@@ -3630,15 +3615,15 @@ class IVApp(Toplevel):
                     ySC.append(y[i+1])
                     ySC.append(y[i+2])
                     break
-    #        print(xSC)
-    #        print(ySC)
-    #        plt.plot(xSC,ySC,'bo')
+
             xSC=np.array(xSC)
             ySC=np.array(ySC)    
-                
-    #        slope = stats.linregress(xSC,ySC)   
+                  
+            xy=[xi*yi for xi, yi in zip(xSC,ySC)]
+            xSC2=[xi**2 for xi in xSC]
             
-            params['Rsc'] =abs( 1/(((mean(xSC)*mean(ySC)) - mean(xSC*ySC)) / ((mean(xSC)**2) - mean(xSC**2))))    
+            params['Rsc'] =abs( 1/(((sum(xSC)*sum(ySC)) - len(xSC)*sum(xy)) / ((sum(xSC)*sum(xSC)) - len(xSC)*sum(xSC2))))  
+            # print(AllDATA[sample]['Rsc'])
             
             if params['Jsc']>1:
                 xSC=[]
@@ -3655,19 +3640,82 @@ class IVApp(Toplevel):
                         ySC.append(y[i])
                         ySC.append(y[i+1])
                         break
-#                plt.plot(xSC,ySC,'bo')
+    #                plt.plot(xSC,ySC,'bo')
                 xSC=np.array(xSC)
-                ySC=np.array(ySC)      
+                ySC=np.array(ySC)
                 
-                params['Roc'] =abs( 1/(((mean(xSC)*mean(ySC)) - mean(xSC*ySC)) / ((mean(xSC)**2) - mean(xSC**2))))
+                xy=[xi*yi for xi, yi in zip(xSC,ySC)]
+                xSC2=[xi**2 for xi in xSC]
+                params['Roc'] =abs( 1/(((sum(xSC)*sum(ySC)) - len(xSC)*sum(xy)) / ((sum(xSC)*sum(xSC)) - len(xSC)*sum(xSC2))))
             else:
                 xSC=x[-3:]
                 ySC=y[-3:]
-#                plt.plot(xSC,ySC,'bo')
                 xSC=np.array(xSC)
                 ySC=np.array(ySC)      
+                xy=[xi*yi for xi, yi in zip(xSC,ySC)]
+                xSC2=[xi**2 for xi in xSC]
                 
-                params['Roc'] = abs(1/(((mean(xSC)*mean(ySC)) - mean(xSC*ySC)) / ((mean(xSC)**2) - mean(xSC**2))) )   
+                params['Roc'] = abs( 1/(((sum(xSC)*sum(ySC)) - len(xSC)*sum(xy)) / ((sum(xSC)*sum(xSC)) - len(xSC)*sum(xSC2))))   
+            # print(AllDATA[sample]['Roc'])
+#             x= [x0 for x0,y0 in sorted(zip(jv[0],jv[1]))]
+#             y= [0.001*y0 for x0,y0 in sorted(zip(jv[0],jv[1]))]
+    
+
+#             xSC=[]
+#             ySC=[]
+#             for i in range(len(x)):
+#                 if x[i]>=0:
+#                     xSC.append(x[i-3])
+#                     xSC.append(x[i-2])
+#                     xSC.append(x[i-1])
+#                     xSC.append(x[i])
+#                     xSC.append(x[i+1])
+#                     xSC.append(x[i+2])
+#                     ySC.append(y[i-3])
+#                     ySC.append(y[i-2])
+#                     ySC.append(y[i-2])
+#                     ySC.append(y[i])
+#                     ySC.append(y[i+1])
+#                     ySC.append(y[i+2])
+#                     break
+#     #        print(xSC)
+#     #        print(ySC)
+#     #        plt.plot(xSC,ySC,'bo')
+#             xSC=np.array(xSC)
+#             ySC=np.array(ySC)    
+                
+#     #        slope = stats.linregress(xSC,ySC)   
+            
+#             params['Rsc'] =abs( 1/(((mean(xSC)*mean(ySC)) - mean(xSC*ySC)) / ((mean(xSC)**2) - mean(xSC**2))))    
+            
+#             if params['Jsc']>1:
+#                 xSC=[]
+#                 ySC=[]
+#                 for i in range(len(x)):
+#                     if x[i]>=params['Voc']:
+#                         xSC.append(x[i-2])
+#                         xSC.append(x[i-1])
+#                         xSC.append(x[i])
+#                         xSC.append(x[i+1])
+                        
+#                         ySC.append(y[i-2])
+#                         ySC.append(y[i-1])
+#                         ySC.append(y[i])
+#                         ySC.append(y[i+1])
+#                         break
+# #                plt.plot(xSC,ySC,'bo')
+#                 xSC=np.array(xSC)
+#                 ySC=np.array(ySC)      
+                
+#                 params['Roc'] =abs( 1/(((mean(xSC)*mean(ySC)) - mean(xSC*ySC)) / ((mean(xSC)**2) - mean(xSC**2))))
+#             else:
+#                 xSC=x[-3:]
+#                 ySC=y[-3:]
+# #                plt.plot(xSC,ySC,'bo')
+#                 xSC=np.array(xSC)
+#                 ySC=np.array(ySC)      
+                
+#                 params['Roc'] = abs(1/(((mean(xSC)*mean(ySC)) - mean(xSC*ySC)) / ((mean(xSC)**2) - mean(xSC**2))) )   
             
             
             

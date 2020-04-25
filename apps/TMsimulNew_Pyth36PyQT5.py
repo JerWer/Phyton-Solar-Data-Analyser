@@ -4,43 +4,36 @@
 
 based on transfer matrix python package tmm, written by Steven Byrnes, http://sjbyrnes.com
 main code to generate the matrices and calculate the currents written by Gabriel Christmann
-readaptation and completion by J.Werner, to tkinter GUI, november 2017
+readaptation and completion by Jérémie Werner (EPFL PVlab 2014-2018, CU Boulder 2019-2020), 
+latest update: April 2020
 
 """
 
-"""
-still to be added:
-    - textu
-    - generation profile in device
-    - refractive index in device for specific wavelength
-    - E field in device
-    - modifiable IQE
-    
-add current of absorber on graph after simulation
-
-- export layer stack with materials and thickness with every simulation
-"""
 #%%
 import os
-#from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from matplotlib.backends.backend_tkagg import NavigationToolbar2Tk as NavigationToolbar2TkAgg
+import sys
+from pathlib import Path
+import matplotlib
 import matplotlib.pyplot as plt
-from PIL import ImageTk
-import PIL.Image
-import tkinter as tk
-from tkinter import ttk, Entry,messagebox, Button, Checkbutton, IntVar, Toplevel, OptionMenu, Frame, StringVar, Scrollbar, Listbox
-from tkinter import filedialog
-from scipy.interpolate import interp1d, UnivariateSpline
-from scipy import integrate, stats
+matplotlib.use("Qt5Agg")
+
+from PyQt5 import QtCore, QtWidgets
+from PyQt5.QtWidgets import QFileDialog, QMessageBox, QAction
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.figure import Figure
+
+from scipy.interpolate import interp1d
+from scipy import integrate
 import numpy as np
-from tkinter import *
-import copy
+
 import csv
+
 import tmm.tmm_core as tm
 import pickle
 import math
 
+from TMsimulGUI import Ui_TransferMatrixModeling
 
 admittance0=2.6544E-3
 echarge = 1.60218e-19
@@ -583,90 +576,104 @@ numberofLayer = 0
 
 MatThickActList=[] #list of list with [Material, thickness, Active?, Incoherent?] info in order of stack
 
-#%%
-
-def center(win):
-    win.update_idletasks()
-    width = win.winfo_width()
-    frm_width = win.winfo_rootx() - win.winfo_x()
-    win_width = width + 2 * frm_width
-    height = win.winfo_height()
-    titlebar_height = win.winfo_rooty() - win.winfo_y()
-    win_height = height + titlebar_height + frm_width
-    x = win.winfo_screenwidth() // 2 - win_width // 2
-    y = win.winfo_screenheight() // 2 - win_height // 2
-    win.geometry('{}x{}+{}+{}'.format(width, height, x, y))
-    win.deiconify()
-    
-
-class PlotNKdat(Toplevel):
-
-    def __init__(self, *args, **kwargs):
-        
-        Toplevel.__init__(self, *args, **kwargs)
-        Toplevel.wm_title(self, "PlotNKdat")
-        Toplevel.config(self,background="white")
-        self.wm_geometry("580x350")
-        center(self)
-        self.initUI()
-
-
-    def initUI(self):
+#%%#######################
+class Help(QtWidgets.QDialog):
+    def __init__(self):
+        super().__init__()
         global matnamelist
-#        print(matnamelist)
-#        self.master.withdraw()
-        self.protocol("WM_DELETE_WINDOW", self.on_closing)
         
-        self.canvas0 = tk.Canvas(self, borderwidth=0, background="#ffffff")
-        self.superframe=Frame(self.canvas0,background="#ffffff")
-        self.canvas0.pack(side="left", fill="both", expand=True)
+        self.resize(1000, 500)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.sizePolicy().hasHeightForWidth())
+        self.setSizePolicy(sizePolicy)
+        self.setMinimumSize(QtCore.QSize(900, 200))
+        self.setWindowTitle("Information")
+        self.gridLayout = QtWidgets.QGridLayout(self)
+        self.label = QtWidgets.QLabel()
+        self.label.setText("""
+More info about transfer matrix modeling: https://en.wikipedia.org/wiki/Transfer-matrix_method_(optics)
+                             
+##################
+based on transfer matrix python package tmm, written by Steven Byrnes, http://sjbyrnes.com
+main code to generate the matrices and calculate the currents written by Gabriel Christmann (PV-Center, CSEM)
+readaptation and completion by Jérémie Werner (EPFL PVlab 2014-2018, CU Boulder 2019-2020), 
+latest update: April 2020
+                              
+##################
+IQE=100%
+the light is considered entering/exiting from/to an incoherent medium with refractive index of 1 (Air), and perpendicular to the device plane.
+all layers are considered flat.""")
+
+        self.gridLayout.addWidget(self.label)
         
-        label = tk.Label(self.canvas0, text="n&k data checking", font=LARGE_FONT, bg="black",fg="white")
-        label.pack(fill=tk.X,expand=0)
+class Nkplotwin(QtWidgets.QDialog):
+    def __init__(self):
+        super().__init__()
+        global matnamelist
         
-        self.frame1=Frame(self.canvas0,borderwidth=0,  bg="white")
-        self.frame1.pack(side="left", fill=tk.BOTH,expand=1)
-        self.frame11=Frame(self.frame1,borderwidth=0,  bg="white")
-        self.frame11.pack(side="left", fill=tk.BOTH,expand=1)
-#        self.frame1.bind("<Configure>", self.onFrameConfigure)
-        self.fig1 = plt.figure()
-        canvas = FigureCanvasTkAgg(self.fig1, self.frame11)
-        canvas.get_tk_widget().pack(fill=tk.BOTH,expand=1)
-        self.nkgraph = plt.subplot2grid((1, 5), (0, 0), colspan=5)
-#        self.nkgraph=plt.subplot2grid()
-        self.toolbar = NavigationToolbar2TkAgg(canvas, self.frame11)
-        self.toolbar.update()
-        canvas._tkcanvas.pack(fill = tk.BOTH, expand = 1) 
+        self.resize(831, 556)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.sizePolicy().hasHeightForWidth())
+        self.setSizePolicy(sizePolicy)
+        self.setMinimumSize(QtCore.QSize(831, 556))
+        self.setWindowTitle("Plot NK data")
         
+        self.gridLayout = QtWidgets.QGridLayout(self)
+        self.gridLayout.setObjectName("gridLayout")
+        self.listWidget_nkplot = QtWidgets.QListWidget(self)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.listWidget_nkplot.sizePolicy().hasHeightForWidth())
+        self.listWidget_nkplot.setSizePolicy(sizePolicy)
+        self.listWidget_nkplot.setObjectName("listWidget_nkplot")
+        self.gridLayout.addWidget(self.listWidget_nkplot, 0, 1, 1, 1)
+        self.frame = QtWidgets.QFrame(self)
+        self.frame.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.frame.setFrameShadow(QtWidgets.QFrame.Raised)
+        self.frame.setObjectName("frame")
+        self.gridLayout_2 = QtWidgets.QGridLayout(self.frame)
+        self.gridLayout_2.setContentsMargins(0, 0, 0, 0)
+        self.gridLayout_2.setObjectName("gridLayout_2")
+        self.widget_nkplot = QtWidgets.QWidget(self.frame)
+        self.widget_nkplot.setObjectName("widget_nkplot")
+        self.gridLayout_nkplot = QtWidgets.QGridLayout(self.widget_nkplot)
+        self.gridLayout_nkplot.setContentsMargins(0, 0, 0, 0)
+        self.gridLayout_nkplot.setObjectName("gridLayout_nkplot")
+        self.gridLayout_2.addWidget(self.widget_nkplot, 0, 0, 1, 1)
+        self.gridLayout.addWidget(self.frame, 0, 0, 1, 1)
         
-        self.frame2=Frame(self.canvas0,borderwidth=0,  bg="white")
-        self.frame2.pack(side="right", fill=tk.BOTH,expand=0)
+        self.fig1 = Figure()
+        self.NKgraph = self.fig1.add_subplot(111)
+        self.addmpl(self.fig1,self.gridLayout_nkplot, self.widget_nkplot)
         
-        valores = StringVar()
-        self.listboxsamples=Listbox(self.frame2,listvariable=valores, selectmode=tk.SINGLE,width=20, height=5)
-        self.listboxsamples.bind('<<ListboxSelect>>', self.updateNkgraph)
-        self.listboxsamples.pack(side="left", fill=tk.BOTH, expand=1)
-        scrollbar = tk.Scrollbar(self.frame2, orient="vertical")
-        scrollbar.config(command=self.listboxsamples.yview)
-        scrollbar.pack(side="right", fill="y")
-        self.listboxsamples.config(yscrollcommand=scrollbar.set)
+        self.listWidget_nkplot.itemClicked.connect(self.updateNkgraph)
+        
         
         for item in matnamelist:
-            self.listboxsamples.insert(tk.END,item)
+            self.listWidget_nkplot.addItem(item)
+            
         
-    def on_closing(self):
         
-        if messagebox.askokcancel("Quit", "Do you want to quit?"):
-            plt.close()
-            self.destroy()
-
+    def addmpl(self, fig, whereLayout, whereWidget):
+        self.canvas = FigureCanvas(fig)
+        whereLayout.addWidget(self.canvas)
+        self.canvas.draw()
+        self.toolbar = NavigationToolbar(self.canvas, 
+                whereWidget, coordinates=True)
+        whereLayout.addWidget(self.toolbar)   
+        
     def updateNkgraph(self,a):
         global matnamelist, material_list_dat
-
+        
         try:
-            w=material_list_dat[matnamelist[self.listboxsamples.curselection()[0]]][0]
-            n=material_list_dat[matnamelist[self.listboxsamples.curselection()[0]]][2]
-            k=material_list_dat[matnamelist[self.listboxsamples.curselection()[0]]][3]
+            w=material_list_dat[matnamelist[self.listWidget_nkplot.currentRow()]][0]
+            n=material_list_dat[matnamelist[self.listWidget_nkplot.currentRow()]][2]
+            k=material_list_dat[matnamelist[self.listWidget_nkplot.currentRow()]][3]
         except ValueError:
             print("valueerror")
             w=[]
@@ -678,456 +685,317 @@ class PlotNKdat(Toplevel):
             w=[]
             n=[]
             k=[]
-        plt.close()
-        self.frame11.destroy()
-        self.frame11=Frame(self.frame1,borderwidth=0,  bg="white")
-        self.frame11.pack(side="left", fill=tk.BOTH,expand=1)
-        self.fig1 = plt.figure()
-        canvas = FigureCanvasTkAgg(self.fig1, self.frame11)
-        canvas.get_tk_widget().pack(fill=tk.BOTH,expand=1)
-        self.nkgraph = plt.subplot2grid((1, 5), (0, 0), colspan=5)
-        self.toolbar = NavigationToolbar2TkAgg(canvas, self.frame11)
-        self.toolbar.update()
-        canvas._tkcanvas.pack(fill = tk.BOTH, expand = 1) 
+
+        self.widget_nkplot.close()
+        self.widget_nkplot = QtWidgets.QWidget(self.frame)
+        self.widget_nkplot.setObjectName("widget_nkplot")
+        self.gridLayout_nkplot = QtWidgets.QGridLayout(self.widget_nkplot)
+        self.gridLayout_nkplot.setContentsMargins(0, 0, 0, 0)
+        self.gridLayout_nkplot.setObjectName("gridLayout_nkplot")
+        self.gridLayout_2.addWidget(self.widget_nkplot, 0, 0, 1, 1)
+        self.gridLayout.addWidget(self.frame, 0, 0, 1, 1)
+        self.fig1 = Figure()
+        self.NKgraph = self.fig1.add_subplot(111)
+        self.addmpl(self.fig1,self.gridLayout_nkplot, self.widget_nkplot)
         
-        self.nkgraph.set_xlabel("Wavelength (nm)")
-        self.nkgraph.set_ylabel("n")
-        self.nkgraph.plot(w,n,'r')
-        self.nkgraph.tick_params(axis='y', labelcolor='r')
         
-        self.nkgraph2 = self.nkgraph.twinx()
+        self.NKgraph.set_xlabel("Wavelength (nm)")
+        self.NKgraph.set_ylabel("n")
+        self.NKgraph.plot(w,n,'r')
+        self.NKgraph.tick_params(axis='y', labelcolor='r')
         
-        self.nkgraph2.set_ylabel("k")
-        self.nkgraph2.plot(w,k,'b')
-        self.nkgraph2.tick_params(axis='y', labelcolor='b')
+        self.NKgraph2 = self.NKgraph.twinx()
+        
+        self.NKgraph2.set_ylabel("k")
+        self.NKgraph2.plot(w,k,'b')
+        self.NKgraph2.tick_params(axis='y', labelcolor='b')
         
         self.fig1.tight_layout()
-        plt.gcf().canvas.draw()
-        
+        self.fig1.canvas.draw() 
 
-#%%
+reordered=0
+class reorderwin(QtWidgets.QDialog):
+    def __init__(self):
+        super().__init__()
+        global MatThickActList, numberofLayer
+        
+        self.resize(300, 300)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.sizePolicy().hasHeightForWidth())
+        self.setSizePolicy(sizePolicy)
+        self.setMinimumSize(QtCore.QSize(200, 200))
+        self.setWindowTitle("Reorder stack by drag and drop")
+        
+        self.widget_layout = QtWidgets.QVBoxLayout()
 
-###############################################################################             
-    
-class TMSimApp(Toplevel):
+        # Create ListWidget and add 10 items to move around.
+        self.list_widget = QtWidgets.QListWidget()
+        for i in range(numberofLayer):
+            self.list_widget.addItem(str(i)+"_"+MatThickActList[i][1])
 
-    def __init__(self, *args, **kwargs):
-        
-        Toplevel.__init__(self, *args, **kwargs)
-        Toplevel.wm_title(self, "TMSim")
-        Toplevel.config(self,background="white")
-        self.wm_geometry("390x500")
-        #self.wm_resizable(False,True)
-        center(self)
-        self.initUI()
+        # Enable drag & drop ordering of items.
+        self.list_widget.setDragDropMode(QtWidgets.QAbstractItemView.InternalMove)
 
-    def initUI(self):
-        global stackNameList
-        self.master.withdraw()
-        self.protocol("WM_DELETE_WINDOW", self.on_closing)
-        
-        label = tk.Label(self, text="Transfer Matrix Optical Modeling", font=LARGE_FONT, bg="black",fg="white")
-        label.pack(fill=tk.X,expand=0)
+        self.pushButton_reorder = QtWidgets.QPushButton("Validate", self)
+        self.widget_layout.addWidget(self.pushButton_reorder)
+        self.pushButton_reorder.clicked.connect(self.validate)
 
-        
-        frame2=Frame(self,borderwidth=0,  bg="white")
-        frame2.pack(fill=tk.X,expand=0)
-        tk.Label(frame2, text="StartWave",font=SMALL_FONT,  bg="white").pack(side=tk.LEFT,expand=1)
-        self.StartWave = tk.DoubleVar()
-        Entry(frame2, textvariable=self.StartWave,width=5).pack(side=tk.LEFT,expand=1)
-        self.StartWave.set(300)
-        tk.Label(frame2, text="EndWave",font=SMALL_FONT,  bg="white").pack(side=tk.LEFT,expand=1) 
-        self.EndWave = tk.DoubleVar()
-        Entry(frame2, textvariable=self.EndWave,width=5).pack(side=tk.LEFT,expand=1) 
-        self.EndWave.set(1100)
-        
-#        self.frame3=Frame(self,borderwidth=0,  bg="white")
-#        self.frame3.pack(fill=tk.X,expand=0)           
-#        self.StackChoice=StringVar()
-#        tk.Label(self.frame3, text=self.StackChoice.get(),font=SMALL_FONT,  bg="white").pack(side=tk.LEFT,expand=1)      
-#        self.dropMenuStack = OptionMenu(self.frame3, self.StackChoice, *stackNameList, command=())
-#        self.dropMenuStack.pack(side=tk.LEFT,expand=1) 
-        self.LoadStack = Button(frame2, text="Load CellStack", command = self.loadstack)
-        self.LoadStack.pack(side=tk.RIGHT,expand=1) 
-        
-        #tk.Label(self, text=" ",font=SMALL_FONT,  bg="white").grid(row=7,column=0)
-        
-        frame4=Frame(self,borderwidth=0,  bg="white")
-        frame4.pack(fill=tk.X,expand=0) 
-        self.SaveStack = Button(frame4, text="Save CellStack", command = self.savestack)
-        self.SaveStack.pack(side=tk.LEFT,expand=1) 
-        self.AddLayer = Button(frame4, text="Add Layer", command = self.AddLayer)
-        self.AddLayer.pack(side=tk.LEFT,expand=1) 
-        self.Reorder = Button(frame4, text="Reorder", command = self.reorder)
-        self.Reorder.pack(side=tk.LEFT,expand=1)
-        self.deletelayer = Button(frame4, text="DeleteLayer", command = self.deletelayer)
-        self.deletelayer.pack(side=tk.LEFT,expand=1)
-        self.checknk = Button(frame4, text="check n&k", command = PlotNKdat)
-        self.checknk.pack(side=tk.LEFT,expand=1)
-        
-        
-        frame5=Frame(self,borderwidth=0,  bg="white")
-        frame5.pack(fill=tk.X,expand=0) 
-        self.StartSim = Button(frame5, text="Start simulation",width=15, command = self.simulate)
-        self.StartSim.pack(side=tk.LEFT,expand=1) 
-             
-        self.check1D = IntVar()
-        Check1Dvar=Checkbutton(frame5,text="1D",variable=self.check1D, 
-                           onvalue=1,offvalue=0,height=1, width=1, command = (),fg='black',background='white')
-        Check1Dvar.pack(side=tk.LEFT,expand=1)
-        self.check1D.set(0)
-        
-        self.check2D = IntVar()
-        Check2Dvar=Checkbutton(frame5,text="2D",variable=self.check2D, 
-                           onvalue=1,offvalue=0,height=1, width=1, command = (),fg='black',background='white')
-        Check2Dvar.pack(side=tk.LEFT,expand=1)
-        self.check2D.set(0)
-        
-        image = PIL.Image.open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),'images',"soleil.jpg"))
-        image=image.resize((50,50),PIL.Image.ANTIALIAS)
-        sunpic=ImageTk.PhotoImage(image)
-        sun_label = tk.Label(frame5, image=sunpic)
-        sun_label.image=sunpic
-        sun_label.pack(side=tk.LEFT,expand=1)
-        
-        self.Help = Button(frame5, text="Help/Info/Credits",width=15, command = self.Help)
-        self.Help.pack(side=tk.RIGHT,expand=1) 
-        
-        
-        
-        
-        self.canvas0 = tk.Canvas(self, borderwidth=0, background="#ffffff")
-        self.frame6 = tk.Frame(self.canvas0, background="#ffffff")
-        self.vsb = tk.Scrollbar(self, orient="vertical", command=self.canvas0.yview)
-        self.canvas0.configure(yscrollcommand=self.vsb.set)
-
-        self.vsb.pack(side="right", fill="y")
-        self.canvas0.pack(side="left", fill="both", expand=True)
-        self.canvas0.create_window((4,4), window=self.frame6, anchor="nw", 
-                                  tags="self.frame6")
-        self.frame6.bind("<Configure>", self.onFrameConfigure)
-
-        self.populate()
-        
-    def on_closing(self):
-        
-        if messagebox.askokcancel("Quit", "Do you want to quit?"):
-            try:
-                self.plotwin.destroy()
-            except:
-                pass
-            self.destroy()
-            self.master.deiconify()
-            
-        
-    def onFrameConfigure(self, event):
-        try:
-            self.canvas0.configure(scrollregion=self.canvas0.bbox("all"))
-            self.canvas1.configure(scrollregion=self.canvas1.bbox("all"))
-        except:
-            pass
-        
-    def populate(self):
-        global numberofLayer
-        global matnamelist
-        global MatThickActList
-        
-        matlist=copy.deepcopy(MatThickActList)
-        #print(matlist[0][0])
-            
-        for item in range(numberofLayer):
-            label=tk.Label(self.frame6,text=item+1,fg='black',background='white')
-            label.grid(row=item+1,column=0, columnspan=1) 
-
-            #the material of the layer
-            MatThickActList[item][0]=StringVar()
-            MatThickActList[item][0].set(matlist[item][0]) # default choice
-            
-            w = ttk.Combobox(self.frame6, textvariable=MatThickActList[item][0], values=matnamelist)            
-            w.grid(row=item+1, column=2, columnspan=4)
-            
-            #the thickness of the layer
-            textinit = tk.IntVar()
-            MatThickActList[item][1]=Entry(self.frame6,textvariable=textinit,width=6)
-            textinit.set(matlist[item][1])
-            MatThickActList[item][1].grid(row=item+1,column=6, columnspan=4)
-
-            #active or not? active=photoactive
-            MatThickActList[item][2] = IntVar()
-            ActiveCheck=Checkbutton(self.frame6,text="active?",variable=MatThickActList[item][2], 
-                               onvalue=1,offvalue=0,height=1, width=5, command = (),fg='black',background='white')
-            ActiveCheck.grid(row=item+1,column=12, columnspan=2)
-            MatThickActList[item][2].set(matlist[item][2])
-            
-            #coherent=unchecked or incoherent=checked
-            MatThickActList[item][3] = IntVar()
-            CoherCheck=Checkbutton(self.frame6,text="incoherent?",variable=MatThickActList[item][3], 
-                               onvalue=1,offvalue=0,height=1, width=8, command = (),fg='black',background='white')
-            CoherCheck.grid(row=item+1,column=15, columnspan=4)
-            MatThickActList[item][3].set(matlist[item][3])
-            
-            
-    def AddLayer(self):
-        global numberofLayer
-        global MatThickActList
-        
-        numberofLayer += 1
-        
-        MatThickActList.append(['Air',0,0,1]) #material,thickness,active,conherence (coherent=0;incoherent=1=checked)
-        
-        self.updatelist()
-    
-    
-    class Drag_and_Drop_Listbox(tk.Listbox):
-        #A tk listbox with drag'n'drop reordering of entries.
-        def __init__(self, master, **kw):
-            #kw['selectmode'] = tk.MULTIPLE
-            kw['selectmode'] = tk.SINGLE
-            kw['activestyle'] = 'none'
-            tk.Listbox.__init__(self, master, kw)
-            self.bind('<Button-1>', self.getState, add='+')
-            self.bind('<Button-1>', self.setCurrent, add='+')
-            self.bind('<B1-Motion>', self.shiftSelection)
-            self.curIndex = None
-            self.curState = None
-        def setCurrent(self, event):
-            ''' gets the current index of the clicked item in the listbox '''
-            self.curIndex = self.nearest(event.y)
-        def getState(self, event):
-            ''' checks if the clicked item in listbox is selected '''
-            #i = self.nearest(event.y)
-            #self.curState = self.selection_includes(i)
-            self.curState = 1
-        def shiftSelection(self, event):
-            ''' shifts item up or down in listbox '''
-            i = self.nearest(event.y)
-            if self.curState == 1:
-              self.selection_set(self.curIndex)
-            else:
-              self.selection_clear(self.curIndex)
-            if i < self.curIndex:
-              # Moves up
-              x = self.get(i)
-              selected = self.selection_includes(i)
-              self.delete(i)
-              self.insert(i+1, x)
-              if selected:
-                self.selection_set(i+1)
-              self.curIndex = i
-            elif i > self.curIndex:
-              # Moves down
-              x = self.get(i)
-              selected = self.selection_includes(i)
-              self.delete(i)
-              self.insert(i-1, x)
-              if selected:
-                self.selection_set(i-1)
-              self.curIndex = i
-              
-
-    def reorder(self): 
-        global MatThickActList
-        
-        for i in range(len(MatThickActList)):
-            if type(MatThickActList[i][0])!=str:
-                MatThickActList[i][0]=MatThickActList[i][0].get()
-            if type(MatThickActList[i][1])!=int:
-                MatThickActList[i][1]=int(MatThickActList[i][1].get())
-            if type(MatThickActList[i][2])!=int:
-                MatThickActList[i][2]=int(MatThickActList[i][2].get())
-            if type(MatThickActList[i][3])!=int:
-                MatThickActList[i][3]=int(MatThickActList[i][3].get())
-        
-        
-        self.listforordering=[]
-        for i in range(len(MatThickActList)):
-            self.listforordering.append(str(i)+"_"+MatThickActList[i][0])
-        
-        self.reorderwindow = tk.Tk()
-        self.reorderwindow.wm_title("Drag&Drop to reorder")
-        self.reorderwindow.geometry("250x200")
-        center(self.reorderwindow)
-        self.listbox = self.Drag_and_Drop_Listbox(self.reorderwindow)
-        for name in self.listforordering:
-          self.listbox.insert(tk.END, name)
-          self.listbox.selection_set(0)
-        self.listbox.pack(fill=tk.BOTH, expand=True)
-        scrollbar = tk.Scrollbar(self.listbox, orient="vertical")
-        scrollbar.config(command=self.listbox.yview)
-        scrollbar.pack(side="right", fill="y")
-        
-        self.listbox.config(yscrollcommand=scrollbar.set)
-        
-        printbut = tk.Button(self.reorderwindow, text="reorder",
-                                    command = self.updateafterordering)
-        printbut.pack()
-        self.reorderwindow.mainloop()    
-    
-    def updateafterordering(self):
-        global MatThickActList
+        self.widget_layout.addWidget(self.list_widget)
+        self.setLayout(self.widget_layout)
+    def validate(self):
+        global MatThickActList,reordered, window
         #reorder the MatThickActList according to the listbox defined order
         
-        reorderedlist=list(self.listbox.get(0,tk.END))
-        print(reorderedlist)
+        # reorderedlist=list(self.listbox.get(0,tk.END))
+        reorderedlist=[self.list_widget.item(x).text() for x in range(self.list_widget.count())]
+        # print(reorderedlist)
         
         numreorderedlist=[]
         for item in reorderedlist:
             numreorderedlist.append(int(item.split('_')[0]))
         
         MatThickActList = [MatThickActList[i] for i in numreorderedlist]
+        window.populate()
+        self.hide()
         
-        #update frame6 and close order window
+
+#%%#######################
+
+class TMSimulation(QtWidgets.QMainWindow):
+    def __init__(self, parent=None):
+        QtWidgets.QMainWindow.__init__(self, parent)
+        global MatThickActList, numberofLayer, reordered
+        self.ui = Ui_TransferMatrixModeling()
+        self.ui.setupUi(self)
         
-        self.updatelist()
-        self.reorderwindow.destroy()    
+        finish = QAction("Quit", self)
+        finish.triggered.connect(lambda: self.closeEvent(0))
+        
+        self.ui.pushButton_LoadStack.clicked.connect(self.loadstack)
+        self.ui.pushButton_SaveStack.clicked.connect(self.savestack)
+        self.ui.pushButton_AddLayer.clicked.connect(self.AddLayer)
+        self.ui.pushButton_ReorderStack.clicked.connect(self.reorder)
+        self.ui.pushButton_DeleteLayer.clicked.connect(self.DeleteLayer)
+        self.ui.pushButton_CheckNK.clicked.connect(self.Nkplotstartwin)
+        self.ui.pushButton_StartSimul.clicked.connect(self.simulate)
+        self.ui.pushButton_Help.clicked.connect(self.Helpcall)
+        
+        self.populate()
+        
+    def closeEvent(self, event):
+        """ what happens when close the program"""
+        
+        close = QMessageBox.question(self,
+                                     "QUIT",
+                                     "Are you sure?",
+                                      QMessageBox.Yes | QMessageBox.No)
+        if close == QMessageBox.Yes:
+            event.accept()
+        else:
+            event.ignore()
+            
+    def reorder(self):
+        self.w=reorderwin()
+        self.w.show()
     
-    def deletelayer(self):
+    def Nkplotstartwin(self):
+        self.w = Nkplotwin()
+        self.w.show()
+        # self.hide()
+        
+    def Helpcall(self):
+        self.w = Help()
+        self.w.show()
+        
+    def populate(self):
+        global numberofLayer
+        global matnamelist
+        global MatThickActList
+       
+        self.clearLayout(self.ui.gridLayout_2)
+        self.ui.scrollArea_stack = QtWidgets.QScrollArea(self.ui.frame_2)
+        self.ui.scrollArea_stack.setWidgetResizable(True)
+        self.ui.scrollArea_stack.setObjectName("scrollArea_stack")
+        self.ui.scrollAreaWidgetContents = QtWidgets.QWidget()
+        self.ui.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 500, 400))
+        self.ui.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
+        self.ui.verticalLayout = QtWidgets.QVBoxLayout(self.ui.scrollAreaWidgetContents)
+        self.ui.verticalLayout.setObjectName("verticalLayout")
+       
+        # numberofLayer=2
+        for item in range(numberofLayer):
+            self.frame = QtWidgets.QFrame(self.ui.scrollAreaWidgetContents)
+            self.frame.setFrameShape(QtWidgets.QFrame.StyledPanel)
+            self.frame.setFrameShadow(QtWidgets.QFrame.Raised)
+            self.frame.setObjectName("frame")
+            self.horizontalLayout = QtWidgets.QHBoxLayout(self.frame)
+            self.horizontalLayout.setObjectName("horizontalLayout")
+            
+            self.checkBox_layernumb = QtWidgets.QCheckBox(self.frame)
+            sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Fixed)
+            sizePolicy.setHorizontalStretch(0)
+            sizePolicy.setVerticalStretch(0)
+            sizePolicy.setHeightForWidth(self.checkBox_layernumb.sizePolicy().hasHeightForWidth())
+            self.checkBox_layernumb.setSizePolicy(sizePolicy)
+            self.checkBox_layernumb.setObjectName("checkBox_layernumb"+str(item+1))
+            self.checkBox_layernumb.setText(str(item+1))
+            self.checkBox_layernumb.setChecked(MatThickActList[item][0])
+            self.horizontalLayout.addWidget(self.checkBox_layernumb)
+            self.checkBox_layernumb.clicked.connect(self.updateMatThickActList)
+            
+            #the material of the layer
+            self.comboBox_matname = QtWidgets.QComboBox(self.frame)
+            sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Fixed)
+            sizePolicy.setHorizontalStretch(0)
+            sizePolicy.setVerticalStretch(0)
+            sizePolicy.setHeightForWidth(self.comboBox_matname.sizePolicy().hasHeightForWidth())
+            self.comboBox_matname.setObjectName("comboBox_matname"+str(item+1))
+            self.comboBox_matname.addItems(matnamelist)
+            self.comboBox_matname.setCurrentText(MatThickActList[item][1])
+            self.horizontalLayout.addWidget(self.comboBox_matname)
+            self.comboBox_matname.currentTextChanged.connect(self.updateMatThickActList)
+            
+            self.spinBox_thickness = QtWidgets.QSpinBox(self.frame)
+            sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Fixed)
+            sizePolicy.setHorizontalStretch(0)
+            sizePolicy.setVerticalStretch(0)
+            sizePolicy.setHeightForWidth(self.spinBox_thickness.sizePolicy().hasHeightForWidth())
+            self.spinBox_thickness.setSizePolicy(sizePolicy)
+            self.spinBox_thickness.setMaximum(9999999)
+            self.spinBox_thickness.setObjectName("spinBox_thickness"+str(item+1))
+            self.spinBox_thickness.setValue(MatThickActList[item][2])
+            self.horizontalLayout.addWidget(self.spinBox_thickness)
+            
+            self.checkBox_activelayer = QtWidgets.QCheckBox(self.frame)
+            sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Fixed)
+            sizePolicy.setHorizontalStretch(0)
+            sizePolicy.setVerticalStretch(0)
+            sizePolicy.setHeightForWidth(self.checkBox_activelayer.sizePolicy().hasHeightForWidth())
+            self.checkBox_activelayer.setSizePolicy(sizePolicy)
+            self.checkBox_activelayer.setObjectName("checkBox_activelayer"+str(item+1))
+            self.checkBox_activelayer.setText("active?")
+            self.checkBox_activelayer.setChecked(MatThickActList[item][3])
+            self.horizontalLayout.addWidget(self.checkBox_activelayer)
+            self.checkBox_activelayer.clicked.connect(self.updateMatThickActList)
+            
+            self.checkBox_incoherent = QtWidgets.QCheckBox(self.frame)
+            sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Fixed)
+            sizePolicy.setHorizontalStretch(0)
+            sizePolicy.setVerticalStretch(0)
+            sizePolicy.setHeightForWidth(self.checkBox_incoherent.sizePolicy().hasHeightForWidth())
+            self.checkBox_incoherent.setSizePolicy(sizePolicy)
+            self.checkBox_incoherent.setObjectName("checkBox_incoherent"+str(item+1))
+            self.checkBox_incoherent.setText("incoherent?")
+            self.checkBox_incoherent.setChecked(MatThickActList[item][4])
+            self.horizontalLayout.addWidget(self.checkBox_incoherent)
+            self.checkBox_incoherent.clicked.connect(self.updateMatThickActList)
+            
+            self.ui.verticalLayout.addWidget(self.frame)
+        
+        self.ui.scrollArea_stack.setWidget(self.ui.scrollAreaWidgetContents)
+        self.ui.gridLayout_2.addWidget(self.ui.scrollArea_stack, 0, 0, 1, 1)   
+    
+    def updateMatThickActList(self):
+        global numberofLayer
+        global matnamelist
         global MatThickActList
         
-        self.deletewin=tk.Tk()
-        self.deletewin.wm_title("Select 1 or more")
-        self.deletewin.geometry("250x200")
-        center(self.deletewin)
-        self.lb=tk.Listbox(self.deletewin, selectmode=tk.MULTIPLE)
+        MatThickActList=[]
+        for i in range(numberofLayer):
+            MatThickActList.append([self.findChild(QtWidgets.QCheckBox,"checkBox_layernumb"+str(i+1)).isChecked()
+                                    ,self.findChild(QtWidgets.QComboBox,"comboBox_matname"+str(i+1)).currentText()
+                                    ,self.findChild(QtWidgets.QSpinBox,"spinBox_thickness"+str(i+1)).value()
+                                    ,self.findChild(QtWidgets.QCheckBox,"checkBox_activelayer"+str(i+1)).isChecked()
+                                    ,self.findChild(QtWidgets.QCheckBox,"checkBox_incoherent"+str(i+1)).isChecked()])
         
-        for i in range(len(MatThickActList)):
-            if type(MatThickActList[i][0])!=str:
-                MatThickActList[i][0]=MatThickActList[i][0].get()
-            if type(MatThickActList[i][1])!=int:
-                MatThickActList[i][1]=int(MatThickActList[i][1].get())
-            if type(MatThickActList[i][2])!=int:
-                MatThickActList[i][2]=int(MatThickActList[i][2].get())
-            if type(MatThickActList[i][3])!=int:
-                MatThickActList[i][3]=int(MatThickActList[i][3].get())
-        
-        
-        self.listfordelete=[]
-        for i in range(len(MatThickActList)):
-            self.listfordelete.append(str(i)+"_"+MatThickActList[i][0])
-    
-        for i in range(len(self.listfordelete)):
-            self.lb.insert("end",self.listfordelete[i])
-        self.lb.pack(side="top",fill="both",expand=True)
-        scrollbar = tk.Scrollbar(self.lb, orient="vertical")
-        scrollbar.config(command=self.lb.yview)
-        scrollbar.pack(side="right", fill="y")
-        self.lb.config(yscrollcommand=scrollbar.set)
-        
-        delbut = tk.Button(self.deletewin, text="delete", command = self.deletebut)
-        delbut.pack()
-    
-    def deletebut(self):
+    def clearLayout(self, layout):
+        if layout is not None:
+            while layout.count():
+                item = layout.takeAt(0)
+                widget = item.widget()
+                if widget is not None:
+                    widget.deleteLater()
+                else:
+                    self.clearLayout(item.layout())
+                
+    def AddLayer(self):
+        global numberofLayer
         global MatThickActList
-        global numberofLayer       
         
-        selected = list(self.lb.curselection())
+        numberofLayer += 1
         
-        MatThickActList=self.multi_delete(MatThickActList,selected)
+        MatThickActList.append([False,'Air',0,True,True]) #material,thickness,active,conherence (coherent=0;incoherent=1=checked)
         
-        numberofLayer -= len(selected)
-        
-        self.updatelist()
-        
-        self.deletewin.destroy()
-        
-        
-    def multi_delete(self, listorig, indiceslist):
-        newlist=[]
-        for i in range(len(listorig)):
-            if i not in indiceslist:
-                newlist.append(listorig[i])
-        return newlist    
+        self.populate()
     
-#    def selectMat(self,a):#create a pop-up window with a selectable list of materials in a listbox
-#        print(a)
-    
+    def DeleteLayer(self):
+        global numberofLayer
+        global MatThickActList
+        
+        # print('')
+        # print('delete')
+        # print(MatThickActList)
+        
+        newmatlist=[]
+        for item in MatThickActList:
+            if not item[0]:
+                print(item[0])
+                newmatlist.append(item)
+        MatThickActList=newmatlist
+        numberofLayer -= 1
+        self.populate()
+        
     def loadstack(self):
         global MatThickActList
         global numberofLayer
         
-        owd = os.getcwd()
+        directory=os.path.join(str(Path(os.path.abspath(__file__)).parent.parent),'TMstacks')
+
+        path = QFileDialog.getOpenFileName(caption = 'Select stack file', directory = directory)
         
-        os.chdir(stackDir)
-        
-        filepath =filedialog.askopenfilename(title="Please select the stack file", initialdir=stackDir)
-        if filepath!='':
+        if path!='':
             try:
-                filetoread=open(filepath,"r", encoding='ISO-8859-1')
-                filedata=filetoread.readlines()
-                
-                MatThickActList=[]
-                i=0
-                for item in filedata: 
-                    MatThickActList.append([item[:-1].split("\t")[0],int(item[:-1].split("\t")[1]),int(item[:-1].split("\t")[2]),int(item[:-1].split("\t")[3])])
-                    i+=1
+                with open(path[0],'r') as file:
+                    MatThickActList=[]
+                    for line in file:
+                        MatThickActList.append([False,
+                                                line[:-1].split("\t")[0],
+                                                int(line[:-1].split("\t")[1]),
+                                                int(line[:-1].split("\t")[2]),
+                                                int(line[:-1].split("\t")[3])])
                 numberofLayer=len(MatThickActList)
-                
-                os.chdir(owd)
-                
-                self.updatelist()
+                self.populate()
             except:
-                messagebox.showinfo("Import failed","Might not be the correct file?!...")
-    
+                QMessageBox.information(self,'Import failed', "Might not be the correct file?!...") 
     
     def savestack(self):
         global MatThickActList
         global stackNameList
-        
-        for i in range(len(MatThickActList)):
-            if type(MatThickActList[i][0])!=str:
-                MatThickActList[i][0]=MatThickActList[i][0].get()
-            if type(MatThickActList[i][1])!=int:
-                MatThickActList[i][1]=int(MatThickActList[i][1].get())
-            if type(MatThickActList[i][2])!=int:
-                MatThickActList[i][2]=int(MatThickActList[i][2].get())
-            if type(MatThickActList[i][3])!=int:
-                MatThickActList[i][3]=int(MatThickActList[i][3].get())
                 
         try:
-            owd = os.getcwd()
+            directory=os.path.join(str(Path(os.path.abspath(__file__)).parent.parent),'TMstacks')
         
-            os.chdir(stackDir)
-        
-            f = filedialog.asksaveasfilename(defaultextension=".txt", filetypes = (("text file", "*.txt"),("All Files", "*.*")))
+            path = QFileDialog.getSaveFileName(caption = 'Select where to save the data', directory = directory)
             
-            file = open(f,'w', encoding='ISO-8859-1')
-            file.writelines("%s\t%d\t%d\t%d\n" % tuple(item) for item in MatThickActList)
-            file.close()
-            
-            os.chdir(owd)
+            with open(path[0],'w') as file:
+                text=''
+                for item in MatThickActList:
+                    text+=item[1]+'\t'+str(item[2])+'\t'+str(item[3])+'\t'+str(item[4])+'\n'
+                file.write(text[:-1])
             
             stacklist=os.listdir(stackDir)
             stackNameList=[]
             for item in stacklist:
                 stackNameList.append(item.split('.')[0])
         except:
-            print("something wrong during saving process...")
-        self.updatelist()
-    
-    def updatelist(self):
-        global MatThickActList
-
-        for i in range(len(MatThickActList)):
-            if type(MatThickActList[i][0])!=str:
-                MatThickActList[i][0]=MatThickActList[i][0].get()
-            if type(MatThickActList[i][1])!=int:
-                MatThickActList[i][1]=int(MatThickActList[i][1].get())
-            if type(MatThickActList[i][2])!=int:
-                MatThickActList[i][2]=int(MatThickActList[i][2].get())
-            if type(MatThickActList[i][3])!=int:
-                MatThickActList[i][3]=int(MatThickActList[i][3].get())
-
-        self.frame6.destroy()
-        self.frame6 = tk.Frame(self.canvas0, background="#ffffff")
-        self.canvas0.create_window((4,4), window=self.frame6, anchor="nw", tags="self.frame6")
-        self.frame6.bind("<Configure>", self.onFrameConfigure)
+            QMessageBox.information(self,'Exception', "something wrong during saving process...") 
         self.populate()
     
-    
-    ####################start simulation code##############################
     def simulate(self):
-        if self.check1D.get()==1 and self.check2D.get()==1:
-            print("cannot make both 1D and 2D at the same time")
+        if self.ui.checkBox_1D.isChecked() and self.ui.checkBox_2D.isChecked():
+            QMessageBox.information(self,'Exception', "cannot make both 1D and 2D at the same time")
         else:
             self.simulate1()
             
@@ -1136,35 +1004,23 @@ class TMSimApp(Toplevel):
         global matnamelist
         global MatThickActList
         
-        for i in range(len(MatThickActList)):
-            if type(MatThickActList[i][0])!=str:
-                MatThickActList[i][0]=MatThickActList[i][0].get()
-            if type(MatThickActList[i][1])!=int:
-                MatThickActList[i][1]=int(MatThickActList[i][1].get())
-            if type(MatThickActList[i][2])!=int:
-                MatThickActList[i][2]=int(MatThickActList[i][2].get())
-            if type(MatThickActList[i][3])!=int:
-                MatThickActList[i][3]=int(MatThickActList[i][3].get())
         
         #ask path to export
-        owd = os.getcwd()
+        directory=os.path.join(str(Path(os.path.abspath(__file__)).parent.parent),'results')
         
-        os.chdir(resDir)
-        
-        f = filedialog.asksaveasfilename(defaultextension=".png", filetypes = (("graph file", "*.png"),("All Files", "*.*")))
-        f1=f    
-        os.chdir(owd)
+        path = QFileDialog.getSaveFileName(self, caption = 'Select where to save the data', directory = directory,filter = "Images (*.png)")
+        f=str(path[0])
         
         #check the wavelength range and readapt to have only in decades (round to nearest decade)
-        start=divmod(self.StartWave.get(),10)
-        startWave=int(self.StartWave.get())
+        start=divmod(self.ui.spinBox_StartWave.value(),10)
+        startWave=int(self.ui.spinBox_StartWave.value())
         if start[1]!=0:
             if start[1]>5:
                 startWave=int((start[0]+1)*10)
             else:
                 startWave=int(start[0]*10)
-        end=divmod(self.EndWave.get(),10)
-        EndWave=int(self.EndWave.get())
+        end=divmod(self.ui.spinBox_EndWave.value(),10)
+        EndWave=int(self.ui.spinBox_EndWave.value())
         if end[1]!=0:
             if end[1]>5:
                 EndWave=int((end[0]+1)*10)
@@ -1174,18 +1030,18 @@ class TMSimApp(Toplevel):
         #create structure and fill with user-defined layer properties
        
         if MatThickActList!=[]:
-            if MatThickActList[0][3]==1:
+            if MatThickActList[0][4]:
                 coher='i'
             else:
                 coher='c'
-            structure=multilayer(layer(material_list[MatThickActList[0][0]],MatThickActList[0][1],coher))
+            structure=multilayer(layer(material_list[MatThickActList[0][1]],MatThickActList[0][2],coher))
             if len(MatThickActList)>1:
                 for i in range(1,len(MatThickActList)):
-                    if MatThickActList[i][3]==1:
+                    if MatThickActList[i][4]:
                         coher='i'
                     else:
                         coher='c'
-                    structure.addlayer(layer(material_list[MatThickActList[i][0]],MatThickActList[i][1],coher))
+                    structure.addlayer(layer(material_list[MatThickActList[i][1]],MatThickActList[i][2],coher))
         
         #create spectrum according to start and end Wavelength
         specttotake=[[],[]]
@@ -1207,20 +1063,20 @@ class TMSimApp(Toplevel):
         currentsnon=[]
         totalcurrent=0
         for i in range(len(MatThickActList)):
-            if MatThickActList[i][2]==1:
+            if MatThickActList[i][3]:
                 numbofactive+=1
                 spectofactivelayers.append(structure.absspectruminlay(i+1,specttotake[0],1,0,1,'s'))
-                Jsc=str(MatThickActList[i][0])+': '+"%.2f"%huss[i+1]+'\n'
+                Jsc=str(MatThickActList[i][1])+': '+"%.2f"%huss[i+1]+'\n'
                 totalcurrent+=huss[i+1]
                 currents.append(Jsc)
-                namesofactive.append(MatThickActList[i][0])
+                namesofactive.append(MatThickActList[i][1])
                 print(Jsc)
             else:
                 numbofnonactive+=1
                 spectofnonactivelayers.append(structure.absspectruminlay(i+1,specttotake[0],1,0,1,'s'))
-                Jsc=str(MatThickActList[i][0])+': '+"%.2f"%huss[i+1]+'\n'
+                Jsc=str(MatThickActList[i][1])+': '+"%.2f"%huss[i+1]+'\n'
                 currentsnon.append(Jsc)
-                namesofnonactive.append(MatThickActList[i][0])
+                namesofnonactive.append(MatThickActList[i][1])
 #                print(Jsc)
         if spectofactivelayers!=[]:
             spectotal=[specR[0],np.asarray(spectofactivelayers[0][1])]
@@ -1229,30 +1085,11 @@ class TMSimApp(Toplevel):
                 spectotal[1]+=np.asarray(spectofactivelayers[i][1])
 
             #make graph and export
-            try:
-                self.plotwin.destroy()
-                plt.close()
-            except:
-                pass
-            self.plotwin=tk.Tk()
-            self.plotwin.wm_title("The graph")
-            self.plotwin.geometry("600x400")
-            center(self.plotwin)
-            self.canvas1 = tk.Canvas(self.plotwin, borderwidth=0, background="white")
-            self.canvas1.pack(side="left", fill="both", expand=True)
-            frame1=Frame(self.canvas1,borderwidth=0,  bg="white")
-            frame1.pack(fill=tk.BOTH,expand=1)
-            frame1.bind("<Configure>", self.onFrameConfigure)
+
             ############ the figures #################
             self.fig = plt.figure(figsize=(6, 4))
             self.fig.patch.set_facecolor('white')
-            canvas = FigureCanvasTkAgg(self.fig, frame1)
-            canvas.get_tk_widget().pack(fill=tk.BOTH,expand=1)
             self.fig1 = self.fig.add_subplot(111)   
-            
-            self.toolbar = NavigationToolbar2TkAgg(canvas, frame1)
-            self.toolbar.update()
-            canvas._tkcanvas.pack(fill = tk.BOTH, expand = 1) 
             
             [x,y]=structure.plotnprofile(400)
             self.fig1.plot(x,y,label='400nm')
@@ -1271,8 +1108,9 @@ class TMSimApp(Toplevel):
             self.fig1.legend(ncol=1)
             self.fig.savefig(f[:-4]+'_n.png', dpi=300, transparent=False) 
             
-            self.fig.clear()
-            self.fig1 = self.fig.add_subplot(111) 
+            self.fig2 = plt.figure(figsize=(6, 4))
+            self.fig2.patch.set_facecolor('white')
+            self.fig21 = self.fig2.add_subplot(111)
             datatoexport=[]
             headoffile1=""
             headoffile2=""
@@ -1280,7 +1118,7 @@ class TMSimApp(Toplevel):
 #            plt.figure()
             k=0
             for item in spectofactivelayers:
-                self.fig1.plot(item[0],item[1],label=currents[k][:-1])
+                self.fig21.plot(item[0],item[1],label=currents[k][:-1])
                 
                 datatoexport.append(item[0])
                 datatoexport.append(item[1])
@@ -1289,7 +1127,7 @@ class TMSimApp(Toplevel):
                 headoffile3+=" \t"+namesofactive[k]+"\t"
                 k+=1
             if len(spectofactivelayers)>1:
-                self.fig1.plot(spectotal[0],spectotal[1],label="Total: "+"%.2f"%totalcurrent)
+                self.fig21.plot(spectotal[0],spectotal[1],label="Total: "+"%.2f"%totalcurrent)
                 datatoexport.append(spectotal[0])
                 datatoexport.append(spectotal[1])
                 headoffile1+="Wavelength\tIntensity\t"
@@ -1314,19 +1152,19 @@ class TMSimApp(Toplevel):
             headoffile1+="Wavelength\tIntensity\t"
             headoffile2+="(nm)\t(-)\t"
             headoffile3+=" \t1-Reflectance\t"
-            self.fig1.plot(specRR[0],specRR[1],label="1-Reflectance: "+"%.2f"%calcCurrent(specR[0],specR[1],specRR[0][0],specRR[0][-1]))
-            self.fig1.set_xlabel("Wavelength (nm)")
-            self.fig1.set_ylabel("Light Intensity Fraction")
-            self.fig1.set_xlim([specRR[0][0],specRR[0][-1]])
-            self.fig1.set_ylim([0,1])
-            self.fig1.legend(ncol=1)#loc='lower right',
-            self.fig.savefig(f, dpi=300, transparent=False) 
+            self.fig21.plot(specRR[0],specRR[1],label="1-Reflectance: "+"%.2f"%calcCurrent(specR[0],specR[1],specRR[0][0],specRR[0][-1]))
+            self.fig21.set_xlabel("Wavelength (nm)")
+            self.fig21.set_ylabel("Light Intensity Fraction")
+            self.fig21.set_xlim([specRR[0][0],specRR[0][-1]])
+            self.fig21.set_ylim([0,1])
+            self.fig21.legend(ncol=1)#loc='lower right',
+            self.fig2.savefig(f, dpi=300, transparent=False) 
             
             #with absorption spectra of non active layers
             k=0
             if len(spectofnonactivelayers)>0:
                 for item in spectofnonactivelayers:
-                    self.fig1.plot(item[0],item[1],label=currentsnon[k][:-1])
+                    # self.fig1.plot(item[0],item[1],label=currentsnon[k][:-1])
                     datatoexport.append(item[0])
                     datatoexport.append(item[1])
                     headoffile1+="Wavelength\tIntensity\t"
@@ -1344,26 +1182,32 @@ class TMSimApp(Toplevel):
             headoffile2=headoffile2[:-1]+'\n'
             headoffile3=headoffile3[:-1]+'\n'
             
-            self.fig.clear()
-            self.fig1 = self.fig.add_subplot(111)  
+            # self.fig.clear()
+            # self.fig1 = self.fig.add_subplot(111)
+            self.fig3 = plt.figure(figsize=(6, 4))
+            self.fig3.patch.set_facecolor('white')
+            self.fig31 = self.fig3.add_subplot(111)
             
             specRR=[specR[0],1-np.asarray(specR[1])-np.asarray(specR[2])]
-            self.fig1.plot(specRR[0],specRR[1],label="Absorptance of full stack: "+"%.2f"%calcCurrent(specRR[0],specRR[1],specRR[0][0],specRR[0][-1]))
+            self.fig31.plot(specRR[0],specRR[1],label="Absorptance of full stack: "+"%.2f"%calcCurrent(specRR[0],specRR[1],specRR[0][0],specRR[0][-1]))
             specRR=[specR[0],1-np.asarray(specR[1])]
             Rloss=calcCurrent(specR[0],specR[1],specRR[0][0],specRR[0][-1])
-            self.fig1.plot(specRR[0],specRR[1],label="1-Reflectance: "+"%.2f"%Rloss)
+            self.fig31.plot(specRR[0],specRR[1],label="1-Reflectance: "+"%.2f"%Rloss)
             specRR=[specR[0],np.asarray(specR[2])]
             Tloss=calcCurrent(specR[0],specR[2],specRR[0][0],specRR[0][-1])
-            self.fig1.plot(specRR[0],specRR[1],label="Transmittance: "+"%.2f"%Tloss)
-            self.fig1.set_xlabel("Wavelength (nm)")
-            self.fig1.set_ylabel("Light Intensity Fraction")
-            self.fig1.set_xlim([specRR[0][0],specRR[0][-1]])
-            self.fig1.set_ylim([0,1])
-            self.fig1.legend(ncol=1)#loc='lower right',
-            self.fig.savefig(f[:-4]+'_ART.png', dpi=300, transparent=False) 
+            self.fig31.plot(specRR[0],specRR[1],label="Transmittance: "+"%.2f"%Tloss)
+            self.fig31.set_xlabel("Wavelength (nm)")
+            self.fig31.set_ylabel("Light Intensity Fraction")
+            self.fig31.set_xlim([specRR[0][0],specRR[0][-1]])
+            self.fig31.set_ylim([0,1])
+            self.fig31.legend(ncol=1)#loc='lower right',
+            self.fig3.savefig(f[:-4]+'_ART.png', dpi=300, transparent=False) 
             
-            self.fig.clear()
-            self.fig1 = self.fig.add_subplot(111) 
+            # self.fig.clear()
+            # self.fig1 = self.fig.add_subplot(111) 
+            self.fig4 = plt.figure(figsize=(6, 4))
+            self.fig4.patch.set_facecolor('white')
+            self.fig41 = self.fig4.add_subplot(111)
             
             spectotalparas=[specR[0],np.asarray(spectofactivelayers[0][1])]
             names=['']
@@ -1378,17 +1222,17 @@ class TMSimApp(Toplevel):
             spectotalparas.append(spectotalparas[-1]+np.asarray(specR[2]))
             
             for i in range(1,len(spectotalparas)):
-                self.fig1.plot(spectotalparas[0],spectotalparas[i],label=names[i-1],color=colorstylelist[i-1],linewidth=1)
+                self.fig41.plot(spectotalparas[0],spectotalparas[i],label=names[i-1],color=colorstylelist[i-1],linewidth=1)
 
             for i in range(1,len(spectotalparas)-1):
-                self.fig1.fill_between(spectotalparas[0],spectotalparas[i],spectotalparas[i+1],facecolor=colorstylelist[i])
+                self.fig41.fill_between(spectotalparas[0],spectotalparas[i],spectotalparas[i+1],facecolor=colorstylelist[i])
             
-            self.fig1.set_xlim([specRR[0][0],specRR[0][-1]])
-            self.fig1.set_xlabel("Wavelength (nm)")
-            self.fig1.set_ylabel("Light Intensity Fraction")
-            self.fig1.set_ylim([0,1])
-            self.fig1.legend(ncol=1)#loc='lower right',
-            self.fig.savefig(f[:-4]+'_withParasitic2.png', dpi=300, transparent=False) 
+            self.fig41.set_xlim([specRR[0][0],specRR[0][-1]])
+            self.fig41.set_xlabel("Wavelength (nm)")
+            self.fig41.set_ylabel("Light Intensity Fraction")
+            self.fig41.set_ylim([0,1])
+            self.fig41.legend(ncol=1)#loc='lower right',
+            self.fig4.savefig(f[:-4]+'_withParasitic2.png', dpi=300, transparent=False) 
             
             datatoexportINV=[list(x) for x in zip(*datatoexport)]
             datatoexportINVtxt=[]
@@ -1405,142 +1249,81 @@ class TMSimApp(Toplevel):
             file.writelines(headoffile3)
             file.writelines(item for item in datatoexportINVtxt)
             file.close()
-            plt.close("all")
-        
-        if self.check1D.get()==1:
-            #ask which layer to scan and what range
-            self.simulatedialog = tk.Toplevel()
-            self.simulatedialog.wm_title("Define the variation ranges")
-            self.simulatedialog.geometry("350x200")
-            center(self.simulatedialog)
+            # plt.close("all")
             
-#            self.matlistfor2Dvar=[item[0] for item in MatThickActList]
-            self.matlistfor2Dvar=[MatThickActList[item][0]+'#'+str(item+1) for item in range(len(MatThickActList))]
-            frame1=Frame(self.simulatedialog,borderwidth=0,  bg="white")
-            frame1.pack(side=tk.LEFT,fill=tk.BOTH, expand=1)
-            label = tk.Label(frame1, text="Material1", font=SMALL_FONT, bg="white",fg="black")
-            label.pack()
-            tk.Label(frame1, text="from",font=SMALL_FONT,  bg="white").pack()
-            self.Startthick1 = tk.DoubleVar()
-            Entry(frame1, textvariable=self.Startthick1,width=5).pack()
-            self.Startthick1.set(0)
-            tk.Label(frame1, text="step",font=SMALL_FONT,  bg="white").pack() 
-            self.Stepthick1 = tk.DoubleVar()
-            Entry(frame1, textvariable=self.Stepthick1,width=5).pack()
-            self.Stepthick1.set(1)
-            tk.Label(frame1, text="to",font=SMALL_FONT,  bg="white").pack() 
-            self.Endthick1 = tk.DoubleVar()
-            Entry(frame1, textvariable=self.Endthick1,width=5).pack() 
-            self.Endthick1.set(10)
-            #tk.Label(frame1, text="layer#?",font=SMALL_FONT,  bg="white").pack() 
-            #self.layernumb1 = tk.DoubleVar()
-            #Entry(frame1, textvariable=self.layernumb1,width=5).pack() 
-            #self.layernumb1.set(0)
-            
-            self.Matchoice1=StringVar()
-            self.dropMenu2D1 = OptionMenu(frame1, self.Matchoice1, *self.matlistfor2Dvar, command=())
-            self.dropMenu2D1.pack()
-            self.Matchoice1.set(self.matlistfor2Dvar[0])
-            
-            frame3=Frame(self.simulatedialog,borderwidth=0,  bg="white")
-            frame3.pack(fill=tk.BOTH, expand=1)
-            StartSim = Button(frame3, text="Start simulation",width=15, command = self.Sim1DthickVar)
-            StartSim.pack(fill=tk.BOTH, expand=1)
-            
-            CancelSim = Button(frame3, text="Cancel",width=15, command = self.CancelSim)
-            CancelSim.pack(fill=tk.BOTH, expand=1)
-            
-            self.structure=structure
-            self.specttotake=specttotake
-            self.f=f
-            
-        if self.check2D.get()==1:
-            self.simulatedialog = tk.Toplevel()
-            self.simulatedialog.wm_title("Define the variation ranges")
-            self.simulatedialog.geometry("350x200")
-            center(self.simulatedialog)
-            
-#            self.matlistfor2Dvar=[item[0] for item in MatThickActList]
-            self.matlistfor2Dvar=[MatThickActList[item][0]+'#'+str(item+1) for item in range(len(MatThickActList))]
-            frame1=Frame(self.simulatedialog,borderwidth=0,  bg="white")
-            frame1.pack(side=tk.LEFT,fill=tk.BOTH, expand=1)
-            label = tk.Label(frame1, text="Material1", font=SMALL_FONT, bg="white",fg="black")
-            label.pack()
-            tk.Label(frame1, text="from",font=SMALL_FONT,  bg="white").pack()
-            self.Startthick1 = tk.DoubleVar()
-            Entry(frame1, textvariable=self.Startthick1,width=5).pack()
-            self.Startthick1.set(0)
-            tk.Label(frame1, text="step",font=SMALL_FONT,  bg="white").pack() 
-            self.Stepthick1 = tk.DoubleVar()
-            Entry(frame1, textvariable=self.Stepthick1,width=5).pack()
-            self.Stepthick1.set(1)
-            tk.Label(frame1, text="to",font=SMALL_FONT,  bg="white").pack() 
-            self.Endthick1 = tk.DoubleVar()
-            Entry(frame1, textvariable=self.Endthick1,width=5).pack() 
-            self.Endthick1.set(10)
-            
-            self.Matchoice1=StringVar()
-            self.dropMenu2D1 = OptionMenu(frame1, self.Matchoice1, *self.matlistfor2Dvar, command=())
-            self.dropMenu2D1.pack()
-            self.Matchoice1.set(self.matlistfor2Dvar[0])
-            
-            frame2=Frame(self.simulatedialog,borderwidth=0,  bg="white")
-            frame2.pack(side=tk.RIGHT,fill=tk.BOTH,expand=1)
-            label = tk.Label(frame2, text="Material2", font=SMALL_FONT, bg="white",fg="black")
-            label.pack()
-            tk.Label(frame2, text="from",font=SMALL_FONT,  bg="white").pack()
-            self.Startthick2 = tk.DoubleVar()
-            Entry(frame2, textvariable=self.Startthick2,width=5).pack()
-            self.Startthick2.set(0)
-            tk.Label(frame2, text="step",font=SMALL_FONT,  bg="white").pack() 
-            self.Stepthick2 = tk.DoubleVar()
-            Entry(frame2, textvariable=self.Stepthick2,width=5).pack()
-            self.Stepthick2.set(1)
-            tk.Label(frame2, text="to",font=SMALL_FONT,  bg="white").pack() 
-            self.Endthick2 = tk.DoubleVar()
-            Entry(frame2, textvariable=self.Endthick2,width=5).pack() 
-            self.Endthick2.set(10)
-            
-            self.Matchoice2=StringVar()
-            self.Matchoice2.set(self.matlistfor2Dvar[0])
-            self.dropMenu2D2 = OptionMenu(frame2, self.Matchoice2, *self.matlistfor2Dvar, command=())
-            self.dropMenu2D2.pack()
-            
-            frame3=Frame(self.simulatedialog,borderwidth=0,  bg="white")
-            frame3.pack(fill=tk.BOTH, expand=1)
-            StartSim = Button(frame3, text="Start simulation",width=15, command = self.Sim2DthickVar)
-            StartSim.pack(fill=tk.BOTH, expand=1)
-            
-            CancelSim = Button(frame3, text="Cancel",width=15, command = self.CancelSim)
-            CancelSim.pack(fill=tk.BOTH, expand=1)
-            
-            self.structure=structure
-            self.specttotake=specttotake
-            self.f=f
+            file = open(f[:-4]+"_layerstack.txt",'w', encoding='ISO-8859-1')
+            file.writelines(item[1]+'\t'+str(item[2])+'\t'+str(item[3])+'\t'+str(item[4])+'\n' for item in MatThickActList)
+            file.close()
             
         
-        #reupdate the screen
-        print("finished")
-        self.updatelist()
-    
-    def CancelSim(self):
-        self.simulatedialog.destroy()
-        self.updatelist()
-    
-    def Sim1DthickVar(self):
+        if self.ui.checkBox_1D.isChecked():
+            w=simul1D(structure,specttotake, f)
+            w.show()
+            
+        elif self.ui.checkBox_2D.isChecked():
+            w=simul2D(structure,specttotake, f)
+            w.show()
+            
+
+
+class simul1D(QtWidgets.QDialog):
+    def __init__(self, structure, specttotake, f):
+        super().__init__()
+        global numberofLayer
+        global matnamelist
         global MatThickActList
         
-        for i in range(len(MatThickActList)):
-            if type(MatThickActList[i][0])!=str:
-                MatThickActList[i][0]=MatThickActList[i][0].get()
-            if type(MatThickActList[i][1])!=int:
-                MatThickActList[i][1]=int(MatThickActList[i][1].get())
-            if type(MatThickActList[i][2])!=int:
-                MatThickActList[i][2]=int(MatThickActList[i][2].get())
-            if type(MatThickActList[i][3])!=int:
-                MatThickActList[i][3]=int(MatThickActList[i][3].get())
+        self.resize(350, 300)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.sizePolicy().hasHeightForWidth())
+        self.setSizePolicy(sizePolicy)
+        self.setMinimumSize(QtCore.QSize(350, 200))
+        self.gridLayout = QtWidgets.QGridLayout(self)
+        self.setWindowTitle("Define the variation ranges")
         
-        d=self.structure.scanlayerthickness(self.matlistfor2Dvar.index(self.Matchoice1.get())+1,range(int(self.Startthick1.get()),int(self.Endthick1.get()+1),int(self.Stepthick1.get())),self.specttotake,1,0,1,'s')
+        self.matlistfor2Dvar=[MatThickActList[item][1]+'#'+str(item+1) for item in range(len(MatThickActList))]
+        
+        self.label = QtWidgets.QLabel()
+        self.label.setText('from')
+        self.gridLayout.addWidget(self.label)
+        
+        self.Startthick1 = QtWidgets.QLineEdit()
+        self.Startthick1.setText(str(0))
+        self.gridLayout.addWidget(self.Startthick1)
+        
+        self.label = QtWidgets.QLabel()
+        self.label.setText('step')
+        self.gridLayout.addWidget(self.label)
+        
+        self.Stepthick1 = QtWidgets.QLineEdit()
+        self.Stepthick1.setText(str(1))
+        self.gridLayout.addWidget(self.Stepthick1)
+        
+        self.label = QtWidgets.QLabel()
+        self.label.setText('to')
+        self.gridLayout.addWidget(self.label)
+        
+        self.Endthick1 = QtWidgets.QLineEdit()
+        self.Endthick1.setText(str(10))
+        self.gridLayout.addWidget(self.Endthick1)
+        
+        self.comboBox_matname1D = QtWidgets.QComboBox()
+        self.comboBox_matname1D.addItems(self.matlistfor2Dvar)
+        self.gridLayout.addWidget(self.comboBox_matname1D)
+        
+        self.pushButton_1D = QtWidgets.QPushButton("Validate", self)
+        self.gridLayout.addWidget(self.pushButton_1D)
+        self.pushButton_1D.clicked.connect(lambda: self.validate(structure,specttotake,f))
+        
+    def validate(self,structure,specttotake,f):
+        global numberofLayer
+        global matnamelist
+        global MatThickActList
+        
+        
+        d=structure.scanlayerthickness(self.matlistfor2Dvar.index(self.comboBox_matname1D.currentText())+1,range(int(self.Startthick1.text()),int(self.Endthick1.text())+1,int(self.Stepthick1.text())),specttotake,1,0,1,'s')
         dinv=[list(x) for x in zip(*d)]
         
         head="Thickness\tAir\t"
@@ -1555,7 +1338,7 @@ class TMSimApp(Toplevel):
             lineinterm+=str(item[len(item)-1])+"\n"
             datatoexportINVtxt.append(lineinterm)
         
-        file = open(self.f[:-4]+"_1Drawdata.txt",'w', encoding='ISO-8859-1')
+        file = open(f[:-4]+"_1Drawdata.txt",'w', encoding='ISO-8859-1')
         file.writelines(head)
         file.writelines(item for item in datatoexportINVtxt)
         file.close()
@@ -1563,35 +1346,104 @@ class TMSimApp(Toplevel):
         plt.figure()
         activelist=[]
         for i in range(len(MatThickActList)):
-            if MatThickActList[i][2]==1:
+            if MatThickActList[i][3]:
                 activelist.append(i)
-                plt.plot(d[0],d[i+2],label=MatThickActList[i][0])
+                plt.plot(d[0],d[i+2],label=MatThickActList[i][1])
         
-        plt.xlabel(self.Matchoice1.get()+" thickness (nm)")
+        plt.xlabel(self.comboBox_matname1D.currentText()+" thickness (nm)")
         plt.ylabel("Current")
         plt.legend(ncol=1)
-        plt.savefig(self.f[:-4]+"_1D.png", dpi=300, transparent=False)
+        plt.savefig(f[:-4]+"_1D.png", dpi=300, transparent=False)
         plt.close()
-        self.simulatedialog.destroy()
-        self.updatelist()
         
-    def Sim2DthickVar(self):
+        self.hide()
+    
+    
+class simul2D(QtWidgets.QDialog):
+    def __init__(self, structure, specttotake, f):
+        super().__init__()
+        global numberofLayer
+        global matnamelist
         global MatThickActList
         
-        for i in range(len(MatThickActList)):
-            if type(MatThickActList[i][0])!=str:
-                MatThickActList[i][0]=MatThickActList[i][0].get()
-            if type(MatThickActList[i][1])!=int:
-                MatThickActList[i][1]=int(MatThickActList[i][1].get())
-            if type(MatThickActList[i][2])!=int:
-                MatThickActList[i][2]=int(MatThickActList[i][2].get())
-            if type(MatThickActList[i][3])!=int:
-                MatThickActList[i][3]=int(MatThickActList[i][3].get())
+        self.resize(350, 500)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.sizePolicy().hasHeightForWidth())
+        self.setSizePolicy(sizePolicy)
+        self.setMinimumSize(QtCore.QSize(350, 200))
+        self.gridLayout = QtWidgets.QGridLayout(self)
+        self.setWindowTitle("Define the variation ranges")
         
-        d=self.structure.scanlayerthickness2D(self.matlistfor2Dvar.index(self.Matchoice1.get())+1,self.matlistfor2Dvar.index(self.Matchoice2.get())+1,range(int(self.Startthick1.get()),int(self.Endthick1.get()+1),int(self.Stepthick1.get())),range(int(self.Startthick2.get()),int(self.Endthick2.get()+1),int(self.Stepthick2.get())),self.specttotake,1,0,1,'s')
-
-        #print(d)
+        self.matlistfor2Dvar=[MatThickActList[item][1]+'#'+str(item+1) for item in range(len(MatThickActList))]
         
+        self.label = QtWidgets.QLabel()
+        self.label.setText('from')
+        self.gridLayout.addWidget(self.label)
+        
+        self.Startthick1 = QtWidgets.QLineEdit()
+        self.Startthick1.setText(str(0))
+        self.gridLayout.addWidget(self.Startthick1)
+        
+        self.label = QtWidgets.QLabel()
+        self.label.setText('step')
+        self.gridLayout.addWidget(self.label)
+        
+        self.Stepthick1 = QtWidgets.QLineEdit()
+        self.Stepthick1.setText(str(1))
+        self.gridLayout.addWidget(self.Stepthick1)
+        
+        self.label = QtWidgets.QLabel()
+        self.label.setText('to')
+        self.gridLayout.addWidget(self.label)
+        
+        self.Endthick1 = QtWidgets.QLineEdit()
+        self.Endthick1.setText(str(10))
+        self.gridLayout.addWidget(self.Endthick1)
+        
+        self.comboBox_matname2D1 = QtWidgets.QComboBox()
+        self.comboBox_matname2D1.addItems(self.matlistfor2Dvar)
+        self.gridLayout.addWidget(self.comboBox_matname2D1)
+        
+        self.label = QtWidgets.QLabel()
+        self.label.setText('from')
+        self.gridLayout.addWidget(self.label)
+        
+        self.Startthick2 = QtWidgets.QLineEdit()
+        self.Startthick2.setText(str(0))
+        self.gridLayout.addWidget(self.Startthick2)
+        
+        self.label = QtWidgets.QLabel()
+        self.label.setText('step')
+        self.gridLayout.addWidget(self.label)
+        
+        self.Stepthick2 = QtWidgets.QLineEdit()
+        self.Stepthick2.setText(str(1))
+        self.gridLayout.addWidget(self.Stepthick2)
+        
+        self.label = QtWidgets.QLabel()
+        self.label.setText('to')
+        self.gridLayout.addWidget(self.label)
+        
+        self.Endthick2 = QtWidgets.QLineEdit()
+        self.Endthick2.setText(str(10))
+        self.gridLayout.addWidget(self.Endthick2)
+        
+        self.comboBox_matname2D2 = QtWidgets.QComboBox()
+        self.comboBox_matname2D2.addItems(self.matlistfor2Dvar)
+        self.gridLayout.addWidget(self.comboBox_matname2D2)
+        
+        self.pushButton_2D = QtWidgets.QPushButton("Validate", self)
+        self.gridLayout.addWidget(self.pushButton_2D)
+        self.pushButton_2D.clicked.connect(lambda: self.validate(structure,specttotake,f))
+        
+    def validate(self,structure,specttotake,f):
+        global numberofLayer
+        global matnamelist
+        global MatThickActList
+        
+        d=structure.scanlayerthickness2D(self.matlistfor2Dvar.index(self.comboBox_matname2D1.currentText())+1,self.matlistfor2Dvar.index(self.comboBox_matname2D2.currentText())+1,range(int(self.Startthick1.text()),int(self.Endthick1.text())+1,int(self.Stepthick1.text())),range(int(self.Startthick2.text()),int(self.Endthick2.text())+1,int(self.Stepthick2.text())),specttotake,1,0,1,'s')
         datatoexporttxt=[]
         
         for i in range(len(d)):
@@ -1602,53 +1454,21 @@ class TMSimApp(Toplevel):
                 linetxt+="\n"
                 datatoexporttxt.append(linetxt)
                 
-        head="Thick. "+self.Matchoice1.get()+"\tThick. "+self.Matchoice2.get()+"\tAir\t"
+        head="Thick. "+self.comboBox_matname2D1.currentText()+"\tThick. "+self.comboBox_matname2D2.currentText()+"\tAir\t"
         for item in self.matlistfor2Dvar:
             head+=item+"\t"
         head+="Air\n"
-        file = open(self.f[:-4]+"_2Drawdata.txt",'w', encoding='ISO-8859-1')
+        file = open(f[:-4]+"_2Drawdata.txt",'w', encoding='ISO-8859-1')
         file.writelines(head)
         file.writelines(item for item in datatoexporttxt)
         file.close()
         
-        self.simulatedialog.destroy()
-        self.updatelist()
-        
-    
-    ######################end simulation code################################
-    
-    def Help(self):
-              
-        self.window = tk.Toplevel()
-        self.window.wm_title("HelpDesk")
-        self.window.geometry("900x200")
-        self.window.config(background="white")
-        center(self.window)
-        
-        S=Scrollbar(self.window)
-        T=tk.Text(self.window,height=50,width=200)
-        S.pack(side=tk.RIGHT, fill=tk.Y)
-        T.pack(side=tk.LEFT, fill=tk.BOTH,expand=1)
-        S.config(command=T.yview)
-        T.config(yscrollcommand=S.set)
-        quote= """
- More info about transfer matrix modeling: https://en.wikipedia.org/wiki/Transfer-matrix_method_(optics)
- 
-####
- based on transfer matrix python package tmm, written by Steven Byrnes, http://sjbyrnes.com
- main code to generate the matrices and calculate the currents written by Gabriel Christmann (PV-Center, CSEM)
- readaptation and completion by J.Werner (PV-Lab, EPFL), 2017-18
- 
- IQE=100%
- the light is considered entering/exiting from/to an incoherent medium with refractive index of 1 (Air), and perpendicular to the device plane.
- all layers are considered flat.                                                                                                 
-        """
-        T.insert(tk.END,quote)
-            
-        
-###############################################################################        
-if __name__ == '__main__':
-    app = TMSimApp()
-    app.mainloop()
+        self.hide()
 
 
+if __name__ == "__main__":
+    app = QtWidgets.QApplication(sys.argv)
+    window = TMSimulation()
+    window.show()
+    sys.exit(app.exec())      
+        

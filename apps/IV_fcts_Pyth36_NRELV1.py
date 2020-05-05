@@ -956,7 +956,8 @@ class IVApp(Toplevel):
                         for key, grp in groupby(sorted(listofthegroup, key = grouper), grouper):
                             result.append(list(grp))
                             keylist.append(key)
-                        
+                        print(result)
+                        print(keylist)
                         listdata=[]
                         for item1 in range(len(keylist)):
                             listdata1=[]

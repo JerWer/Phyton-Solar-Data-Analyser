@@ -47,7 +47,7 @@ from IVpyqt5gui import Ui_MainWindow
 #%%############# Global variable definition
 file_path=[]
 testdata = []
-DATA = [] #[{"SampleName":, "CellNumber": , "MeasDayTime":, "CellSurface":, "Voc":, "Jsc":, "FF":, "Eff":, "Pmpp":, "Vmpp":, "Jmpp":, "Roc":, "Rsc":, "VocFF":, "RscJsc":, "NbPoints":, "Delay":, "IntegTime":, "Vstart":, "Vend":, "Illumination":, "ScanDirection":, "ImaxComp":, "Isenserange":,"AreaJV":, "Operator":, "MeasComment":, "IVData":}]
+DATA = {} #{sampleID: {"SampleName":, "CellNumber": , "MeasDayTime":, "CellSurface":, "Voc":, "Jsc":, "FF":, "Eff":, "Pmpp":, "Vmpp":, "Jmpp":, "Roc":, "Rsc":, "VocFF":, "RscJsc":, "NbPoints":, "Delay":, "IntegTime":, "Vstart":, "Vend":, "Illumination":, "ScanDirection":, "ImaxComp":, "Isenserange":,"AreaJV":, "Operator":, "MeasComment":, "IVData":}]
 DATAJVforexport=[]
 DATAJVtabforexport=[]
 DATAmppforexport=[]
@@ -59,7 +59,7 @@ takenforplot=[]
 takenforplotmpp=[]
 takenforplotTime=[]
 
-DATAMPP = []
+DATAMPP = {}
 DATAdark = []
 DATAFV=[]
 
@@ -69,6 +69,7 @@ numbDarkfiles=0
 IVlegendMod = []
 IVlinestyle = []
 colorstylelist = ['black', 'red', 'blue', 'brown', 'green','cyan','magenta','olive','navy','orange','gray','aliceblue','antiquewhite','aqua','aquamarine','azure','beige','bisque','blanchedalmond','blue','blueviolet','brown','burlywood','cadetblue','chartreuse','chocolate','coral','cornflowerblue','cornsilk','crimson','darkblue','darkcyan','darkgoldenrod','darkgray','darkgreen','darkkhaki','darkmagenta','darkolivegreen','darkorange','darkorchid','darkred','darksalmon','darkseagreen','darkslateblue','darkslategray','darkturquoise','darkviolet','deeppink','deepskyblue','dimgray','dodgerblue','firebrick','floralwhite','forestgreen','fuchsia','gainsboro','ghostwhite','gold','goldenrod','greenyellow','honeydew','hotpink','indianred','indigo','ivory','khaki','lavender','lavenderblush','lawngreen','lemonchiffon','lightblue','lightcoral','lightcyan','lightgoldenrodyellow','lightgreen','lightgray','lightpink','lightsalmon','lightseagreen','lightskyblue','lightslategray','lightsteelblue','lightyellow','lime','limegreen','linen','magenta','maroon','mediumaquamarine','mediumblue','mediumorchid','mediumpurple','mediumseagreen','mediumslateblue','mediumspringgreen','mediumturquoise','mediumvioletred','midnightblue','mintcream','mistyrose','moccasin','navajowhite','navy','oldlace','olive','olivedrab','orange','orangered','orchid','palegoldenrod','palegreen','paleturquoise','palevioletred','papayawhip','peachpuff','peru','pink','plum','powderblue','purple','red','rosybrown','royalblue','saddlebrown','salmon','sandybrown','seagreen','seashell','sienna','silver','skyblue','slateblue','slategray','snow','springgreen','steelblue','tan','teal','thistle','tomato','turquoise','violet','wheat','white','whitesmoke','yellow','yellowgreen']
+colormapname="jet"
 
 MPPlegendMod = []
 MPPlinestyle = []
@@ -101,11 +102,96 @@ class IVapp(QtWidgets.QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
+        self.fig1 = Figure()
+        self.JVgraph = self.fig1.add_subplot(111)
+        self.JVgraph.set_xlabel('Voltage (mV)')
+        self.JVgraph.set_ylabel('Current density (mA/cm'+'\xb2'+')')
+        self.JVgraph.axhline(y=0, color='k')
+        self.JVgraph.axvline(x=0, color='k')
+        self.addmpl(self.fig1,self.ui.gridLayout_5, self.ui.widget_JVGraph)
+
+        self.fig2 = Figure()
+        self.MPPgraph = self.fig2.add_subplot(111)
+        self.MPPgraph.set_ylabel('Power (mW/cm'+'\xb2'+')')
+        self.MPPgraph.set_xlabel('Time (s)')
+        self.addmpl(self.fig2,self.ui.gridLayout_2, self.ui.widget_Mpp)
+        
+        self.fig3 = Figure()
+        self.Boxgraph = self.fig3.add_subplot(111)
+        self.addmpl(self.fig3,self.ui.gridLayout_7, self.ui.widget_BoxPlot)
+        
+        self.fig4 = Figure()
+        self.TimeEvolraph = self.fig4.add_subplot(111)
+        self.addmpl(self.fig4,self.ui.gridLayout_10, self.ui.widget_PVPTime)
+        
+        self.fig5 = Figure()
+        self.ParamParamgraph = self.fig5.add_subplot(111)
+        self.addmpl(self.fig5,self.ui.gridLayout_11, self.ui.widget_PVPGraph)
+        
+        self.fig6 = Figure()
+        self.Histgraph = self.fig6.add_subplot(111)
+        self.addmpl(self.fig6,self.ui.gridLayout_13, self.ui.widget_HistoGraph)
+        
         finish = QAction("Quit", self)
         finish.triggered.connect(lambda: self.closeEvent(1))
 
         self.ui.pushButton_ImportData.clicked.connect(self.startimporting)
+        self.ui.pushButton_DeleteRows.clicked.connect(self.DeleteRows)
+        self.ui.pushButton_DefineGroup.clicked.connect(self.Confirmgroupnamechanges)
+        
+        self.ui.radioButton_JVtopleft.toggled.connect(self.PlotIV)
+        self.ui.radioButton_JVtopright.toggled.connect(self.PlotIV)
+        self.ui.radioButton_JVbottomleft.toggled.connect(self.PlotIV)
+        self.ui.radioButton_JVbottomright.toggled.connect(self.PlotIV)
+        self.ui.radioButton_JVoutside.toggled.connect(self.PlotIV)
+        self.ui.radioButton_JVBest.toggled.connect(self.PlotIV)
+        self.ui.checkBox_JVLegend.toggled.connect(self.PlotIV)
+        self.ui.pushButton_PlotJV.clicked.connect(self.PlotIV)
+        self.ui.pushButton_SaveJV.clicked.connect(self.GraphJVsave_as)
+        
+        self.ui.radioButton_MppTopleft.toggled.connect(self.PlotMPP)
+        self.ui.radioButton_MppTopright.toggled.connect(self.PlotMPP)
+        self.ui.radioButton_MppBottomleft.toggled.connect(self.PlotMPP)
+        self.ui.radioButton_MppBottomright.toggled.connect(self.PlotMPP)
+        self.ui.radioButton_MppOutside.toggled.connect(self.PlotMPP)
+        self.ui.radioButton_MppBest.toggled.connect(self.PlotMPP)
+        self.ui.checkBox_MppLegend.toggled.connect(self.PlotMPP)
+        self.ui.listWidget_MppSamples.itemClicked.connect(self.PlotMPP)
+        self.ui.pushButton_SaveMpp.clicked.connect(self.GraphMPPsave_as)
+        self.ui.listWidget_MppSamples.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
+        
+        self.ui.listWidget_HistoGroups.itemClicked.connect(self.UpdateHistGraph)
+        self.ui.comboBox_HistoParam.currentTextChanged.connect(self.UpdateHistGraph)
+        self.ui.comboBox_HistoScanDirect.currentTextChanged.connect(self.UpdateHistGraph)
+        self.ui.comboBox_HistoType.currentTextChanged.connect(self.UpdateHistGraph)
+        self.ui.checkBox_Histxscale.toggled.connect(self.UpdateHistGraph)
+        self.ui.spinBox_HistoBins.valueChanged.connect(self.UpdateHistGraph)
+        self.ui.spinBox_HistxscaleMin.valueChanged.connect(self.UpdateHistGraph)
+        self.ui.spinBox_HistxscaleMax.valueChanged.connect(self.UpdateHistGraph)
+        self.ui.pushButton_SaveHistoGraph.clicked.connect(self.GraphHistsave_as)
+        self.ui.listWidget_HistoGroups.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
+
+        self.ui.listWidget_BoxPlotGroup.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
+        self.ui.listWidget_BoxPlotGroup.setDragDropMode(QtWidgets.QAbstractItemView.InternalMove)
+        self.ui.listWidget_BoxPlotGroup.itemClicked.connect(self.UpdateBoxGraph)
+        self.ui.comboBox_BoxPlotParam.currentTextChanged.connect(self.UpdateBoxGraph)
+        self.ui.checkBox_BoxPlotAftermpp.toggled.connect(self.UpdateBoxGraph)
+        self.ui.checkBox_BoxPlotBkg.toggled.connect(self.UpdateBoxGraph)
+        self.ui.spinBox_BoxPlotRotation.valueChanged.connect(self.UpdateBoxGraph)
+        self.ui.spinBox_BoxPlotFontsize.valueChanged.connect(self.UpdateBoxGraph)
+        self.ui.checkBox_BoxPlotBoxPlot.toggled.connect(self.UpdateBoxGraph)
+        self.ui.checkBox_BoxPlotRevForw.toggled.connect(self.UpdateBoxGraph)
+        self.ui.pushButton_SaveBoxPlot.clicked.connect(self.GraphBoxsave_as)
+
     
+    def addmpl(self, fig, whereLayout, whereWidget):
+        self.canvas = FigureCanvas(fig)
+        whereLayout.addWidget(self.canvas)
+        self.canvas.draw()
+        self.toolbar = NavigationToolbar(self.canvas, 
+                whereWidget, coordinates=True)
+        whereLayout.addWidget(self.toolbar)
+        
     def closeEvent(self, event):
         """ what happens when close the program"""
         global testdata, DATA, DATAJVforexport, DATAJVtabforexport
@@ -197,6 +283,7 @@ class IVapp(QtWidgets.QMainWindow):
                             print("NREL files")
                             self.thread = Thread_getdatalistsfromNRELfiles(file_path)
                             self.thread.change_value.connect(self.setProgressVal)
+                            self.thread.finished.connect(self.ImportFinished)
                             self.thread.start()
                             
                         elif 'Notes' in filerawdata[1]:
@@ -205,7 +292,10 @@ class IVapp(QtWidgets.QMainWindow):
                             finished=1
                         else:
                             print("NREL files")
-                            # self.getdatalistsfromNRELfiles(file_path)
+                            self.thread = Thread_getdatalistsfromNRELfiles(file_path)
+                            self.thread.change_value.connect(self.setProgressVal)
+                            self.thread.finished.connect(self.ImportFinished)
+                            self.thread.start()
                             finished=1
                         break
                     elif filetype==".xls":
@@ -262,27 +352,19 @@ class IVapp(QtWidgets.QMainWindow):
                 QMessageBox.information(self,'Information', "Please select IV files")
                 j+=1
 
-
-    def setProgressVal(self, val):
+    def ImportFinished(self):
         global file_path
         global DATA, DATAdark
         global DATAMPP, numbLightfiles, numbDarkfiles
         
-        self.ui.progressBar_ImportData.setValue(val)
         print(len(DATA))
+        print(len(DATAMPP.keys()))
         
-        # if DATAMPP!=[]:
-        #     self.mppnames = ()
-        #     self.mppnames=self.SampleMppNames(DATAMPP)
-        #     self.mppmenu = tk.Menu(self.mppmenubutton, tearoff=False)
-        #     self.mppmenubutton.configure(menu=self.mppmenu)
-        #     self.choicesmpp = {}
-        #     for choice in range(len(self.mppnames)):
-        #         self.choicesmpp[choice] = tk.IntVar(value=0)
-        #         self.mppmenu.add_checkbutton(label=self.mppnames[choice], variable=self.choicesmpp[choice], 
-        #                               onvalue=1, offvalue=0, command = self.UpdateMppGraph0)
-        
-        # self.updateTable()
+        if DATAMPP!={}:
+            self.ui.listWidget_MppSamples.clear()
+            self.ui.listWidget_MppSamples.addItems(DATAMPP.keys())
+
+        self.updateTable(DATA)
         
         # self.updategrouptoplotdropbutton()
         # self.updateCompgrouptoplotdropbutton()
@@ -290,9 +372,692 @@ class IVapp(QtWidgets.QMainWindow):
         # self.UpdateGroupGraph(1)
         # self.UpdateCompGraph(1)
         
-    def updateTable(self):
-        print('updating table')
+    def setProgressVal(self, val):
+        global DATA
+        
+        self.ui.progressBar_ImportData.setValue(val)
+        
+        self.updateTable(DATA)
 
+        
+    def updateTable(self, dictdata):
+        
+        self.ui.tableWidget.setRowCount(len(dictdata.keys()))
+        self.ui.tableWidget.setHorizontalHeaderLabels(
+            ['Group','SampleName','DateTime','Eff. (%)','FF (%)', 'Voc (mV)', 'Jsc (mA/cm2)','Isc (A)', 
+             'Roc (ohm/cm2)', 'Rsc (ohm/cm2)', 'Pmpp (W/m2)', 'Vmpp (mV)', 'Jmpp (mA/cm2)','Area','ScanDirect.','SunInten.'])
+        i=0
+        for key in dictdata.keys():
+            self.ui.tableWidget.setItem(i,0,QTableWidgetItem(dictdata[key]['Group']))
+            self.ui.tableWidget.setItem(i,1,QTableWidgetItem(dictdata[key]['SampleName']))
+            self.ui.tableWidget.setItem(i,2,QTableWidgetItem(str(dictdata[key]['MeasDayTime2'])))
+            self.ui.tableWidget.setItem(i,3,QTableWidgetItem('%.2f' % dictdata[key]['Eff']))
+            self.ui.tableWidget.setItem(i,4,QTableWidgetItem('%.2f' % dictdata[key]['FF']))
+            self.ui.tableWidget.setItem(i,5,QTableWidgetItem('%.2f' % dictdata[key]['Voc']))
+            self.ui.tableWidget.setItem(i,6,QTableWidgetItem('%.2f' % dictdata[key]['Jsc']))
+            self.ui.tableWidget.setItem(i,7,QTableWidgetItem('%.2f' % dictdata[key]['Isc']))
+            self.ui.tableWidget.setItem(i,8,QTableWidgetItem('%.2f' % dictdata[key]['Roc']))
+            self.ui.tableWidget.setItem(i,9,QTableWidgetItem('%.2f' % dictdata[key]['Rsc']))
+            self.ui.tableWidget.setItem(i,10,QTableWidgetItem('%.2f' % dictdata[key]['Pmpp']))
+            self.ui.tableWidget.setItem(i,11,QTableWidgetItem('%.2f' % dictdata[key]['Vmpp']))
+            self.ui.tableWidget.setItem(i,12,QTableWidgetItem('%.2f' % dictdata[key]['Jmpp']))
+            self.ui.tableWidget.setItem(i,13,QTableWidgetItem('%.2f' % dictdata[key]['CellSurface']))
+            self.ui.tableWidget.setItem(i,14,QTableWidgetItem(dictdata[key]['ScanDirection']))
+            self.ui.tableWidget.setItem(i,15,QTableWidgetItem('%.2f' % dictdata[key]['sunintensity']))
+            i+=1
+            
+    def ClearTable(self):
+        self.ui.tableWidget.setRowCount(0)
+    
+    def DeleteRows(self):
+        global DATA
+        
+        rows=list(set(index.row() for index in self.ui.tableWidget.selectedIndexes()))
+        sampleselected=[self.ui.tableWidget.item(row,1).text()+'_'+str(self.ui.tableWidget.item(row,2).text()).replace(' ','_').replace(':','-')+'_'+'%.2f'%float(self.ui.tableWidget.item(row,3).text()) for row in rows]
+        
+        for item in sampleselected:
+            del(DATA[item])
+        
+        self.updateTable(DATA)
+        
+    def Confirmgroupnamechanges(self):
+        global DATA
+        self.ui.listWidget_BoxPlotGroup.clear()
+        self.ui.listWidget_HistoGroups.clear()
+        
+        groupnames=[]
+        for i in range(self.ui.tableWidget.rowCount()):
+            sn=self.ui.tableWidget.item(i,1).text()+'_'+str(self.ui.tableWidget.item(i,2).text()).replace(' ','_').replace(':','-')+'_'+'%.2f'%float(self.ui.tableWidget.item(i,3).text())
+            DATA[sn]['Group']=self.ui.tableWidget.item(i,0).text()
+            groupnames.append(self.ui.tableWidget.item(i,0).text())
+            
+        groupnames=set(groupnames)
+        self.ui.listWidget_BoxPlotGroup.addItems(groupnames)
+        self.ui.listWidget_HistoGroups.addItems(groupnames)
+        
+#%%#############
+    def PlotMPP(self):
+        global DATAMPP, MPPlegendMod, MPPlinestyle
+        global DATAmppforexport
+        DATAmppforexport=[]
+        items = self.ui.listWidget_MppSamples.selectedItems()
+        selectedmpptraces = []
+        for i in range(len(items)):
+            selectedmpptraces.append(str(self.ui.listWidget_MppSamples.selectedItems()[i].text()))
+        
+        self.MPPgraph.clear()
+        for item in selectedmpptraces:
+            x = DATAMPP[item]["MppData"][2]
+            y = DATAMPP[item]["MppData"][3]
+            
+            colx=["Time","s",""]+x
+            coly=["Power","mW/cm2",DATAMPP[item]["SampleName"]]+y
+            DATAmppforexport.append(colx)
+            DATAmppforexport.append(coly)
+            
+            if self.ui.checkBox_MppLegend.isChecked():
+                self.MPPgraph.plot(x,y,label=DATAMPP[item]["MPPlinestyle"][0],linestyle=DATAMPP[item]["MPPlinestyle"][1],color=DATAMPP[item]["MPPlinestyle"][2],linewidth=DATAMPP[item]["MPPlinestyle"][3])
+            else:
+                self.MPPgraph.plot(x,y,linestyle=DATAMPP[item]["MPPlinestyle"][1],color=DATAMPP[item]["MPPlinestyle"][2],linewidth=DATAMPP[item]["MPPlinestyle"][3])
+                
+        self.MPPgraph.set_ylabel('Power (mW/cm'+'\xb2'+')')
+        self.MPPgraph.set_xlabel('Time (s)')
+        
+        for item in ([self.MPPgraph.title, self.MPPgraph.xaxis.label, self.MPPgraph.yaxis.label] +
+                             self.MPPgraph.get_xticklabels() + self.MPPgraph.get_yticklabels()):
+            item.set_fontsize(self.ui.spinBox_MppFontsize.value())
+        
+        if self.ui.checkBox_MppLegend.isChecked():
+            if self.ui.radioButton_MppTopleft.isChecked():
+                self.leg=self.MPPgraph.legend(loc=2, fontsize = self.ui.spinBox_MppFontsize.value())
+            elif self.ui.radioButton_MppTopright.isChecked():
+                self.leg=self.MPPgraph.legend(loc=1, fontsize = self.ui.spinBox_MppFontsize.value())
+            elif self.ui.radioButton_MppBottomleft.isChecked():
+                self.leg=self.MPPgraph.legend(loc=3, fontsize = self.ui.spinBox_MppFontsize.value())
+            elif self.ui.radioButton_MppBottomright.isChecked():
+                self.leg=self.MPPgraph.legend(loc=4, fontsize = self.ui.spinBox_MppFontsize.value())
+            elif self.ui.radioButton_MppOutside.isChecked():
+                self.leg=self.MPPgraph.legend(bbox_to_anchor=(1, 1), loc='upper left', ncol=1, fontsize = self.ui.spinBox_MppFontsize.value())
+            elif self.ui.radioButton_MppBest.isChecked():
+                self.leg=self.MPPgraph.legend(loc=0, fontsize = self.ui.spinBox_MppFontsize.value())
+        
+        DATAmppforexport=map(list, six.moves.zip_longest(*DATAmppforexport, fillvalue=' '))
+
+        self.fig2.canvas.draw_idle()
+        self.fig2.canvas.flush_events()        
+        
+    def GraphMPPsave_as(self):
+        global DATAmppforexport
+        # try:
+        path = QFileDialog.getSaveFileName(self, 'Save graph and data', ".png", "graph file (*.png);; All Files (*)")[0]
+
+        if self.ui.checkBox_MppLegend.isChecked():
+            self.fig2.savefig(path, dpi=300, bbox_extra_artists=(self.leg,))#, transparent=True)
+        else:
+            self.fig2.savefig(path, dpi=300)#, transparent=True)
+            
+        DATAmppforexport1=[]            
+        for item in DATAmppforexport:
+            line=""
+            for item1 in item:
+                line=line+str(item1)+"\t"
+            line=line[:-1]+"\n"
+            DATAmppforexport1.append(line)
+            
+        file = open(str(path[:-4]+"_dat.txt"),'w', encoding='ISO-8859-1')
+        file.writelines("%s" % item for item in DATAmppforexport1)
+        file.close()
+        
+        # except:
+        #     print("there is an exception while saving MPP")    
+#%%#############
+        
+    def PlotIV(self):
+        global DATA, DATAJVforexport, DATAJVtabforexport
+        
+        # print(DATA.keys())
+        
+        DATAJVforexport=[]
+        DATAJVtabforexport=[]
+        
+        rows=list(set(index.row() for index in self.ui.tableWidget.selectedIndexes()))
+        sampleselected=[self.ui.tableWidget.item(row,1).text()+'_'+str(self.ui.tableWidget.item(row,2).text()).replace(' ','_').replace(':','-')+'_'+'%.2f'%float(self.ui.tableWidget.item(row,3).text()) for row in rows]
+        # print(sampleselected)
+        self.JVgraph.clear()
+        for item in sampleselected:
+            x = DATA[item]["IVData"][0]
+            y = DATA[item]["IVData"][1]
+            
+            colx=["Voltage","mV",""]+x
+            coly=["Current density","ma/cm2",DATA[item]["SampleName"]]+y
+            DATAJVforexport.append(colx)
+            DATAJVforexport.append(coly)
+            DATAJVtabforexport.append([DATA[item]["SampleName"],str(DATA[item]["MeasDayTime2"]),'%.f' % float(DATA[item]["Voc"]),'%.2f' % float(DATA[item]["Jsc"]),'%.2f' % float(DATA[item]["FF"]),'%.2f' % float(DATA[item]["Eff"]),'%.2f' % float(DATA[item]["Roc"]),'%.2f' % float(DATA[item]["Rsc"]),'%.2f' % float(DATA[item]["Vstart"]),'%.2f' % float(DATA[item]["Vend"]),'%.2f' % float(DATA[item]["CellSurface"])])
+
+            if self.ui.checkBox_JVLegend.isChecked():
+                self.JVgraph.plot(x,y,label=DATA[item]["IVlinestyle"][0],linestyle=DATA[item]["IVlinestyle"][1],color=DATA[item]["IVlinestyle"][2],linewidth=DATA[item]["IVlinestyle"][3])
+            else:
+                self.JVgraph.plot(x,y,linestyle=DATA[item]["IVlinestyle"][1],color=DATA[item]["IVlinestyle"][2],linewidth=DATA[item]["IVlinestyle"][3])
+        self.JVgraph.set_xlabel('Voltage (V)')#,**csfont)
+        self.JVgraph.set_ylabel('Current density (mA/cm'+'\xb2'+')')#,**csfont)
+        self.JVgraph.axhline(y=0, color='k')
+        self.JVgraph.axvline(x=0, color='k')
+        for item in ([self.JVgraph.title, self.JVgraph.xaxis.label, self.JVgraph.yaxis.label] +
+                             self.JVgraph.get_xticklabels() + self.JVgraph.get_yticklabels()):
+            item.set_fontsize(self.ui.spinBox_JVfontsize.value())
+        
+        DATAJVforexport=map(list, six.moves.zip_longest(*DATAJVforexport, fillvalue=' '))
+        DATAJVtabforexport.insert(0,[" ","DateTime","Voc", "Jsc", "FF","Eff","Roc","Rsc","Vstart","Vend","Cellsurface"])
+        
+        if self.ui.checkBox_JVLegend.isChecked():
+            if self.ui.radioButton_JVtopleft.isChecked():
+                self.leg=self.JVgraph.legend(loc=2, fontsize = self.ui.spinBox_JVfontsize.value())
+            elif self.ui.radioButton_JVtopright.isChecked():
+                self.leg=self.JVgraph.legend(loc=1, fontsize = self.ui.spinBox_JVfontsize.value())
+            elif self.ui.radioButton_JVbottomleft.isChecked():
+                self.leg=self.JVgraph.legend(loc=3, fontsize = self.ui.spinBox_JVfontsize.value())
+            elif self.ui.radioButton_JVbottomright.isChecked():
+                self.leg=self.JVgraph.legend(loc=4, fontsize = self.ui.spinBox_JVfontsize.value())
+            elif self.ui.radioButton_JVoutside.isChecked():
+                self.leg=self.JVgraph.legend(bbox_to_anchor=(1, 1), loc='upper left', ncol=1, fontsize = self.ui.spinBox_JVfontsize.value())
+            elif self.ui.radioButton_JVBest.isChecked():
+                self.leg=self.JVgraph.legend(loc=0, fontsize = self.ui.spinBox_JVfontsize.value())
+
+        self.fig1.canvas.draw_idle()
+        self.fig1.canvas.flush_events()
+
+    def GraphJVsave_as(self):
+        global DATA, DATAJVforexport, DATAJVtabforexport
+        
+        f = QFileDialog.getSaveFileName(self, 'Save graph and data', ".png", "graph file (*.png);; All Files (*)")[0]
+
+        if self.ui.checkBox_MppLegend.isChecked():
+            self.fig1.savefig(f, dpi=300, bbox_extra_artists=(self.leg,))#, transparent=True)
+        else:
+            self.fig1.savefig(f, dpi=300)#, transparent=True)
+        
+        DATAJVforexport1=[]
+        for item in DATAJVforexport:
+            line=""
+            for item1 in item:
+                line=line+str(item1)+"\t"
+            line=line[:-1]+"\n"
+            DATAJVforexport1.append(line)
+            
+        file = open(str(f[:-4]+"_dat.txt"),'w', encoding='ISO-8859-1')
+        file.writelines("%s" % item for item in DATAJVforexport1)
+        file.close()   
+        
+        DATAJVforexport1=[]
+        for item in DATAJVtabforexport:
+            line=""
+            for item1 in item:
+                line=line+str(item1)+"\t"
+            line=line[:-1]+"\n"
+            DATAJVforexport1.append(line)
+        file = open(str(f[:-4]+"_tab.txt"),'w', encoding='ISO-8859-1')
+        file.writelines("%s" % item for item in DATAJVforexport1)
+        file.close()
+        
+        
+#%%#############
+        
+    def UpdateHistGraph(self):
+        global DATA        
+        global DATAHistforexport, groupstoplot
+        
+        DATAHistforexport=[]
+        numbbins=int(self.ui.spinBox_HistoBins.value())
+        DATAx=copy.deepcopy(DATA)
+        
+        samplesgroups = self.ui.listWidget_HistoGroups.selectedItems()
+        samplesgroups=[item.text() for item in samplesgroups]
+        # print(samplesgroups)
+        groupnames=[]
+        #sorting data
+        if samplesgroups==[]:
+            self.Histgraph.clear()
+        else:
+            grouplistdict=[]
+            if self.ui.comboBox_HistoScanDirect.currentText()=="Allmeas":    #select all data points
+                for item in range(len(samplesgroups)):
+                    listdata=[]
+                    for item1 in DATAx.keys():
+                        if DATAx[item1]["Group"]==samplesgroups[item] and DATAx[item1]["Illumination"]=='Light':
+                            listdata.append(DATAx[item1][self.ui.comboBox_HistoParam.currentText()])
+                    groupnames.append(samplesgroups[item])
+                    grouplistdict.append(listdata)
+            elif self.ui.comboBox_HistoScanDirect.currentText()=="OnlyRev":
+                for item in range(len(samplesgroups)):
+                    listdata=[]
+                    for item1 in DATAx.keys():
+                        if DATAx[item1]["Group"]==samplesgroups[item] and DATAx[item1]["Illumination"]=='Light' and DATAx[item1]["ScanDirection"]=="Reverse":
+                            listdata.append(DATAx[item1][self.ui.comboBox_HistoParam.currentText()])
+                    groupnames.append(samplesgroups[item])        
+                    grouplistdict.append(listdata)
+                    
+            elif self.ui.comboBox_HistoScanDirect.currentText()=="OnlyForw":
+                for item in range(len(samplesgroups)):
+                    listdata=[]
+                    for item1 in DATAx.keys():
+                        if DATAx[item1]["Group"]==samplesgroups[item] and DATAx[item1]["Illumination"]=='Light' and DATAx[item1]["ScanDirection"]=="Forward":
+                            listdata.append(DATAx[item1][self.ui.comboBox_HistoParam.currentText()])
+                    groupnames.append(samplesgroups[item])        
+                    grouplistdict.append(listdata)
+                    
+            elif self.ui.comboBox_HistoScanDirect.currentText()=="Bestof/pix":  
+                for item in range(len(samplesgroups)):
+                    listofthegroup=[]
+                    for item1 in DATAx.keys():
+                        if DATAx[item1]["Group"]==samplesgroups[item] and DATAx[item1]["Illumination"]=='Light':
+                            listofthegroup.append(DATAx[item1])
+                    if len(listofthegroup)!=0:
+                        
+                        grouper = itemgetter("DepID", "Cellletter")
+                        result = []
+                        keylist=[]
+                        for key, grp in groupby(sorted(listofthegroup, key = grouper), grouper):
+                            result.append(list(grp))
+                            keylist.append(key)
+                        # print(result)
+                        # print(keylist)
+                        listdata=[]
+                        for item1 in range(len(keylist)):
+                            listdata1=[]
+                            for item2 in range(len(result[item1])):
+                                listdata1.append(result[item1][item2][self.ui.comboBox_HistoParam.currentText()])
+                            listdata.append(max(listdata1))
+                            
+                        groupnames.append(samplesgroups[item])        
+                        grouplistdict.append(listdata)
+            elif self.ui.comboBox_HistoScanDirect.currentText()=="Bestof/subst":  
+                for item in range(len(samplesgroups)):
+                    listofthegroup=[]
+                    for item1 in DATAx.keys():
+                        if DATAx[item1]["Group"]==samplesgroups[item] and DATAx[item1]["Illumination"]=='Light':
+                            listofthegroup.append(DATAx[item1])
+                    if len(listofthegroup)!=0:
+                        grouper = itemgetter("DepID")
+                        result = []
+                        keylist=[]
+                        for key, grp in groupby(sorted(listofthegroup, key = grouper), grouper):
+                            result.append(list(grp))
+#                            print(len(result))
+                            keylist.append(key)
+                        
+                        listdata=[]
+                        for item1 in range(len(keylist)):
+                            listdata1=[]
+                            for item2 in range(len(result[item1])):
+                                listdata1.append(result[item1][item2][self.ui.comboBox_HistoParam.currentText()])
+                            listdata.append(max(listdata1))
+                            
+                        groupnames.append(samplesgroups[item])        
+                        grouplistdict.append(listdata)
+
+
+            self.Histgraph.clear()
+            if self.ui.checkBox_Histxscale.isChecked():
+                self.Histgraph.hist(grouplistdict,bins=numbbins,range=[self.ui.spinBox_HistxscaleMin.value(), self.ui.spinBox_HistxscaleMax.value()],histtype= self.ui.comboBox_HistoType.currentText(), density=False, cumulative=False, alpha=0.6, edgecolor='black', linewidth=1.2, label=groupnames)
+            else:
+                self.Histgraph.hist(grouplistdict,bins=numbbins,histtype= self.ui.comboBox_HistoType.currentText(), density=False, cumulative=False, alpha=0.6, edgecolor='black', linewidth=1.2, label=groupnames)
+                
+            self.Histgraph.set_xlabel(self.ui.comboBox_HistoParam.currentText())
+            self.Histgraph.set_ylabel('counts')
+            self.Histgraph.legend()
+        
+            DATAHistforexport=list(map(list, six.moves.zip_longest(*grouplistdict, fillvalue=' ')))
+            DATAHistforexport=[groupnames]+DATAHistforexport
+
+        
+        self.fig6.canvas.draw_idle()
+        self.fig6.canvas.flush_events()
+
+    def GraphHistsave_as(self):
+        global DATA, DATAHistforexport
+        
+        f = QFileDialog.getSaveFileName(self, 'Save graph and data', ".png", "graph file (*.png);; All Files (*)")[0]
+        self.fig6.savefig(f, dpi=300)#, transparent=True)
+                       
+        DATAHistforexport1=[]            
+        for item in DATAHistforexport:
+            line=""
+            for item1 in item:
+                line=line+str(item1)+"\t"
+            line=line[:-1]+"\n"
+            DATAHistforexport1.append(line)
+            
+        file = open(str(f[:-4]+"_dat.txt"),'w', encoding='ISO-8859-1')
+        file.writelines("%s" % item for item in DATAHistforexport1)
+        file.close()
+
+
+    def UpdateBoxGraph(self):
+        global DATA
+        global groupstoplot
+        global DATAgroupforexport
+        
+        DATAgroupforexport=[]
+        fontsizegroup=self.ui.spinBox_BoxPlotFontsize.value()
+        DATAx=copy.deepcopy(DATA)
+        
+        samplesgroups = self.ui.listWidget_BoxPlotGroup.selectedItems()
+        samplesgroups=[item.text() for item in samplesgroups]
+        print(samplesgroups)
+        
+        if len(samplesgroups)>0:    #if user defined group names different than "Default group"        
+            grouplistdict=[]
+            if not self.ui.checkBox_BoxPlotRevForw.isChecked():    #select all data points
+                if not self.ui.checkBox_BoxPlotAftermpp.isChecked():#all points without separation
+                    for sample in samplesgroups:
+#                        print(samplesgroups[item])
+                        groupdict={}
+                        groupdict["Group"]=sample
+                        listofthegroup=[]
+                        for item1 in DATAx.keys():
+                            if DATAx[item1]["Group"]==groupdict["Group"] and DATAx[item1]["Illumination"]=='Light':
+                                listofthegroup.append(DATAx[item1])
+                        if len(listofthegroup)!=0:
+                            listofthegroupRev=[]
+                            listofthegroupFor=[]
+                            for item1 in range(len(listofthegroup)):
+#                                print(listofthegroup[item1]["ScanDirection"])
+                                if listofthegroup[item1]["ScanDirection"]=="Reverse":
+                                    listofthegroupRev.append(listofthegroup[item1])
+                                else:
+                                    listofthegroupFor.append(listofthegroup[item1])
+                            
+                            groupdict["RevVoc"]=[x['Voc'] for x in listofthegroupRev if 'Voc' in x]
+                            groupdict["ForVoc"]=[x['Voc'] for x in listofthegroupFor if 'Voc' in x]
+                            groupdict["RevJsc"]=[x['Jsc'] for x in listofthegroupRev if 'Jsc' in x]
+                            groupdict["ForJsc"]=[x['Jsc'] for x in listofthegroupFor if 'Jsc' in x]
+                            groupdict["RevFF"]=[x['FF'] for x in listofthegroupRev if 'FF' in x]
+                            groupdict["ForFF"]=[x['FF'] for x in listofthegroupFor if 'FF' in x]
+                            groupdict["RevEff"]=[x['Eff'] for x in listofthegroupRev if 'Eff' in x]
+                            groupdict["ForEff"]=[x['Eff'] for x in listofthegroupFor if 'Eff' in x]
+                            groupdict["RevRoc"]=[x['Roc'] for x in listofthegroupRev if 'Roc' in x]
+                            groupdict["ForRoc"]=[x['Roc'] for x in listofthegroupFor if 'Roc' in x]
+                            groupdict["RevRsc"]=[x['Rsc'] for x in listofthegroupRev if 'Rsc' in x]
+                            groupdict["ForRsc"]=[x['Rsc'] for x in listofthegroupFor if 'Rsc' in x]
+                            groupdict["RevVmpp"]=[x['Vmpp'] for x in listofthegroupRev if 'Vmpp' in x]
+                            groupdict["ForVmpp"]=[x['Vmpp'] for x in listofthegroupFor if 'Vmpp' in x]
+                            groupdict["RevJmpp"]=[x['Jmpp'] for x in listofthegroupRev if 'Jmpp' in x]
+                            groupdict["ForJmpp"]=[x['Jmpp'] for x in listofthegroupFor if 'Jmpp' in x]
+                            
+                            grouplistdict.append(groupdict)
+                
+                else:#for separation before/after mpp
+                    for sample in samplesgroups:
+                        groupdict={}
+                        groupdict["Group"]=sample
+                        listofthegroup=[]
+                        for item1 in DATAx.keys():
+                            if DATAx[item1]["Group"]==groupdict["Group"] and DATAx[item1]["Illumination"]=='Light' and DATAx[item1]["aftermpp"]==0:
+                                listofthegroup.append(DATAx[item1])
+                        if len(listofthegroup)!=0:
+                            listofthegroupRev=[]
+                            listofthegroupFor=[]
+                            for item1 in range(len(listofthegroup)):
+                                if listofthegroup[item1]["ScanDirection"]=="Reverse":
+                                    listofthegroupRev.append(listofthegroup[item1])
+                                else:
+                                    listofthegroupFor.append(listofthegroup[item1])
+                            
+                            groupdict["RevVoc"]=[x['Voc'] for x in listofthegroupRev if 'Voc' in x]
+                            groupdict["ForVoc"]=[x['Voc'] for x in listofthegroupFor if 'Voc' in x]
+                            groupdict["RevJsc"]=[x['Jsc'] for x in listofthegroupRev if 'Jsc' in x]
+                            groupdict["ForJsc"]=[x['Jsc'] for x in listofthegroupFor if 'Jsc' in x]
+                            groupdict["RevFF"]=[x['FF'] for x in listofthegroupRev if 'FF' in x]
+                            groupdict["ForFF"]=[x['FF'] for x in listofthegroupFor if 'FF' in x]
+                            groupdict["RevEff"]=[x['Eff'] for x in listofthegroupRev if 'Eff' in x]
+                            groupdict["ForEff"]=[x['Eff'] for x in listofthegroupFor if 'Eff' in x]
+                            groupdict["RevRoc"]=[x['Roc'] for x in listofthegroupRev if 'Roc' in x]
+                            groupdict["ForRoc"]=[x['Roc'] for x in listofthegroupFor if 'Roc' in x]
+                            groupdict["RevRsc"]=[x['Rsc'] for x in listofthegroupRev if 'Rsc' in x]
+                            groupdict["ForRsc"]=[x['Rsc'] for x in listofthegroupFor if 'Rsc' in x]
+                            groupdict["RevVmpp"]=[x['Vmpp'] for x in listofthegroupRev if 'Vmpp' in x]
+                            groupdict["ForVmpp"]=[x['Vmpp'] for x in listofthegroupFor if 'Vmpp' in x]
+                            groupdict["RevJmpp"]=[x['Jmpp'] for x in listofthegroupRev if 'Jmpp' in x]
+                            groupdict["ForJmpp"]=[x['Jmpp'] for x in listofthegroupFor if 'Jmpp' in x]
+                            
+#                            grouplistdict.append(groupdict)
+                        listofthegroup2=[]
+                        for item1 in DATAx.keys():
+                            if DATAx[item1]["Group"]==groupdict["Group"] and DATAx[item1]["Illumination"]=='Light' and DATAx[item1]["aftermpp"]==1:
+                                listofthegroup2.append(DATAx[item1])
+                        if len(listofthegroup2)!=0:
+                            listofthegroupRev=[]
+                            listofthegroupFor=[]
+                            for item1 in range(len(listofthegroup2)):
+                                if listofthegroup2[item1]["ScanDirection"]=="Reverse":
+                                    listofthegroupRev.append(listofthegroup2[item1])
+                                else:
+                                    listofthegroupFor.append(listofthegroup2[item1])
+                            
+                            groupdict["RevVocAMPP"]=[x['Voc'] for x in listofthegroupRev if 'Voc' in x]
+                            groupdict["ForVocAMPP"]=[x['Voc'] for x in listofthegroupFor if 'Voc' in x]
+                            groupdict["RevJscAMPP"]=[x['Jsc'] for x in listofthegroupRev if 'Jsc' in x]
+                            groupdict["ForJscAMPP"]=[x['Jsc'] for x in listofthegroupFor if 'Jsc' in x]
+                            groupdict["RevFFAMPP"]=[x['FF'] for x in listofthegroupRev if 'FF' in x]
+                            groupdict["ForFFAMPP"]=[x['FF'] for x in listofthegroupFor if 'FF' in x]
+                            groupdict["RevEffAMPP"]=[x['Eff'] for x in listofthegroupRev if 'Eff' in x]
+                            groupdict["ForEffAMPP"]=[x['Eff'] for x in listofthegroupFor if 'Eff' in x]
+                            groupdict["RevRocAMPP"]=[x['Roc'] for x in listofthegroupRev if 'Roc' in x]
+                            groupdict["ForRocAMPP"]=[x['Roc'] for x in listofthegroupFor if 'Roc' in x]
+                            groupdict["RevRscAMPP"]=[x['Rsc'] for x in listofthegroupRev if 'Rsc' in x]
+                            groupdict["ForRscAMPP"]=[x['Rsc'] for x in listofthegroupFor if 'Rsc' in x]
+                            groupdict["RevVmppAMPP"]=[x['Vmpp'] for x in listofthegroupRev if 'Vmpp' in x]
+                            groupdict["ForVmppAMPP"]=[x['Vmpp'] for x in listofthegroupFor if 'Vmpp' in x]
+                            groupdict["RevJmppAMPP"]=[x['Jmpp'] for x in listofthegroupRev if 'Jmpp' in x]
+                            groupdict["ForJmppAMPP"]=[x['Jmpp'] for x in listofthegroupFor if 'Jmpp' in x]
+                        else:
+                            groupdict["RevVocAMPP"]=[]
+                            groupdict["ForVocAMPP"]=[]
+                            groupdict["RevJscAMPP"]=[]
+                            groupdict["ForJscAMPP"]=[]
+                            groupdict["RevFFAMPP"]=[]
+                            groupdict["ForFFAMPP"]=[]
+                            groupdict["RevEffAMPP"]=[]
+                            groupdict["ForEffAMPP"]=[]
+                            groupdict["RevRocAMPP"]=[]
+                            groupdict["ForRocAMPP"]=[]
+                            groupdict["RevRscAMPP"]=[]
+                            groupdict["ForRscAMPP"]=[]
+                            groupdict["RevVmppAMPP"]=[]
+                            groupdict["ForVmppAMPP"]=[]
+                            groupdict["RevJmppAMPP"]=[]
+                            groupdict["ForJmppAMPP"]=[]                            
+                        grouplistdict.append(groupdict)
+                    
+                    
+            elif self.ui.checkBox_BoxPlotRevForw.isChecked():      #select only the best RevFor of each cell
+                if not self.ui.checkBox_BoxPlotAftermpp.isChecked():
+                    for sample in samplesgroups:
+                        groupdict={}
+                        groupdict["Group"]=sample
+                        listofthegroup=[]
+                        for item1 in DATAx.keys():
+                            if DATAx[item1]["Group"]==groupdict["Group"] and DATAx[item1]["Illumination"]=='Light':
+                                listofthegroup.append(DATAx[item1])
+                        if len(listofthegroup)!=0:
+                            grouper = itemgetter("DepID", "Cellletter",'ScanDirection')
+                            result = []
+                            for key, grp in groupby(sorted(listofthegroup, key = grouper), grouper):
+                                result.append(list(grp))
+                            
+                            result1=[]
+                            
+                            for item in result:
+                                result1.append(sorted(item,key=itemgetter('Eff'),reverse=True)[0])
+                            
+                            grouper = itemgetter('ScanDirection')
+                            result2 = []
+                            for key, grp in groupby(sorted(result1, key = grouper), grouper):
+                                result2.append(list(grp))
+                            
+                            listofthegroupRev=[]
+                            listofthegroupFor=[]
+                            
+                            if result2[0][0]['ScanDirection']=='Forward':
+                                listofthegroupFor=result2[0]
+                                if len(result2)>1:
+                                    listofthegroupRev=result2[1]
+                            else:
+                                listofthegroupRev=result2[0]
+                                if len(result2)>1:
+                                    listofthegroupFor=result2[1]
+        
+                            groupdict["RevVoc"]=[x['Voc'] for x in listofthegroupRev if 'Voc' in x]
+                            groupdict["ForVoc"]=[x['Voc'] for x in listofthegroupFor if 'Voc' in x]
+                            groupdict["RevJsc"]=[x['Jsc'] for x in listofthegroupRev if 'Jsc' in x]
+                            groupdict["ForJsc"]=[x['Jsc'] for x in listofthegroupFor if 'Jsc' in x]
+                            groupdict["RevFF"]=[x['FF'] for x in listofthegroupRev if 'FF' in x]
+                            groupdict["ForFF"]=[x['FF'] for x in listofthegroupFor if 'FF' in x]
+                            groupdict["RevEff"]=[x['Eff'] for x in listofthegroupRev if 'Eff' in x]
+                            groupdict["ForEff"]=[x['Eff'] for x in listofthegroupFor if 'Eff' in x]
+                            groupdict["RevRoc"]=[x['Roc'] for x in listofthegroupRev if 'Roc' in x]
+                            groupdict["ForRoc"]=[x['Roc'] for x in listofthegroupFor if 'Roc' in x]
+                            groupdict["RevRsc"]=[x['Rsc'] for x in listofthegroupRev if 'Rsc' in x]
+                            groupdict["ForRsc"]=[x['Rsc'] for x in listofthegroupFor if 'Rsc' in x]
+                            groupdict["RevVmpp"]=[x['Vmpp'] for x in listofthegroupRev if 'Vmpp' in x]
+                            groupdict["ForVmpp"]=[x['Vmpp'] for x in listofthegroupFor if 'Vmpp' in x]
+                            groupdict["RevJmpp"]=[x['Jmpp'] for x in listofthegroupRev if 'Jmpp' in x]
+                            groupdict["ForJmpp"]=[x['Jmpp'] for x in listofthegroupFor if 'Jmpp' in x]
+                            
+                            grouplistdict.append(groupdict)
+                else: #if aftermppchecked
+#                    print("aftermpp is checked")
+#                    print(samplesgroups)
+                    for sample in samplesgroups:
+                        groupdict={}
+                        groupdict["Group"]=sample
+                        listofthegroup=[]
+                        for item1 in DATAx.keys():
+                            if DATAx[item1]["Group"]==groupdict["Group"] and DATAx[item1]["Illumination"]=='Light' and DATAx[item1]["aftermpp"]==0:
+                                listofthegroup.append(DATAx[item1])
+                        if len(listofthegroup)!=0:
+#                            print("listofthegroup1nonzero")
+                            grouper = itemgetter("DepID", "Cellletter",'ScanDirection')
+                            result = []
+                            for key, grp in groupby(sorted(listofthegroup, key = grouper), grouper):
+                                result.append(list(grp))
+                            
+                            result1=[]
+                            
+                            for item in result:
+                                result1.append(sorted(item,key=itemgetter('Eff'),reverse=True)[0])
+                            
+                            grouper = itemgetter('ScanDirection')
+                            result2 = []
+                            for key, grp in groupby(sorted(result1, key = grouper), grouper):
+                                result2.append(list(grp))
+                            
+                            listofthegroupRev=[]
+                            listofthegroupFor=[]
+                            
+                            if result2[0][0]['ScanDirection']=='Forward':
+                                listofthegroupFor=result2[0]
+                                if len(result2)>1:
+                                    listofthegroupRev=result2[1]
+                            else:
+                                listofthegroupRev=result2[0]
+                                if len(result2)>1:
+                                    listofthegroupFor=result2[1]
+        
+                            groupdict["RevVoc"]=[x['Voc'] for x in listofthegroupRev if 'Voc' in x]
+                            groupdict["ForVoc"]=[x['Voc'] for x in listofthegroupFor if 'Voc' in x]
+                            groupdict["RevJsc"]=[x['Jsc'] for x in listofthegroupRev if 'Jsc' in x]
+                            groupdict["ForJsc"]=[x['Jsc'] for x in listofthegroupFor if 'Jsc' in x]
+                            groupdict["RevFF"]=[x['FF'] for x in listofthegroupRev if 'FF' in x]
+                            groupdict["ForFF"]=[x['FF'] for x in listofthegroupFor if 'FF' in x]
+                            groupdict["RevEff"]=[x['Eff'] for x in listofthegroupRev if 'Eff' in x]
+                            groupdict["ForEff"]=[x['Eff'] for x in listofthegroupFor if 'Eff' in x]
+                            groupdict["RevRoc"]=[x['Roc'] for x in listofthegroupRev if 'Roc' in x]
+                            groupdict["ForRoc"]=[x['Roc'] for x in listofthegroupFor if 'Roc' in x]
+                            groupdict["RevRsc"]=[x['Rsc'] for x in listofthegroupRev if 'Rsc' in x]
+                            groupdict["ForRsc"]=[x['Rsc'] for x in listofthegroupFor if 'Rsc' in x]
+                            groupdict["RevVmpp"]=[x['Vmpp'] for x in listofthegroupRev if 'Vmpp' in x]
+                            groupdict["ForVmpp"]=[x['Vmpp'] for x in listofthegroupFor if 'Vmpp' in x]
+                            groupdict["RevJmpp"]=[x['Jmpp'] for x in listofthegroupRev if 'Jmpp' in x]
+                            groupdict["ForJmpp"]=[x['Jmpp'] for x in listofthegroupFor if 'Jmpp' in x]
+                            
+#                            grouplistdict.append(groupdict)
+                        listofthegroup2=[]
+                        for item1 in DATAx.keys():
+                            if DATAx[item1]["Group"]==groupdict["Group"] and DATAx[item1]["Illumination"]=='Light' and DATAx[item1]["aftermpp"]==1:
+                                listofthegroup2.append(DATAx[item1])
+                        if len(listofthegroup2)!=0:
+#                            print("listofthegroup2nonzero")
+                            grouper = itemgetter("DepID", "Cellletter",'ScanDirection')
+                            result = []
+                            for key, grp in groupby(sorted(listofthegroup2, key = grouper), grouper):
+                                result.append(list(grp))
+                            
+                            result1=[]
+                            
+                            for item in result:
+                                result1.append(sorted(item,key=itemgetter('Eff'),reverse=True)[0])
+                            
+                            grouper = itemgetter('ScanDirection')
+                            result2 = []
+                            for key, grp in groupby(sorted(result1, key = grouper), grouper):
+                                result2.append(list(grp))
+                            
+                            listofthegroupRev=[]
+                            listofthegroupFor=[]
+                            
+                            if result2[0][0]['ScanDirection']=='Forward':
+                                listofthegroupFor=result2[0]
+                                if len(result2)>1:
+                                    listofthegroupRev=result2[1]
+                            else:
+                                listofthegroupRev=result2[0]
+                                if len(result2)>1:
+                                    listofthegroupFor=result2[1]
+        
+                            groupdict["RevVocAMPP"]=[x['Voc'] for x in listofthegroupRev if 'Voc' in x]
+                            groupdict["ForVocAMPP"]=[x['Voc'] for x in listofthegroupFor if 'Voc' in x]
+                            groupdict["RevJscAMPP"]=[x['Jsc'] for x in listofthegroupRev if 'Jsc' in x]
+                            groupdict["ForJscAMPP"]=[x['Jsc'] for x in listofthegroupFor if 'Jsc' in x]
+                            groupdict["RevFFAMPP"]=[x['FF'] for x in listofthegroupRev if 'FF' in x]
+                            groupdict["ForFFAMPP"]=[x['FF'] for x in listofthegroupFor if 'FF' in x]
+                            groupdict["RevEffAMPP"]=[x['Eff'] for x in listofthegroupRev if 'Eff' in x]
+                            groupdict["ForEffAMPP"]=[x['Eff'] for x in listofthegroupFor if 'Eff' in x]
+                            groupdict["RevRocAMPP"]=[x['Roc'] for x in listofthegroupRev if 'Roc' in x]
+                            groupdict["ForRocAMPP"]=[x['Roc'] for x in listofthegroupFor if 'Roc' in x]
+                            groupdict["RevRscAMPP"]=[x['Rsc'] for x in listofthegroupRev if 'Rsc' in x]
+                            groupdict["ForRscAMPP"]=[x['Rsc'] for x in listofthegroupFor if 'Rsc' in x]
+                            groupdict["RevVmppAMPP"]=[x['Vmpp'] for x in listofthegroupRev if 'Vmpp' in x]
+                            groupdict["ForVmppAMPP"]=[x['Vmpp'] for x in listofthegroupFor if 'Vmpp' in x]
+                            groupdict["RevJmppAMPP"]=[x['Jmpp'] for x in listofthegroupRev if 'Jmpp' in x]
+                            groupdict["ForJmppAMPP"]=[x['Jmpp'] for x in listofthegroupFor if 'Jmpp' in x]
+                        else:
+                            groupdict["RevVocAMPP"]=[]
+                            groupdict["ForVocAMPP"]=[]
+                            groupdict["RevJscAMPP"]=[]
+                            groupdict["ForJscAMPP"]=[]
+                            groupdict["RevFFAMPP"]=[]
+                            groupdict["ForFFAMPP"]=[]
+                            groupdict["RevEffAMPP"]=[]
+                            groupdict["ForEffAMPP"]=[]
+                            groupdict["RevRocAMPP"]=[]
+                            groupdict["ForRocAMPP"]=[]
+                            groupdict["RevRscAMPP"]=[]
+                            groupdict["ForRscAMPP"]=[]
+                            groupdict["RevVmppAMPP"]=[]
+                            groupdict["ForVmppAMPP"]=[]
+                            groupdict["RevJmppAMPP"]=[]
+                            groupdict["ForJmppAMPP"]=[]    
+                        grouplistdict.append(groupdict)
+                            
+                            
+                            
+                            
+        print(grouplistdict)
+                                
+        
+    def GraphBoxsave_as(self):
+        global DATA
 
 
 #%%#############
@@ -305,20 +1070,22 @@ class IVapp(QtWidgets.QMainWindow):
 # self.getdatalistsfromCUBfiles(file_path)
 
 class Thread_getdatalistsfromNRELfiles(QThread):
-    
+    finished = pyqtSignal()
     change_value = pyqtSignal(int)
     def __init__(self, file_path, parent=None):
         QThread.__init__(self, parent)
         self.file_path=file_path
         
     def run(self):
-        global DATA, DATAdark
-        global DATAMPP, numbLightfiles, numbDarkfiles
+        global DATA, DATAdark, colorstylelist
+        global DATAMPP, numbLightfiles, numbDarkfiles, colormapname
         print('threadstart')
         # for i in range(len(file_path)):
         #     time.sleep(0.5)
         #     print(i)
         #     self.change_value.emit(100*(i+1)/len(file_path))
+        
+        
         
         for i in range(len(self.file_path)):
             filetoread = open(self.file_path[i],"r", encoding='ISO-8859-1')
@@ -327,11 +1094,25 @@ class Thread_getdatalistsfromNRELfiles(QThread):
             filetype = 0
             if "HEADER START" in filerawdata[0]:
                 filetype = 1 #JV file from solar simulator in SERF C215
+                num_plots=len(DATA.keys())+len(file_path)
+                cmap = plt.get_cmap(colormapname)
+                colors = cmap(np.linspace(0, 1.0, num_plots))
+                colors=[tuple(item) for item in colors]
+                # print('jv')
             elif "Power (mW/cm2)" in filerawdata[0]:
                 filetype = 2
+                num_plots=len(DATA.keys())+len(file_path)
+                cmap = plt.get_cmap(colormapname)
+                colors = cmap(np.linspace(0, 1.0, num_plots))
+                colors=[tuple(item) for item in colors]
+                # print('mpp')
             elif "V\tI" in filerawdata[0]:
                 filetype = 3
-                print("JVT")
+                num_plots=len(DATAMPP.keys())+len(file_path)
+                cmap = plt.get_cmap(colormapname)
+                colors = cmap(np.linspace(0, 1.0, num_plots))
+                colors=[tuple(item) for item in colors]
+                # print("JVT")
             
             
             if filetype ==1 : #J-V files of SERF C215
@@ -366,8 +1147,12 @@ class Thread_getdatalistsfromNRELfiles(QThread):
                     if "Date/Time:" in filerawdata[item]:
                         partdict["MeasDayTime2"]=parser.parse(filerawdata[item][11:-1])
                         partdict["MeasDayTime"]=filerawdata[item][11:-1]
-#                        print(partdict["MeasDayTime2"])
+                        # print(partdict["MeasDayTime2"])
 #                        print(partdict["MeasDayTime"].split(' ')[-2])
+                        break
+                for item in range(len(filerawdata)):
+                    if "Intensity:" in filerawdata[item]:
+                        partdict["sunintensity"]=float(filerawdata[item][11:-1])
                         break
                 partdict["MeasComment"]="-"
                 for item in range(len(filerawdata)):
@@ -429,6 +1214,7 @@ class Thread_getdatalistsfromNRELfiles(QThread):
                 params=extract_jv_params(partdict["IVData"])
                 partdict["Voc"]=params['Voc']*1000 #mV
                 partdict["Jsc"]=params['Jsc'] #mA/cm2
+                partdict["Isc"]=params['Jsc']*partdict["CellSurface"]
                 partdict["FF"]=params['FF'] #%
                 partdict["Eff"]=params['Pmax'] #%
                 partdict["Pmpp"]=partdict["Eff"]*10 #W/cm2
@@ -443,7 +1229,9 @@ class Thread_getdatalistsfromNRELfiles(QThread):
                 partdict["Isenserange"]=-1
                 
                 partdict["Operator"]=-1
-                              
+                
+                
+                
                 try:
                     if partdict["Illumination"]=="Light" and max(ivpartdat[0])>0.001*float(partdict["Voc"]):
                         f = interp1d(ivpartdat[0], ivpartdat[1], kind='cubic')
@@ -461,15 +1249,19 @@ class Thread_getdatalistsfromNRELfiles(QThread):
                 partdict["RefMeasCurr"]=999
                 partdict["AirTemp"]=999
                 partdict["ChuckTemp"]=999
-                    
+                partdict["IVlinestyle"]=[partdict["SampleName"],"-",colors[len(DATA.keys())],2]
 #                DATA.append(partdict)
 
                 if partdict["Illumination"]=="Light":
-                    DATA.append(partdict)
+                    # DATA.append(partdict)
+                    partdict["SampleNameID"]=partdict["SampleName"]+'_'+str(partdict["MeasDayTime2"]).replace(' ','_').replace(':','-')+'_'+'%.2f'%float(partdict["Eff"])
+
+                    DATA[partdict["SampleNameID"]]=partdict
                     numbLightfiles+=1
                 else:
                     partdict["SampleName"]=partdict["SampleName"]+'_D'
-                    DATA.append(partdict)
+                    partdict["SampleNameID"]=partdict["SampleName"]+'_'+str(partdict["MeasDayTime2"]).replace(' ','_').replace(':','-')+'_'+'%.2f'%float(partdict["Eff"])
+                    DATA[partdict["SampleNameID"]]=partdict
                     DATAdark.append(partdict)
                     numbDarkfiles+=1
             elif filetype ==3 : #JVT files from Taylor
@@ -492,9 +1284,8 @@ class Thread_getdatalistsfromNRELfiles(QThread):
                 partdict["ScanDirection"]="Reverse"
                 
                 
-                partdict["MeasDayTime2"]='2020-01-29 12:55:00'
+                partdict["MeasDayTime2"]=modification_date(self.file_path[i])#'2020-01-29 12:55:00'
                 partdict["MeasDayTime"]='Wed, Jan 29, 2020 0:00:00'
-                        
                 partdict["MeasComment"]="-"
                 partdict["aftermpp"]=1
                 partdict["Vstart"]=0
@@ -503,6 +1294,7 @@ class Thread_getdatalistsfromNRELfiles(QThread):
                 partdict["CellSurface"]=0.1  
                 partdict["Delay"]=0    
                 partdict["IntegTime"]=0
+                partdict["sunintensity"]=1
                         
                 ivpartdat = [[],[]]#[voltage,current]
                 for item in range(1,len(filerawdata),1):
@@ -515,6 +1307,7 @@ class Thread_getdatalistsfromNRELfiles(QThread):
                 params=extract_jv_params(partdict["IVData"])
                 partdict["Voc"]=params['Voc']*1000 #mV
                 partdict["Jsc"]=params['Jsc'] #mA/cm2
+                partdict["Isc"]=params['Jsc']*partdict["CellSurface"]
                 partdict["FF"]=params['FF'] #%
                 partdict["Eff"]=params['Pmax'] #%
                 partdict["Pmpp"]=partdict["Eff"]*10 #W/cm2
@@ -529,7 +1322,8 @@ class Thread_getdatalistsfromNRELfiles(QThread):
                 partdict["Isenserange"]=-1
                 
                 partdict["Operator"]=-1
-                              
+                partdict["SampleNameID"]=partdict["SampleName"]+'_'+str(partdict["MeasDayTime2"]).replace(' ','_').replace(':','-')+'_'+'%.2f'%float(partdict["Eff"])
+
                 try:
                     if partdict["Illumination"]=="Light" and max(ivpartdat[0])>0.001*float(partdict["Voc"]):
                         f = interp1d(ivpartdat[0], ivpartdat[1], kind='cubic')
@@ -540,7 +1334,8 @@ class Thread_getdatalistsfromNRELfiles(QThread):
                 except ValueError:
                     print("there is a ValueError on sample ",i)
                 
-                
+                partdict["IVlinestyle"]=[partdict["SampleName"],"-",colors[len(DATA.keys())],2]
+
                 partdict["Group"]="Default group"
                 partdict["Setup"]="JVT"              
                 partdict["RefNomCurr"]=999
@@ -549,7 +1344,7 @@ class Thread_getdatalistsfromNRELfiles(QThread):
                 partdict["ChuckTemp"]=999
                     
 #                DATA.append(partdict)
-                DATA.append(partdict)
+                DATA[partdict["SampleNameID"]]=partdict
                 numbLightfiles+=1
                 
             elif filetype ==2 : #mpp files of SERF C215 labview program
@@ -562,9 +1357,9 @@ class Thread_getdatalistsfromNRELfiles(QThread):
                 partdict["Cellletter"]=filename.split('_')[2]
                 partdict["batchname"]=filename.split('_')[0]
                 partdict["MeasComment"]=filename[filename.index('_')+1:]
-
+                
                 partdict["MeasDayTime"]=modification_date(self.file_path[i])
-
+                # print(partdict["MeasDayTime"])
                 partdict["CellSurface"]= float(filerawdata[0].split('\t')[-1])
 
                 partdict["Delay"]=0
@@ -575,6 +1370,7 @@ class Thread_getdatalistsfromNRELfiles(QThread):
                 partdict["ExecTime"]=0
                 partdict["Operator"]='unknown'
                 partdict["Group"]="Default group"
+                partdict["sunintensity"]=1
                 
                 mpppartdat = [[],[],[],[],[]]#[voltage,current,time,power,vstep]
                 for item in range(1,len(filerawdata),1):
@@ -586,78 +1382,82 @@ class Thread_getdatalistsfromNRELfiles(QThread):
                 partdict["PowerEnd"]=mpppartdat[3][-1]
                 partdict["PowerAvg"]=sum(mpppartdat[3])/float(len(mpppartdat[3]))
                 partdict["trackingduration"]=mpppartdat[2][-1]
+                partdict["SampleNameID"]=partdict["SampleName"]+'_'+str(partdict["MeasDayTime"]).replace(' ','_').replace(':','-')+'_'+str(partdict["PowerEnd"])
+
                 partdict["MppData"]=mpppartdat
                 partdict["SampleName"]=partdict["SampleName"]+'_'+str(partdict["MeasDayTime"]).replace(':','').replace(' ','-')
-                DATAMPP.append(partdict)                
+                partdict["MPPlinestyle"]=[partdict["SampleName"],"-",colors[len(DATAMPP.keys())],2]
+                
+                DATAMPP[partdict["SampleNameID"]]=partdict                
                 
             self.change_value.emit(100*(i+1)/len(self.file_path))
         
-        DATA = sorted(DATA, key=itemgetter('SampleName')) 
-        names=[d["SampleName"] for d in DATA if "SampleName" in d]
-        groupednames=[list(j) for i, j in groupby(names)]
-        print(groupednames)
-        for item in range(len(groupednames)):
-            if len(groupednames[item])>1 and groupednames[item][0][-1]!='D':
-                positions=[]
-                effrev=0
-                efffor=0
-                for item2 in range(len(DATA)):
-                    if DATA[item2]['SampleName']==groupednames[item][0]:
-                        positions.append(item2)
-                        if DATA[item2]["ScanDirection"]=="Reverse":
-                            effrev=DATA[item2]['Eff']
-                        else:
-                            efffor=DATA[item2]['Eff']
-                    if len(positions)==len(groupednames[item]):
-                        break
-                try:
-                    hyste=100*(effrev-efffor)/effrev
-                    for item2 in range(len(positions)):
-                        DATA[positions[item2]]['HI']=hyste
-#                        print(hyste)
-                except:
-                    print("except HI")
+#         DATA = sorted(DATA, key=itemgetter('SampleName')) 
+#         names=[d["SampleName"] for d in DATA if "SampleName" in d]
+#         groupednames=[list(j) for i, j in groupby(names)]
+#         # print(groupednames)
+#         for item in range(len(groupednames)):
+#             if len(groupednames[item])>1 and groupednames[item][0][-1]!='D':
+#                 positions=[]
+#                 effrev=0
+#                 efffor=0
+#                 for item2 in range(len(DATA)):
+#                     if DATA[item2]['SampleName']==groupednames[item][0]:
+#                         positions.append(item2)
+#                         if DATA[item2]["ScanDirection"]=="Reverse":
+#                             effrev=DATA[item2]['Eff']
+#                         else:
+#                             efffor=DATA[item2]['Eff']
+#                     if len(positions)==len(groupednames[item]):
+#                         break
+#                 try:
+#                     hyste=100*(effrev-efffor)/effrev
+#                     for item2 in range(len(positions)):
+#                         DATA[positions[item2]]['HI']=hyste
+# #                        print(hyste)
+#                 except:
+#                     print("except HI")
         
-        for item in range(len(groupednames)):
-            if len(groupednames[item])!=1:
-                k=1
-                for item0 in range(1,len(groupednames[item])):
+#         for item in range(len(groupednames)):
+#             if len(groupednames[item])!=1:
+#                 k=1
+#                 for item0 in range(1,len(groupednames[item])):
                     
-#                    groupednames2=copy.deepcopy(groupednames)
-#                    groupednames[item][item0]+= "_"+str(k)
-#                    print(groupednames[item][item0])
-                    while(1):
-                        groupednames2=list(chain.from_iterable(groupednames))
-#                        print(groupednames2)
+# #                    groupednames2=copy.deepcopy(groupednames)
+# #                    groupednames[item][item0]+= "_"+str(k)
+# #                    print(groupednames[item][item0])
+#                     while(1):
+#                         groupednames2=list(chain.from_iterable(groupednames))
+# #                        print(groupednames2)
                         
-                        if groupednames[item][item0]+"_"+str(k) in groupednames2:
-                            k+=1
-                            groupednames[item][item0]+= "_"+str(k)
-#                            print(groupednames[item][item0])
-#                            print('')
-                        else:
-                            groupednames[item][item0]+= "_"+str(k)
-#                            print('notin')
-                            break
+#                         if groupednames[item][item0]+"_"+str(k) in groupednames2:
+#                             k+=1
+#                             groupednames[item][item0]+= "_"+str(k)
+# #                            print(groupednames[item][item0])
+# #                            print('')
+#                         else:
+#                             groupednames[item][item0]+= "_"+str(k)
+# #                            print('notin')
+#                             break
                         
-        groupednames=list(chain.from_iterable(groupednames))
-#        print("")
-#        print(groupednames)
-        for item in range(len(DATA)):
-            DATA[item]['SampleName']=groupednames[item]
+#         groupednames=list(chain.from_iterable(groupednames))
+# #        print("")
+# #        print(groupednames)
+#         for item in range(len(DATA)):
+#             DATA[item]['SampleName']=groupednames[item]
         
-        DATAMPP = sorted(DATAMPP, key=itemgetter('SampleName')) 
-        names=[d["SampleName"] for d in DATAMPP if "SampleName" in d]
-        groupednames=[list(j) for i, j in groupby(names)]
-        for item in range(len(groupednames)):
-            if len(groupednames[item])!=1:
-                for item0 in range(1,len(groupednames[item]),1):
-                    groupednames[item][item0]+= "_"+str(item0)
-        groupednames=list(chain.from_iterable(groupednames))
-        for item in range(len(DATAMPP)):
-            DATAMPP[item]['SampleName']=groupednames[item]
+        # DATAMPP = sorted(DATAMPP, key=itemgetter('SampleName')) 
+        # names=[d["SampleName"] for d in DATAMPP if "SampleName" in d]
+        # groupednames=[list(j) for i, j in groupby(names)]
+        # for item in range(len(groupednames)):
+        #     if len(groupednames[item])!=1:
+        #         for item0 in range(1,len(groupednames[item]),1):
+        #             groupednames[item][item0]+= "_"+str(item0)
+        # groupednames=list(chain.from_iterable(groupednames))
+        # for item in range(len(DATAMPP)):
+        #     DATAMPP[item]['SampleName']=groupednames[item]
         
-        self.change_value.emit(0)
+        self.finished.emit()
 
 
 

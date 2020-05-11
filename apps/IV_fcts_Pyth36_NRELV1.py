@@ -2744,7 +2744,7 @@ class IVApp(Toplevel):
 #        print(takenforplotTime)
         #"MeasDayTime2"
         DATAtimeevolforexport={}
-        
+        print(takenforplotTime)
         if takenforplotTime!=[]:
             if self.BestPixofDayTimegraph.get()==0 and self.BestofRevForTimegraph.get()==0:
                 TimeDatDict={}

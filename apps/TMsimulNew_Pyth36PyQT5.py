@@ -32,8 +32,10 @@ import csv
 import tmm.tmm_core as tm
 import pickle
 import math
+from PyQt5.uic import loadUiType
 
-from TMsimulGUI import Ui_TransferMatrixModeling
+# from TMsimulGUI import Ui_TransferMatrixModeling
+Ui_TransferMatrixModeling, QMainWindow = loadUiType('TMsimulGUI.ui')
 
 admittance0=2.6544E-3
 echarge = 1.60218e-19

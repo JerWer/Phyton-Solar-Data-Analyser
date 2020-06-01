@@ -51,21 +51,6 @@
        <enum>QFrame::Raised</enum>
       </property>
       <layout class="QHBoxLayout" name="horizontalLayout">
-       <property name="spacing">
-        <number>5</number>
-       </property>
-       <property name="leftMargin">
-        <number>0</number>
-       </property>
-       <property name="topMargin">
-        <number>0</number>
-       </property>
-       <property name="rightMargin">
-        <number>0</number>
-       </property>
-       <property name="bottomMargin">
-        <number>0</number>
-       </property>
        <item>
         <widget class="QGroupBox" name="groupBox_2">
          <property name="title">
@@ -110,10 +95,39 @@
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="pushButton_AbsCoeffTauc">
-         <property name="text">
-          <string>AbsCoeff/Tauc</string>
+        <widget class="QGroupBox" name="groupBox_3">
+         <property name="title">
+          <string/>
          </property>
+         <layout class="QGridLayout" name="gridLayout_3">
+          <item row="0" column="0">
+           <widget class="QLabel" name="label">
+            <property name="text">
+             <string>Fontsize</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QSpinBox" name="spinBox_fontsize">
+            <property name="value">
+             <number>12</number>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <spacer name="verticalSpacer">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>127</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
         </widget>
        </item>
        <item>
@@ -199,7 +213,7 @@
      <string>File</string>
     </property>
     <addaction name="actionImport_DATA"/>
-    <addaction name="actionExport_Graph_DATA"/>
+    <addaction name="actionExport_Graph"/>
     <addaction name="actionExport_All_DATA"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
@@ -217,9 +231,9 @@
     <string>Import DATA</string>
    </property>
   </action>
-  <action name="actionExport_Graph_DATA">
+  <action name="actionExport_Graph">
    <property name="text">
-    <string>Export Graph&amp;DATA</string>
+    <string>Export Graph</string>
    </property>
   </action>
   <action name="actionHelp">

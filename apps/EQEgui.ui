@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>848</width>
-    <height>661</height>
+    <width>896</width>
+    <height>677</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -65,7 +65,7 @@
       <property name="frameShadow">
        <enum>QFrame::Raised</enum>
       </property>
-      <layout class="QGridLayout" name="gridLayout_3">
+      <layout class="QGridLayout" name="gridLayout_5">
        <property name="leftMargin">
         <number>0</number>
        </property>
@@ -81,69 +81,49 @@
        <property name="spacing">
         <number>5</number>
        </property>
-       <item row="0" column="0" rowspan="3" colspan="2">
-        <widget class="QGroupBox" name="groupBox_2">
-         <property name="title">
-          <string/>
-         </property>
-         <layout class="QGridLayout" name="gridLayout_2">
-          <item row="0" column="0" colspan="2">
-           <widget class="QPushButton" name="pushButton_SGFilter">
-            <property name="text">
-             <string>SavitzkyGolayFilter</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="0">
-           <widget class="QSpinBox" name="spinBox_SG1">
-            <property name="maximum">
-             <number>999</number>
-            </property>
-            <property name="value">
-             <number>31</number>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="1">
-           <widget class="QSpinBox" name="spinBox_SG2">
-            <property name="maximum">
-             <number>999</number>
-            </property>
-            <property name="value">
-             <number>5</number>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="0" colspan="2">
-           <widget class="QPushButton" name="pushButton_goback">
-            <property name="text">
-             <string>GoBack</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
+       <item row="0" column="3" rowspan="3">
+        <widget class="QListWidget" name="listWidget"/>
+       </item>
+       <item row="2" column="0" rowspan="2" colspan="2">
+        <widget class="QComboBox" name="comboBox">
+         <item>
+          <property name="text">
+           <string>linear</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>log</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Tauc1</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Tauc2</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>NormalizedByAll</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>NormalizedBySingle</string>
+          </property>
+         </item>
         </widget>
        </item>
-       <item row="0" column="2">
-        <widget class="QPushButton" name="pushButton_stitchEQEs">
-         <property name="text">
-          <string>Stitch EQEs</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="3" rowspan="6">
+       <item row="0" column="2" rowspan="4">
         <widget class="QGroupBox" name="groupBox">
          <property name="title">
           <string>Legend</string>
          </property>
          <layout class="QGridLayout" name="gridLayout">
-          <item row="0" column="0">
-           <widget class="QCheckBox" name="checkBox_legend">
-            <property name="text">
-             <string>legend?</string>
-            </property>
-           </widget>
-          </item>
           <item row="1" column="0">
            <widget class="QRadioButton" name="radioButton_topleft">
             <property name="text">
@@ -158,6 +138,27 @@
             </property>
            </widget>
           </item>
+          <item row="5" column="0">
+           <widget class="QLabel" name="label">
+            <property name="text">
+             <string>Fontsize</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QCheckBox" name="checkBox_legend">
+            <property name="text">
+             <string>legend?</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="1">
+           <widget class="QSpinBox" name="spinBox_fontsize">
+            <property name="value">
+             <number>12</number>
+            </property>
+           </widget>
+          </item>
           <item row="2" column="0">
            <widget class="QRadioButton" name="radioButton_bottomleft">
             <property name="text">
@@ -165,13 +166,10 @@
             </property>
            </widget>
           </item>
-          <item row="3" column="1">
-           <widget class="QRadioButton" name="radioButton_best">
+          <item row="4" column="0">
+           <widget class="QCheckBox" name="checkBox_Jsc">
             <property name="text">
-             <string>Best</string>
-            </property>
-            <property name="checked">
-             <bool>true</bool>
+             <string>Jsc</string>
             </property>
            </widget>
           </item>
@@ -189,13 +187,6 @@
             </property>
            </widget>
           </item>
-          <item row="4" column="0">
-           <widget class="QCheckBox" name="checkBox_Jsc">
-            <property name="text">
-             <string>Jsc</string>
-            </property>
-           </widget>
-          </item>
           <item row="4" column="1">
            <widget class="QCheckBox" name="checkBox_Eg">
             <property name="text">
@@ -203,79 +194,195 @@
             </property>
            </widget>
           </item>
+          <item row="3" column="1">
+           <widget class="QRadioButton" name="radioButton_best">
+            <property name="text">
+             <string>Best</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
          </layout>
         </widget>
        </item>
-       <item row="0" column="4" rowspan="5">
-        <widget class="QListWidget" name="listWidget"/>
-       </item>
-       <item row="1" column="2">
-        <widget class="QPushButton" name="pushButton_CalcIQE">
-         <property name="text">
-          <string>Calculate IQE</string>
+       <item row="1" column="1">
+        <widget class="QTabWidget" name="tabWidget">
+         <property name="currentIndex">
+          <number>2</number>
          </property>
-        </widget>
-       </item>
-       <item row="2" column="2">
-        <widget class="QPushButton" name="pushButton_CalcCurrent">
-         <property name="text">
-          <string>Calc. Current</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0" colspan="3">
-        <widget class="QComboBox" name="comboBox">
-         <item>
-          <property name="text">
-           <string>Linear</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>Log</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>Tauc1</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>Tauc2</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>Normalized by All</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>Normalized by Single</string>
-          </property>
-         </item>
-        </widget>
-       </item>
-       <item row="4" column="0" rowspan="2">
-        <widget class="QCheckBox" name="checkBox_showsecreteg">
-         <property name="text">
-          <string>ShowSecretEg</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="1" rowspan="2" colspan="2">
-        <widget class="QCheckBox" name="checkBox_integrJsc">
-         <property name="text">
-          <string>Integr.Jsc</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="4">
-        <widget class="QPushButton" name="pushButton_updatefromlistwidget">
-         <property name="text">
-          <string>Update</string>
-         </property>
+         <widget class="QWidget" name="tab">
+          <attribute name="title">
+           <string>SGfilter</string>
+          </attribute>
+          <layout class="QGridLayout" name="gridLayout_3">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+           <item row="0" column="0">
+            <widget class="QGroupBox" name="groupBox_2">
+             <property name="title">
+              <string/>
+             </property>
+             <layout class="QGridLayout" name="gridLayout_2">
+              <item row="0" column="0" colspan="2">
+               <widget class="QPushButton" name="pushButton_SGFilter">
+                <property name="text">
+                 <string>SavitzkyGolayFilter</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QSpinBox" name="spinBox_SG1">
+                <property name="maximum">
+                 <number>999</number>
+                </property>
+                <property name="value">
+                 <number>31</number>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QSpinBox" name="spinBox_SG2">
+                <property name="maximum">
+                 <number>999</number>
+                </property>
+                <property name="value">
+                 <number>5</number>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0" colspan="2">
+               <widget class="QPushButton" name="pushButton_goback">
+                <property name="text">
+                 <string>GoBack</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+         <widget class="QWidget" name="tab_2">
+          <attribute name="title">
+           <string>others</string>
+          </attribute>
+          <layout class="QGridLayout" name="gridLayout_4">
+           <item row="2" column="0">
+            <widget class="QCheckBox" name="checkBox_showsecreteg">
+             <property name="text">
+              <string>ShowSecretEg</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QPushButton" name="pushButton_CalcIQE">
+             <property name="text">
+              <string>Calculate IQE</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="0">
+            <widget class="QPushButton" name="pushButton_stitchEQEs">
+             <property name="text">
+              <string>Stitch EQEs</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QCheckBox" name="checkBox_integrJsc">
+             <property name="text">
+              <string>Integr.Jsc</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+         <widget class="QWidget" name="tab_3">
+          <attribute name="title">
+           <string>CalcCurrent</string>
+          </attribute>
+          <layout class="QGridLayout" name="gridLayout_6">
+           <item row="0" column="0" colspan="2">
+            <widget class="QPushButton" name="pushButton_CalcCurrent">
+             <property name="text">
+              <string>Calc. Current</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="label_2">
+             <property name="text">
+              <string>Between</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QSpinBox" name="spinBox_from">
+             <property name="maximum">
+              <number>9999</number>
+             </property>
+             <property name="value">
+              <number>320</number>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="2">
+            <widget class="QLabel" name="label_3">
+             <property name="text">
+              <string>and</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="3">
+            <widget class="QSpinBox" name="spinBox_to">
+             <property name="maximum">
+              <number>9999</number>
+             </property>
+             <property name="value">
+              <number>1200</number>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0" colspan="2">
+            <widget class="QLabel" name="label_4">
+             <property name="text">
+              <string>Calculated current:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="2" colspan="2">
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_calcjsc">
+             <property name="decimals">
+              <number>3</number>
+             </property>
+             <property name="minimum">
+              <double>-999.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>999.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="2" colspan="2">
+            <widget class="QComboBox" name="comboBox_calccurrent"/>
+           </item>
+          </layout>
+         </widget>
         </widget>
        </item>
       </layout>
@@ -288,7 +395,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>848</width>
+     <width>896</width>
      <height>31</height>
     </rect>
    </property>
@@ -301,14 +408,7 @@
     <addaction name="actionExport_All_DATA"/>
     <addaction name="actionSave_to_DB"/>
    </widget>
-   <widget class="QMenu" name="menuHelp">
-    <property name="title">
-     <string>Help</string>
-    </property>
-    <addaction name="actionHelp"/>
-   </widget>
    <addaction name="menuFile"/>
-   <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionImport_DATA">

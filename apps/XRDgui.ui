@@ -74,6 +74,9 @@
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
+         <property name="selectionMode">
+          <enum>QAbstractItemView::MultiSelection</enum>
+         </property>
         </widget>
        </item>
        <item row="0" column="1">
@@ -85,7 +88,7 @@
           </sizepolicy>
          </property>
          <property name="currentIndex">
-          <number>0</number>
+          <number>2</number>
          </property>
          <widget class="QWidget" name="tab">
           <attribute name="title">
@@ -136,15 +139,27 @@
            </item>
            <item row="1" column="0">
             <widget class="QDoubleSpinBox" name="doubleSpinBox_Xshift">
+             <property name="minimum">
+              <double>-100000.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>100000.000000000000000</double>
+             </property>
              <property name="singleStep">
-              <double>0.100000000000000</double>
+              <double>1.000000000000000</double>
              </property>
             </widget>
            </item>
            <item row="1" column="1">
             <widget class="QDoubleSpinBox" name="doubleSpinBox_Yshift">
+             <property name="minimum">
+              <double>-100000.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>100000.000000000000000</double>
+             </property>
              <property name="singleStep">
-              <double>0.100000000000000</double>
+              <double>1.000000000000000</double>
              </property>
             </widget>
            </item>
@@ -236,14 +251,14 @@
             </spacer>
            </item>
            <item>
-            <widget class="QCheckBox" name="checkBox">
+            <widget class="QCheckBox" name="checkBox_ylabel">
              <property name="text">
               <string>no y label</string>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QCheckBox" name="checkBox_3">
+            <widget class="QCheckBox" name="checkBox_Qspace">
              <property name="text">
               <string>q space</string>
              </property>
@@ -353,21 +368,21 @@
            <item row="1" column="9">
             <widget class="QLabel" name="label_5">
              <property name="text">
-              <string>C</string>
+              <string>diffLeftRight</string>
              </property>
             </widget>
            </item>
            <item row="1" column="7">
             <widget class="QLabel" name="label_3">
              <property name="text">
-              <string>A</string>
+              <string>#points</string>
              </property>
             </widget>
            </item>
            <item row="1" column="8">
             <widget class="QLabel" name="label_4">
              <property name="text">
-              <string>B</string>
+              <string>basepts</string>
              </property>
             </widget>
            </item>
@@ -388,7 +403,7 @@
            <item row="1" column="2" colspan="2">
             <widget class="QPushButton" name="pushButton_peaknames">
              <property name="text">
-              <string>Change peak names</string>
+              <string>Confirm peak names</string>
              </property>
             </widget>
            </item>
@@ -423,6 +438,12 @@
          </attribute>
          <attribute name="verticalHeaderVisible">
           <bool>false</bool>
+         </attribute>
+         <attribute name="verticalHeaderDefaultSectionSize">
+          <number>20</number>
+         </attribute>
+         <attribute name="verticalHeaderMinimumSectionSize">
+          <number>10</number>
          </attribute>
          <column>
           <property name="text">
@@ -479,6 +500,9 @@
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
+         <property name="selectionMode">
+          <enum>QAbstractItemView::MultiSelection</enum>
+         </property>
         </widget>
        </item>
       </layout>
@@ -502,22 +526,16 @@
     <addaction name="actionimport_data"/>
     <addaction name="actionimport_ref"/>
    </widget>
-   <widget class="QMenu" name="menuTimeEvol">
-    <property name="title">
-     <string>TimeEvol</string>
-    </property>
-    <addaction name="actionmakeTimeGraph"/>
-   </widget>
    <widget class="QMenu" name="menuExport">
     <property name="title">
      <string>Export</string>
     </property>
-    <addaction name="actionExport_2"/>
+    <addaction name="actionExport_export"/>
     <addaction name="actionExportWillHall"/>
+    <addaction name="actionExport_as_Ref"/>
    </widget>
    <addaction name="menuImport_export"/>
    <addaction name="menuExport"/>
-   <addaction name="menuTimeEvol"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionimport_data">
@@ -545,7 +563,7 @@
     <string>makeTimeGraph</string>
    </property>
   </action>
-  <action name="actionExport_2">
+  <action name="actionExport_export">
    <property name="text">
     <string>Export</string>
    </property>
@@ -553,6 +571,11 @@
   <action name="actionExportWillHall">
    <property name="text">
     <string>ExportWillHall</string>
+   </property>
+  </action>
+  <action name="actionExport_as_Ref">
+   <property name="text">
+    <string>Export as Ref</string>
    </property>
   </action>
  </widget>

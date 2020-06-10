@@ -332,7 +332,7 @@ class IVapp(QtWidgets.QMainWindow):
                             finished=1
                         else:
                             print("NREL files")
-                            self.thread = Thread_getdatalistsfromCUBfiles(file_path)
+                            self.thread = Thread_getdatalistsfromNRELfiles(file_path)
                             self.thread.change_value.connect(self.setProgressVal)
                             self.thread.finished.connect(self.ImportFinished)
                             self.thread.start()

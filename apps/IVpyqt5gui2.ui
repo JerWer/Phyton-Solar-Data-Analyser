@@ -22,7 +22,7 @@
       </property>
       <widget class="QTabWidget" name="tabWidget">
        <property name="currentIndex">
-        <number>5</number>
+        <number>0</number>
        </property>
        <widget class="QWidget" name="JVcurves">
         <attribute name="title">
@@ -196,11 +196,7 @@
              </widget>
             </item>
             <item row="0" column="0" rowspan="2" colspan="4">
-             <widget class="QListWidget" name="listWidget_MppSamples">
-              <property name="selectionMode">
-               <enum>QAbstractItemView::MultiSelection</enum>
-              </property>
-             </widget>
+             <widget class="QListWidget" name="listWidget_MppSamples"/>
             </item>
             <item row="5" column="3">
              <widget class="QRadioButton" name="radioButton_MppBottomright">
@@ -398,11 +394,7 @@
              </widget>
             </item>
             <item row="2" column="0" colspan="7">
-             <widget class="QListWidget" name="listWidget_BoxPlotGroup">
-              <property name="selectionMode">
-               <enum>QAbstractItemView::MultiSelection</enum>
-              </property>
-             </widget>
+             <widget class="QListWidget" name="listWidget_BoxPlotGroup"/>
             </item>
            </layout>
           </widget>
@@ -598,9 +590,6 @@
                 <verstretch>0</verstretch>
                </sizepolicy>
               </property>
-              <property name="selectionMode">
-               <enum>QAbstractItemView::MultiSelection</enum>
-              </property>
              </widget>
             </item>
             <item row="1" column="0">
@@ -767,11 +756,7 @@
              </widget>
             </item>
             <item row="3" column="0" colspan="5">
-             <widget class="QListWidget" name="listWidget_HistoGroups">
-              <property name="selectionMode">
-               <enum>QAbstractItemView::MultiSelection</enum>
-              </property>
-             </widget>
+             <widget class="QListWidget" name="listWidget_HistoGroups"/>
             </item>
             <item row="1" column="0">
              <widget class="QComboBox" name="comboBox_HistoType">
@@ -1136,9 +1121,6 @@
            <number>30</number>
           </attribute>
           <attribute name="horizontalHeaderShowSortIndicator" stdset="0">
-           <bool>true</bool>
-          </attribute>
-          <attribute name="horizontalHeaderStretchLastSection">
            <bool>true</bool>
           </attribute>
           <attribute name="verticalHeaderDefaultSectionSize">

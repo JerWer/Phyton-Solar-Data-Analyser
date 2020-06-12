@@ -2,47 +2,34 @@ import sys
 import datetime
 import os
 from pathlib import Path
-import traceback
-import pandas as pd
 import numpy as np
-import calendar
-from statistics import mean
-from scipy.interpolate import interp1d as interp
 import sqlite3
 #%%######################################################################################################
 import matplotlib
 import matplotlib.pyplot as plt
 matplotlib.use("Qt5Agg")
 #%%######################################################################################################
-from PyQt5 import QtCore, QtWidgets, QtGui
-from PyQt5 import QtTest
-from PyQt5.QtCore import Qt, QThread, pyqtSignal
+from PyQt5 import QtCore, QtWidgets
+from PyQt5.QtCore import QThread, pyqtSignal
 # from PyQt5.QtCore.QElapsedTimer import timer
 from PyQt5.QtWidgets import QFileDialog, QMessageBox, QAction, QTableWidgetItem
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
-import time
 import copy
 import xlsxwriter
 import xlrd
 from scipy import integrate
 from operator import itemgetter
-from itertools import groupby, chain
+from itertools import groupby
 from PIL import Image as ImageTk
 from matplotlib.ticker import MaxNLocator
-from matplotlib.transforms import Bbox
 import pickle
 import six
-from functools import partial
 import darktolight as DtoL
 import os.path
-import shutil
 from dateutil import parser
-from scipy import stats
-from statistics import mean
 from scipy.interpolate import interp1d
-# from IVpyqt5gui import Ui_MainWindow
 from PyQt5.uic import loadUiType
 
 
@@ -95,6 +82,11 @@ def modification_date(path_to_file):
 
 Ui_MainWindow, QMainWindow = loadUiType('IVpyqt5gui.ui')
 
+
+
+"""
+
+"""
 
 #%%#############
 
@@ -168,7 +160,7 @@ class IVapp(QtWidgets.QMainWindow):
         self.ui.checkBox_MppLegend.toggled.connect(self.PlotMPP)
         self.ui.listWidget_MppSamples.itemClicked.connect(self.PlotMPP)
         self.ui.pushButton_SaveMpp.clicked.connect(self.GraphMPPsave_as)
-        self.ui.listWidget_MppSamples.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
+        # self.ui.listWidget_MppSamples.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
         self.ui.spinBox_MppFontsize.valueChanged.connect(self.PlotMPP)
         
         self.ui.listWidget_HistoGroups.itemClicked.connect(self.UpdateHistGraph)
@@ -180,9 +172,9 @@ class IVapp(QtWidgets.QMainWindow):
         self.ui.spinBox_HistxscaleMin.valueChanged.connect(self.UpdateHistGraph)
         self.ui.spinBox_HistxscaleMax.valueChanged.connect(self.UpdateHistGraph)
         self.ui.pushButton_SaveHistoGraph.clicked.connect(self.GraphHistsave_as)
-        self.ui.listWidget_HistoGroups.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
+        # self.ui.listWidget_HistoGroups.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
 
-        self.ui.listWidget_BoxPlotGroup.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
+        # self.ui.listWidget_BoxPlotGroup.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
         self.ui.listWidget_BoxPlotGroup.setDragDropMode(QtWidgets.QAbstractItemView.InternalMove)
         self.ui.listWidget_BoxPlotGroup.itemClicked.connect(self.UpdateBoxGraph)
         self.ui.comboBox_BoxPlotParam.currentTextChanged.connect(self.UpdateBoxGraph)
@@ -208,7 +200,7 @@ class IVapp(QtWidgets.QMainWindow):
         self.ui.pushButton_SavePVPGraph.clicked.connect(self.GraphCompsave_as)
         self.ui.comboBox_PVPx.currentTextChanged.connect(self.UpdateCompGraph)
         self.ui.comboBox_PVPy.currentTextChanged.connect(self.UpdateCompGraph)
-        self.ui.listWidget_ParamComp.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
+        # self.ui.listWidget_ParamComp.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
         self.ui.listWidget_ParamComp.setDragDropMode(QtWidgets.QAbstractItemView.InternalMove)
         self.ui.listWidget_ParamComp.itemClicked.connect(self.UpdateCompGraph)
         
@@ -270,8 +262,8 @@ class IVapp(QtWidgets.QMainWindow):
         else:
             event.ignore()
 
-    def darktolightchange(self):
-        DtoL.DarkToLight()
+    # def darktolightchange(self):
+    #     DtoL.DarkToLight()
         
     def startimporting(self):
         global DATA 
@@ -2058,8 +2050,7 @@ class IVapp(QtWidgets.QMainWindow):
         sorted_datampp = sorted(DATAMPPx, key=itemgetter('DepID')) 
         sorted_datadark = sorted(DATAdark, key=itemgetter('DepID'))
 
-        
-        Thread_AA(DATAx,DATAMPPx,DATAdark,sorted_datajv,sorted_datampp,sorted_datadark)
+        QMessageBox.information(self, 'Information',AA(DATAx,DATAMPPx,DATAdark,sorted_datajv,sorted_datampp,sorted_datadark))
 
 
 # class Thread_AA(QThread):
@@ -2091,7 +2082,7 @@ class IVapp(QtWidgets.QMainWindow):
 #         bestEff=[]
 #         bestvocff =[]
 
-def Thread_AA(DATAx,DATAMPPx,DATAdarkx,sorted_datajv,sorted_datampp,sorted_datadark):
+def AA(DATAx,DATAMPPx,DATAdarkx,sorted_datajv,sorted_datampp,sorted_datadark):
     
     DATAx=copy.deepcopy(DATAx)
     DATAMPP=DATAMPPx
@@ -3570,7 +3561,7 @@ def Thread_AA(DATAx,DATAMPPx,DATAdarkx,sorted_datajv,sorted_datampp,sorted_datad
             new_im.paste(im=images[2],box=(max(widths[0],widths[1]),0))
             new_im.save(batchname+'_controls.png')
                 
-    QMessageBox.information('Information', 'autoanalysis is finished')
+    return 'autoanalysis is finished'
 
 #%%#############
 # self.getdatalistsfromIVTFfiles(file_pathnew)

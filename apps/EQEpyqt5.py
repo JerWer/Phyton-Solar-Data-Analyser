@@ -104,7 +104,7 @@ class EQEapp(QtWidgets.QMainWindow):
         # self.ui.pushButton_SGFilter.clicked.connect(self.SavitzkyGolayFiltering)
         # self.ui.pushButton_goback.clicked.connect(self.backtoOriginal)
         
-        self.ui.listWidget.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
+        # self.ui.listWidget.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
         self.ui.listWidget.itemClicked.connect(self.select)
         
         self.ui.checkBox_legend.toggled.connect(self.UpdateEQEGraph)

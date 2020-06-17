@@ -2050,7 +2050,8 @@ class IVapp(QtWidgets.QMainWindow):
         sorted_datampp = sorted(DATAMPPx, key=itemgetter('DepID')) 
         sorted_datadark = sorted(DATAdark, key=itemgetter('DepID'))
 
-        QMessageBox.information(self, 'Information',AA(DATAx,DATAMPPx,DATAdark,sorted_datajv,sorted_datampp,sorted_datadark))
+        QMessageBox.information(self, 'Information',
+                                AA(DATAx,DATAMPPx,DATAdark,sorted_datajv,sorted_datampp,sorted_datadark))
 
 
 # class Thread_AA(QThread):

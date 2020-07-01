@@ -85,6 +85,14 @@ Ui_MainWindow, QMainWindow = loadUiType('IVpyqt5gui.ui')
 
 
 """
+- ploting from table doesn't work. not the correct lines. 
+calculation of jv param faulty. a lot of error with param calc
+=> seems it is ok for some dataset ??
+
+
+- sorting in table column not working
+
+- reintroduce the legend color choice and naming function. 
 
 """
 
@@ -294,7 +302,10 @@ class IVapp(QtWidgets.QMainWindow):
                         break
                     elif filetype==".itx" or (".itx" in list(set(filetypes)) and '.txt'in list(set(filetypes))):
                         print("cigs igor text data")
-                        # self.getdatalistsfromNRELcigssetup(file_path)
+                        self.thread = Thread_getdatalistsfromNRELcigssetup(file_path)
+                        self.thread.change_value.connect(self.setProgressVal)
+                        self.thread.finished.connect(self.ImportFinished)
+                        self.thread.start()
                         finished=1
                         break
                     elif filetype==".txt" or filetype=='':
@@ -318,6 +329,13 @@ class IVapp(QtWidgets.QMainWindow):
                         elif 'Notes' in filerawdata[1]:
                             print("CUB files")
                             self.thread = Thread_getdatalistsfromCUBfiles(file_path)
+                            self.thread.change_value.connect(self.setProgressVal)
+                            self.thread.finished.connect(self.ImportFinished)
+                            self.thread.start()
+                            finished=1
+                        elif '\t' in filerawdata[1][0]:
+                            print('iiiv')
+                            self.thread = Thread_getdatalistsfromIIIVsetupfiles(file_path)
                             self.thread.change_value.connect(self.setProgressVal)
                             self.thread.finished.connect(self.ImportFinished)
                             self.thread.start()
@@ -3565,11 +3583,6 @@ def AA(DATAx,DATAMPPx,DATAdarkx,sorted_datajv,sorted_datampp,sorted_datadark):
     return 'autoanalysis is finished'
 
 #%%#############
-# self.getdatalistsfromIVTFfiles(file_pathnew)
-# self.getdatalistsfromIVHITfiles(file_path)
-
-# self.getdatalistsfromNRELcigssetup(file_path)
-
 
 class Thread_getdatalistsfromCUBpyfiles(QThread):
     finished = pyqtSignal()
@@ -3929,9 +3942,10 @@ class Thread_getdatalistsfromCUBfiles(QThread):
             partdict["Vstart"]=ivpartdat[0][-1]
             partdict["Vend"]=ivpartdat[0][0]
                     
-            params=self.extract_jv_params(partdict["IVData"])
+            params=extract_jv_params(partdict["IVData"])
             partdict["Voc"]=params['Voc']*1000 #mV
             partdict["Jsc"]=params['Jsc'] #mA/cm2
+            partdict["Isc"]=params['Jsc']*partdict["CellSurface"]
             partdict["FF"]=params['FF'] #%
             partdict["Eff"]=params['Pmax'] #%
             partdict["Pmpp"]=partdict["Eff"]*10 #W/cm2
@@ -3982,10 +3996,7 @@ class Thread_getdatalistsfromCUBfiles(QThread):
             
         self.finished.emit()
         
-        
-        
-
-class Thread_getdatalistsfromNRELfiles(QThread):
+class Thread_getdatalistsfromNRELcigssetup(QThread):
     finished = pyqtSignal()
     change_value = pyqtSignal(int)
     def __init__(self, file_path, parent=None):
@@ -3997,17 +4008,361 @@ class Thread_getdatalistsfromNRELfiles(QThread):
         global DATAMPP, numbLightfiles, numbDarkfiles, colormapname
         print('threadstart')
         
+        num_plots=len(DATA.keys())+len(file_path)
+        cmap = plt.get_cmap(colormapname)
+        colors = cmap(np.linspace(0, 1.0, num_plots))
+        colors=[tuple(item) for item in colors]
+        
+        for i in range(len(self.file_path)):
+            filetoread = open(self.file_path[i],"r", encoding='ISO-8859-1')
+            filerawdata = filetoread.readlines()
+            if os.path.splitext(file_path[i])[1]=='.txt':
+#                print("txt mpp file")
+                partdict = {}
+                partdict["filepath"]=file_path[i]
+                filename=os.path.splitext(os.path.basename(partdict["filepath"]))[0]
+                partdict["DepID"]=filename.split('.')[0]+'_'+filename.split('.')[1]
+                partdict["SampleName"]=filename.split('.')[0]+'_'+filename.split('.')[1]+'_'+filename.split('.')[2]
+                partdict["Cellletter"]='Single'
+                partdict["batchname"]=filename.split('.')[0]
+                partdict["MeasComment"]=filerawdata[0].split('\t')[-1]
+
+                partdict["MeasDayTime"]=modification_date(file_path[i])
+
+                partdict["CellSurface"]= 1
+
+                partdict["Delay"]=0
+                partdict["IntegTime"]=0
+                partdict["Vstep"]=0
+                partdict["Vstart"]=0
+                partdict["Vend"]=0
+                partdict["ExecTime"]=0
+                partdict["Operator"]='unknown'
+                partdict["Group"]="Default group"
+                
+                mpppartdat = [[],[],[],[],[]]#[voltage,current,time,power,vstep,delay]
+                for item in range(2,len(filerawdata),1):
+                    mpppartdat[0].append(float(filerawdata[item].split("\t")[0]))
+                    mpppartdat[1].append(float(filerawdata[item].split("\t")[1]))
+                    mpppartdat[2].append(float(filerawdata[item].split("\t")[2]))
+                    mpppartdat[3].append(float(filerawdata[item].split("\t")[3]))
+                    mpppartdat[4].append(float(filerawdata[item].split("\t")[4]))
+                partdict["PowerEnd"]=mpppartdat[3][-1]
+                partdict["PowerAvg"]=sum(mpppartdat[3])/float(len(mpppartdat[3]))
+                partdict["trackingduration"]=mpppartdat[2][-1]
+                partdict["MppData"]=mpppartdat
+                partdict["MPPlinestyle"]=[partdict["SampleName"],"-",colors[len(DATAMPP.keys())],2]
+                DATAMPP.append(partdict)   
+                
+                
+            elif os.path.splitext(file_path[i])[1]=='.itx':
+#                print("cigs iv file")
+                partdict = {}
+                partdict["filepath"]=file_path[i]
+                
+                filename=os.path.splitext(os.path.basename(partdict["filepath"]))[0]
+#                print(filename)
+                if 'Reverse' in filename:
+                    partdict["DepID"]=filename[:filename.index('Reverse')-1]
+                    aftername=filename[filename.index('Reverse'):]
+                    partdict["ScanDirection"]="Reverse"
+                elif 'Forward' in filename:
+                    partdict["DepID"]=filename[:filename.index('Forward')-1]
+                    aftername=filename[filename.index('Forward'):]
+                    partdict["ScanDirection"]="Forward" 
+                
+                partdict["Cellletter"]='Single'
+                partdict["batchname"]=partdict["DepID"].split('.')[0]
+                partdict["SampleName"]=partdict["DepID"]+"_"+aftername.split('.')[1]+"_"+aftername.split('.')[2]
+                
+#                print(partdict["SampleName"])
+                
+                if 'LIV' in aftername:
+                    partdict["Illumination"]="Light"
+                    partdict["sunintensity"]=1
+                elif 'DIV' in aftername:
+                    partdict["Illumination"]="Dark"
+                    partdict["sunintensity"]=0
+                    
+                    
+                partdict["MeasDayTime2"]=modification_date(file_path[i])#'2020-01-29 12:55:00'
+                partdict["MeasDayTime"]='Mon, Jan 01, 0000 0:00:00'
+                
+                for item in range(len(filerawdata)):
+                    if "X Note" in filerawdata[item]:
+#                        print(filerawdata[item].index('\\r'))
+#                        print(filerawdata[item][filerawdata[item].index('\\r')+2:filerawdata[item].index('\\rArea')-1])
+                        partdict["MeasDayTime2"]=parser.parse(filerawdata[item][filerawdata[item].index('\\r')+2:filerawdata[item].index('\\rArea')-1])
+                        partdict["MeasDayTime"]=filerawdata[item][filerawdata[item].index('\\r')+2:filerawdata[item].index('\\rArea')-1]
+#                        print(partdict["MeasDayTime2"])
+                        break
+                
+#                partdict["MeasComment"]=filerawdata[-1][filerawdata[-1].index('"')+1:-3]
+                partdict["MeasComment"]=''
+#                if "aftermpp" in partdict["MeasComment"]:
+#                    partdict["aftermpp"]=1
+#                else:
+#                    partdict["aftermpp"]=0
+                
+                for item in range(len(filerawdata)):
+                    if "X SetScale" in filerawdata[item]:
+                        partdict["Vstart"]=float(filerawdata[item][15:filerawdata[item].index(',')])
+                        break
+                #vstep
+                for item in range(len(filerawdata)):
+                    if "X SetScale" in filerawdata[item]:
+                        partdict["Vstep"]=float(filerawdata[item].split(',')[1])
+                        break
+#                print(partdict["Vstart"])
+#                print(partdict["Vstep"])
+                ivpartdat = [[],[]]#[voltage,current]
+                increm=0
+                for item in range(3,len(filerawdata),1):
+                    if 'END' not in filerawdata[item]:
+                        ivpartdat[0].append(partdict["Vstart"]+increm*partdict["Vstep"])
+#                        print(item)
+#                        if partdict["ScanDirection"]=="Forward":
+#                            ivpartdat[0].append(partdict["Vstart"]+increm*partdict["Vstep"])
+#                        else:
+#                            ivpartdat[0].append(partdict["Vstart"]+increm*partdict["Vstep"])
+                        ivpartdat[1].append(float(filerawdata[item].split('\t')[2][:-2])) 
+                        increm+=1
+                    else:
+                        break
+                partdict["IVData"]=ivpartdat
+                
+                partdict["Vend"]=ivpartdat[0][-1]
+                
+#                if partdict["ScanDirection"]=="Reverse":
+#                    if partdict["Vstart"]<partdict["Vend"]:
+#                        vend=partdict["Vend"]
+#                        partdict["Vend"]=partdict["Vstart"]
+#                        partdict["Vstart"]=vend
+#                else:
+#                    if partdict["Vstart"]>partdict["Vend"]:
+#                        vend=partdict["Vend"]
+#                        partdict["Vend"]=partdict["Vstart"]
+#                        partdict["Vstart"]=vend 
+                        
+                partdict["NbPoints"]=len(ivpartdat[0])
+                partdict["CellSurface"]=1
+                for item in range(len(filerawdata)):
+                    if "X Note" in filerawdata[item]:
+                        # print(filerawdata[item])
+                        partdict["CellSurface"]=float(filerawdata[item][filerawdata[item].index('\\rArea')+18:filerawdata[item].index('\\rVoc')-1])
+                        break
+                
+                partdict["Delay"]=-1
+                partdict["IntegTime"]=-1                        
+
+                params=extract_jv_params(partdict["IVData"])
+                partdict["Voc"]=params['Voc']*1000 #mV
+                partdict["Jsc"]=params['Jsc'] #mA/cm2
+                partdict["Isc"]=params['Jsc']*partdict["CellSurface"]
+                partdict["FF"]=params['FF'] #%
+                partdict["Eff"]=params['Pmax'] #%
+                partdict["Pmpp"]=partdict["Eff"]*10 #W/cm2
+                partdict["VocFF"]=partdict["Voc"]*partdict["FF"]
+                partdict["Roc"]=params['Roc'] 
+                partdict["Rsc"]=params['Rsc'] 
+                partdict["RscJsc"]=partdict["Rsc"]*partdict["Jsc"]
+                
+                partdict["Vmpp"]=params['Vmpp']
+                partdict["Jmpp"]=params['Jmpp']
+                partdict["ImaxComp"]=-1
+                partdict["Isenserange"]=-1
+                
+                partdict["Operator"]=-1
+                              
+                try:
+                    if partdict["Illumination"]=="Light" and max(ivpartdat[0])>0.001*float(partdict["Voc"]):
+                        f = interp1d(ivpartdat[0], ivpartdat[1], kind='cubic')
+                        x2 = lambda x: f(x)
+                        partdict["AreaJV"] = integrate.quad(x2,0,0.001*float(partdict["Voc"]))[0]
+                    else:
+                        partdict["AreaJV"] =""
+                except ValueError:
+                    print("there is a ValueError on sample ",i)
+                
+                
+                partdict["Group"]="Default group"
+                partdict["Setup"]="SSIgorC215"              
+                partdict["RefNomCurr"]=999
+                partdict["RefMeasCurr"]=999
+                partdict["AirTemp"]=999
+                partdict["ChuckTemp"]=999
+                partdict["IVlinestyle"]=[partdict["SampleName"],"-",colors[len(DATA.keys())],2]
+#                DATA.append(partdict)
+
+                if partdict["Illumination"]=="Light":
+                    partdict["SampleNameID"]=partdict["SampleName"]+'_'+str(partdict["MeasDayTime2"]).replace(' ','_').replace(':','-')+'_'+'%.2f'%float(partdict["Eff"])
+
+                    DATA[partdict["SampleNameID"]]=partdict
+                    numbLightfiles+=1
+                else:
+                    partdict["SampleName"]=partdict["SampleName"]+'_D'
+                    partdict["SampleNameID"]=partdict["SampleName"]+'_'+str(partdict["MeasDayTime2"]).replace(' ','_').replace(':','-')+'_'+'%.2f'%float(partdict["Eff"])
+                    DATA[partdict["SampleNameID"]]=partdict
+                    DATAdark.append(partdict)
+                    numbDarkfiles+=1
+                
+            self.change_value.emit(100*(i+1)/len(self.file_path))
+            
+        self.finished.emit()
+        
+        
+class Thread_getdatalistsfromIIIVsetupfiles(QThread):
+    finished = pyqtSignal()
+    change_value = pyqtSignal(int)
+    def __init__(self, file_path, parent=None):
+        QThread.__init__(self, parent)
+        self.file_path=file_path
+        
+    def run(self):
+        global DATA, DATAdark, colorstylelist
+        global DATAMPP, numbLightfiles, numbDarkfiles, colormapname
+        print('threadstart')
+        
+
+        
+        for i in range(len(self.file_path)):
+            filetoread = open(self.file_path[i],"r", encoding='ISO-8859-1')
+            filerawdata = filetoread.readlines()
+                              
+
+            
+            measnames=filerawdata[0].split('\t\t\t')
+            measnames[-1]=measnames[-1][:-3]
+            # print(measnames)
+            # print(len(filerawdata[0].split('\t\t\t')))
+            
+            num_plots=len(DATA.keys())+len(measnames)
+            cmap = plt.get_cmap(colormapname)
+            colors = cmap(np.linspace(0, 1.0, num_plots))
+            colors=[tuple(item) for item in colors]
+            for item in range(len(measnames)):
+                partdict = {}
+                partdict["filepath"]=self.file_path[i]
+                filename=os.path.splitext(os.path.basename(partdict["filepath"]))[0]
+                ivpartdat = [[],[]]#[voltage,current]
+                for row in range(1, len(filerawdata)):
+                    if filerawdata[row].split('\t')[item*3+1] != '':
+                        ivpartdat[0].append(float(filerawdata[row].split('\t')[item*3+1]))
+                        ivpartdat[1].append(float(filerawdata[row].split('\t')[item*3+2]))
+                
+                partdict["Cellletter"]='Z' #could search for the 'n' in name + number after
+                partdict["batchname"]='X'
+                partdict["DepID"]=partdict["batchname"]
+                partdict["SampleName"]=measnames[item]
+                
+                if "L" in measnames[item]:
+                    partdict["Illumination"]="Light"
+                else:
+                    partdict["Illumination"]="Dark"
+                
+                if ivpartdat[0][0]>ivpartdat[0][-1]:
+                    partdict["ScanDirection"]="Reverse"
+                else:
+                    partdict["ScanDirection"]="Forward" 
+            
+            
+                partdict["MeasDayTime2"]=''
+                partdict["MeasDayTime"]=''
+                        
+                partdict["MeasComment"]="-"
+                    
+                partdict["CellSurface"]=0.09
+                partdict["Delay"]=999
+                partdict["IntegTime"]=999
+                partdict["IVData"]=ivpartdat
+                partdict["NbPoints"]=len(ivpartdat[0])
+                partdict["Vstart"]=ivpartdat[0][0]
+                partdict["Vend"]=ivpartdat[0][-1]
+                
+                params=extract_jv_params(partdict["IVData"])
+                partdict["Voc"]=params['Voc']*1000 #mV
+                partdict["Jsc"]=params['Jsc'] #mA/cm2
+                partdict["Isc"]=params['Jsc']*partdict["CellSurface"]
+                partdict["FF"]=params['FF'] #%
+                partdict["Eff"]=params['Pmax'] #%
+                partdict["Pmpp"]=partdict["Eff"]*10 #W/cm2
+                partdict["VocFF"]=partdict["Voc"]*partdict["FF"]
+                partdict["Roc"]=params['Roc'] 
+                partdict["Rsc"]=params['Rsc'] 
+                partdict["RscJsc"]=partdict["Rsc"]*partdict["Jsc"]
+                
+                partdict["Vmpp"]=params['Vmpp']
+                partdict["Jmpp"]=params['Jmpp']
+                partdict["ImaxComp"]=-1
+                partdict["Isenserange"]=-1
+                
+                partdict["Operator"]=-1
+                              
+                try:
+                    if partdict["Illumination"]=="Light" and max(ivpartdat[0])>0.001*float(partdict["Voc"]):
+                        f = interp1d(ivpartdat[0], ivpartdat[1], kind='cubic')
+                        x2 = lambda x: f(x)
+                        partdict["AreaJV"] = integrate.quad(x2,0,0.001*float(partdict["Voc"]))[0]
+                    else:
+                        partdict["AreaJV"] =""
+                except ValueError:
+                    print("there is a ValueError on sample ",i)
+                
+                partdict["sunintensity"]=1
+                partdict["Group"]="Default group"
+                partdict["Setup"]="IIIV"              
+                partdict["RefNomCurr"]=999
+                partdict["RefMeasCurr"]=999
+                partdict["AirTemp"]=999
+                partdict["ChuckTemp"]=999
+                partdict["IVlinestyle"]=[partdict["SampleName"],"-",colors[len(DATA.keys())],2]
+                
+                if partdict["Illumination"]=="Light":
+                    # DATA.append(partdict)
+                    partdict["SampleNameID"]=partdict["SampleName"]+'_'+str(partdict["MeasDayTime2"]).replace(' ','_').replace(':','-')+'_'+'%.2f'%float(partdict["Eff"])
+                    DATA[partdict["SampleNameID"]]=partdict
+                    numbLightfiles+=1
+                else:
+                    partdict["SampleName"]=partdict["SampleName"]+'_D'
+                    partdict["SampleNameID"]=partdict["SampleName"]+'_'+str(partdict["MeasDayTime2"]).replace(' ','_').replace(':','-')+'_'+'%.2f'%float(partdict["Eff"])
+                    DATA[partdict["SampleNameID"]]=partdict
+                    DATAdark.append(partdict)
+                    numbDarkfiles+=1
+                    
+                self.change_value.emit(100*(i+1)/len(self.file_path))
+            
+        self.finished.emit()
+
+class Thread_getdatalistsfromNRELfiles(QThread):
+    finished = pyqtSignal()
+    change_value = pyqtSignal(int)
+    def __init__(self, file_path, parent=None):
+        QThread.__init__(self, parent)
+        self.file_path=file_path
+
+    def run(self):
+        global DATA, DATAdark, colorstylelist
+        global DATAMPP, numbLightfiles, numbDarkfiles, colormapname
+        print('threadstart')
+        
         for i in range(len(self.file_path)):
             filetoread = open(self.file_path[i],"r", encoding='ISO-8859-1')
             filerawdata = filetoread.readlines()
             # print(i)
             filetype = 0
             if "HEADER START" in filerawdata[0]:
-                filetype = 1 #JV file from solar simulator in SERF C215
-                num_plots=len(DATA.keys())+len(file_path)
-                cmap = plt.get_cmap(colormapname)
-                colors = cmap(np.linspace(0, 1.0, num_plots))
-                colors=[tuple(item) for item in colors]
+                if 'SPO' in self.file_path[i]:
+                    filetype = 11
+                    num_plots=len(DATA.keys())+len(file_path)
+                    cmap = plt.get_cmap(colormapname)
+                    colors = cmap(np.linspace(0, 1.0, num_plots))
+                    colors=[tuple(item) for item in colors]
+                else:
+                    filetype = 1 #JV file from solar simulator in SERF C215
+                    num_plots=len(DATA.keys())+len(file_path)
+                    cmap = plt.get_cmap(colormapname)
+                    colors = cmap(np.linspace(0, 1.0, num_plots))
+                    colors=[tuple(item) for item in colors]
                 # print('jv')
             elif "Power (mW/cm2)" in filerawdata[0]:
                 filetype = 2
@@ -4299,7 +4654,53 @@ class Thread_getdatalistsfromNRELfiles(QThread):
                 partdict["MPPlinestyle"]=[partdict["SampleName"],"-",colors[len(DATAMPP.keys())],2]
                 
                 DATAMPP[partdict["SampleNameID"]]=partdict                
+
+            elif filetype ==11 : #SPO files of SERF C215 igor program
+                #assumes file name: batch_samplenumber_cellLetter_mpp
+                partdict = {}
+                partdict["filepath"]=self.file_path[i]
+                filename=os.path.splitext(os.path.basename(partdict["filepath"]))[0]
+                partdict["DepID"]=filename.split('_')[0]+'_'+filename.split('_')[1]
+                partdict["SampleName"]=filename.split('_')[0]+'_'+filename.split('_')[1]+'_'+filename.split('_')[2]
+                partdict["Cellletter"]=filename.split('_')[2]
+                partdict["batchname"]=filename.split('_')[0]
+                partdict["MeasComment"]=filename[filename.index('_')+1:]
                 
+                partdict["MeasDayTime"]=modification_date(self.file_path[i])
+                # print(partdict["MeasDayTime"])
+                partdict["CellSurface"]= -1
+
+                partdict["Delay"]=0
+                partdict["IntegTime"]=0
+                partdict["Vstep"]=0
+                partdict["Vstart"]=0
+                partdict["Vend"]=0
+                partdict["ExecTime"]=0
+                partdict["Operator"]='unknown'
+                partdict["Group"]="Default group"
+                partdict["sunintensity"]=1
+                
+                for item in range(len(filerawdata)):
+                    if "HEADER END" in filerawdata[item]:
+                            pos=item+3
+                            break
+                mpppartdat = [[],[],[],[],[]]#[voltage,current,time,power,vstep]
+                for item in range(pos,len(filerawdata),1):
+                    mpppartdat[0].append(float(filerawdata[item].split("\t")[1]))
+                    mpppartdat[1].append(float(filerawdata[item].split("\t")[0]))
+                    mpppartdat[2].append(float(filerawdata[item].split("\t")[3]))
+                    mpppartdat[3].append(float(filerawdata[item].split("\t")[2]))
+                    mpppartdat[4].append(-1)
+                partdict["PowerEnd"]=mpppartdat[3][-1]
+                partdict["PowerAvg"]=sum(mpppartdat[3])/float(len(mpppartdat[3]))
+                partdict["trackingduration"]=mpppartdat[2][-1]
+                partdict["SampleNameID"]=partdict["SampleName"]+'_'+str(partdict["MeasDayTime"]).replace(' ','_').replace(':','-')+'_'+str(partdict["PowerEnd"])
+
+                partdict["MppData"]=mpppartdat
+                partdict["SampleName"]=partdict["SampleName"]+'_'+str(partdict["MeasDayTime"]).replace(':','').replace(' ','-')
+                partdict["MPPlinestyle"]=[partdict["SampleName"],"-",colors[len(DATAMPP.keys())],2]
+                
+                DATAMPP[partdict["SampleNameID"]]=partdict                                
             self.change_value.emit(100*(i+1)/len(self.file_path))
         
 #         DATA = sorted(DATA, key=itemgetter('SampleName')) 

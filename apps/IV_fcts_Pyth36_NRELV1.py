@@ -3805,6 +3805,8 @@ class IVApp(Toplevel):
                     partdict["Illumination"]="Dark"
                     
                     
+                partdict["MeasDayTime2"]=modification_date(file_path[i])#'2020-01-29 12:55:00'
+                partdict["MeasDayTime"]='Mon, Jan 01, 0000 0:00:00'
                 
                 for item in range(len(filerawdata)):
                     if "X Note" in filerawdata[item]:
@@ -3863,11 +3865,12 @@ class IVApp(Toplevel):
 #                        partdict["Vstart"]=vend 
                         
                 partdict["NbPoints"]=len(ivpartdat[0])
+                partdict["CellSurface"]=999
                 for item in range(len(filerawdata)):
                     if "X Note" in filerawdata[item]:
+                        # print(filerawdata[item])
                         partdict["CellSurface"]=filerawdata[item][filerawdata[item].index('\\rArea')+18:filerawdata[item].index('\\rVoc')-1]
                         break
-#                print(partdict["CellSurface"])
                 
                 partdict["Delay"]=-1
                 partdict["IntegTime"]=-1                        
